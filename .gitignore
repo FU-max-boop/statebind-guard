@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+HANDOFF.md
+statebind.json
+.env
+.venv/
+venv/
+build/
+dist/
+

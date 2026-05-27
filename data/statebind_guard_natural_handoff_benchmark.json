@@ -1,0 +1,132 @@
+[
+  {
+    "id": "codex-router-file-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "src/api/router.py"}
+    ],
+    "handoff": "# Resume note\n\nThe active_patch_file is `src/api/router.py` because `git diff --name-only` only changed that router module. Related context file: `docs/api-routing.md`.\n\nNext action: edit `src/api/router.py`, then run the bound router test."
+  },
+  {
+    "id": "codex-router-file-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "src/api/router.py"}
+    ],
+    "handoff": "# Resume note\n\nThe active patch file still needs work.\n\nMentioned handles from the transcript: `src/api/router.py`, `src/ui/app.ts`, and `docs/api-routing.md`.\n\nNext action: continue with the file."
+  },
+  {
+    "id": "claude-base-sha-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "comparison_base_sha", "handle": "def5678"}
+    ],
+    "handoff": "# PR handoff\n\ncomparison_base_sha: `def5678` from the PR metadata `base.sha` field.\ncurrent_head_sha: `abc1234` from the PR metadata `head.sha` field.\n\nUse `def5678` for the comparison base."
+  },
+  {
+    "id": "claude-base-sha-swapped",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "comparison_base_sha", "handle": "def5678"}
+    ],
+    "handoff": "# PR handoff\n\ncomparison_base_sha: `abc1234` from the head row.\ncurrent_head_sha: `def5678` from the base row.\n\nBoth identifiers were visible in the trace, but the roles were swapped."
+  },
+  {
+    "id": "openhands-failing-test-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "failing_test", "handle": "pytest tests/test_agent_resume.py::test_restore_state"}
+    ],
+    "handoff": "# Session resume\n\nfailing_test -> `pytest tests/test_agent_resume.py::test_restore_state`; this is the latest red test after the memory patch.\n\nNext action: rerun that selector before any broader test suite."
+  },
+  {
+    "id": "openhands-failing-test-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "failing_test", "handle": "pytest tests/test_agent_resume.py::test_restore_state"}
+    ],
+    "handoff": "# Session resume\n\nThe failing test is in the resume area.\n\nObserved command strings: `pytest tests/test_agent_resume.py::test_restore_state`, `pytest tests/test_cli.py`, and `make test`.\n\nNext action: rerun the test after patching."
+  },
+  {
+    "id": "codex-next-command-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "next_command", "handle": "make public-check"}
+    ],
+    "handoff": "# Release handoff\n\nnext_command: `make public-check`; evidence: repository release gate.\n\nDo not publish unless that command passes."
+  },
+  {
+    "id": "codex-next-command-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "next_command", "handle": "make public-check"}
+    ],
+    "handoff": "# Release handoff\n\nThe next command is the release check.\n\nCommands mentioned during the session: `make public-check`, `python -m unittest discover -s tests`, and `bash scripts/run_smoke_test.sh`.\n\nNext action: run the command before publishing."
+  },
+  {
+    "id": "github-pr-target-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_target_pr", "handle": "https://github.com/example/project/pull/42"}
+    ],
+    "handoff": "# Review handoff\n\nactive_target_pr = `https://github.com/example/project/pull/42`; evidence: current review thread URL.\nrelated_issue = `https://github.com/example/project/issues/17`.\n\nNext action: inspect unresolved comments on PR 42."
+  },
+  {
+    "id": "github-pr-target-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_target_pr", "handle": "https://github.com/example/project/pull/42"}
+    ],
+    "handoff": "# Review handoff\n\nThe active target PR is the previous review item.\n\nVisible URLs: `https://github.com/example/project/pull/42`, `https://github.com/example/project/issues/17`, and `https://github.com/example/project/pull/41`.\n\nNext action: continue the previous PR."
+  },
+  {
+    "id": "migration-script-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "migration_script", "handle": "scripts/migrations/20260527_add_statebind.sql"}
+    ],
+    "handoff": "# Database task\n\nmigration_script: `scripts/migrations/20260527_add_statebind.sql`; evidence: staged migration file.\nrollback_script: `scripts/migrations/20260527_revert_statebind.sql`.\n\nNext action: inspect the migration before generating fixtures."
+  },
+  {
+    "id": "migration-script-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "migration_script", "handle": "scripts/migrations/20260527_add_statebind.sql"}
+    ],
+    "handoff": "# Database task\n\nThe migration script was created in the migrations folder.\n\nVisible files: `scripts/migrations/20260527_add_statebind.sql`, `scripts/migrations/20260527_revert_statebind.sql`, and `scripts/migrations/README.md`.\n\nNext action: inspect the script before generating fixtures."
+  },
+  {
+    "id": "artifact-output-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "primary_output", "handle": "docs/result_cards/statebind_guard_seed_benchmark.md"}
+    ],
+    "handoff": "# Artifact handoff\n\nprimary_output: `docs/result_cards/statebind_guard_seed_benchmark.md`; evidence: benchmark runner output.\nmetrics_output: `docs/result_cards/statebind_guard_seed_benchmark_metrics.json`.\n\nNext action: quote the result card, not the temporary console output."
+  },
+  {
+    "id": "artifact-output-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "primary_output", "handle": "docs/result_cards/statebind_guard_seed_benchmark.md"}
+    ],
+    "handoff": "# Artifact handoff\n\nThe primary output was a result card.\n\nFiles written: `docs/result_cards/statebind_guard_seed_benchmark.md`, `docs/result_cards/statebind_guard_seed_benchmark_metrics.json`, and `/tmp/statebind_guard_card_check.md`.\n\nNext action: quote the output."
+  },
+  {
+    "id": "multi-natural-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "statebind_handoff/statebind_handoff.py"},
+      {"role": "next_command", "handle": "python -m unittest discover -s tests"}
+    ],
+    "handoff": "# Tooling handoff\n\nactive_patch_file: `statebind_handoff/statebind_handoff.py`; evidence: implementation file under edit.\nnext_command: `python -m unittest discover -s tests`; evidence: validation gate for the helper.\n\nNext action: edit the helper, then run the unit tests."
+  },
+  {
+    "id": "multi-natural-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "statebind_handoff/statebind_handoff.py"},
+      {"role": "next_command", "handle": "python -m unittest discover -s tests"}
+    ],
+    "handoff": "# Tooling handoff\n\nThe active patch file is the handoff helper and the next command is the unit test suite.\n\nVisible handles: `statebind_handoff/statebind_handoff.py`, `scripts/run_statebind_benchmark.py`, `python -m unittest discover -s tests`, and `make public-check`.\n\nNext action: continue the helper work and run tests."
+  }
+]

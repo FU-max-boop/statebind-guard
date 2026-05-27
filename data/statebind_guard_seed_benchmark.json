@@ -1,0 +1,99 @@
+[
+  {
+    "id": "base-sha-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "comparison_base_sha", "handle": "def5678"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| comparison_base_sha | `def5678` | PR metadata base.sha | high |\n| current_head_sha | `abc1234` | PR metadata head.sha | high |\n\nNext action: compare the current patch against `def5678`."
+  },
+  {
+    "id": "base-sha-visible-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "comparison_base_sha", "handle": "def5678"}
+    ],
+    "handoff": "# Handoff\n\nThe transcript mentions head SHA `abc1234`, base SHA `def5678`, and stale SHA `999aaaa`.\n\nNext action: continue from the PR and use the SHA above."
+  },
+  {
+    "id": "base-sha-wrong-role",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "comparison_base_sha", "handle": "def5678"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| comparison_base_sha | `abc1234` | PR metadata head.sha | high |\n| current_head_sha | `def5678` | PR metadata base.sha | high |\n\nNext action: diff against the comparison base."
+  },
+  {
+    "id": "test-selector-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "failing_test", "handle": "pytest tests/test_router.py::test_stream"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| failing_test | `pytest tests/test_router.py::test_stream` | latest failing test log | high |\n\nNext action: run `pytest tests/test_router.py::test_stream` after editing `src/api/router.py`."
+  },
+  {
+    "id": "test-selector-visible-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "failing_test", "handle": "pytest tests/test_router.py::test_stream"}
+    ],
+    "handoff": "# Handoff\n\nRelevant text included `pytest tests/test_router.py::test_stream` and `pytest tests/test_auth.py::test_login`.\n\nNext action: rerun the test after the fix."
+  },
+  {
+    "id": "active-file-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "src/api/router.py"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| active_patch_file | `src/api/router.py` | git diff --name-only | high |\n| related_context_file | `docs/api-routing.md` | design note | medium |\n\nNext action: edit `src/api/router.py`, then run the bound router test."
+  },
+  {
+    "id": "active-file-visible-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "src/api/router.py"}
+    ],
+    "handoff": "# Handoff\n\nMentioned files: `src/api/router.py`, `src/ui/app.ts`, and `docs/api-routing.md`.\n\nNext action: continue with the file."
+  },
+  {
+    "id": "pr-target-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_target_pr", "handle": "https://github.com/org/repo/pull/42"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| active_target_pr | `https://github.com/org/repo/pull/42` | current GitHub PR URL | high |\n| related_issue | `https://github.com/org/repo/issues/17` | linked from PR body | medium |\n\nNext action: inspect PR 42 review comments."
+  },
+  {
+    "id": "pr-target-visible-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_target_pr", "handle": "https://github.com/org/repo/pull/42"}
+    ],
+    "handoff": "# Handoff\n\nLinks seen: `https://github.com/org/repo/pull/42` and `https://github.com/org/repo/issues/17`.\n\nNext action: continue the previous PR."
+  },
+  {
+    "id": "next-command-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "next_command", "handle": "make public-check"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| next_command | `make public-check` | repository quality gate | high |\n\nNext action: run `make public-check` before publishing."
+  },
+  {
+    "id": "next-command-visible-unbound",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "next_command", "handle": "make public-check"}
+    ],
+    "handoff": "# Handoff\n\nEarlier commands included `make public-check`, `pytest`, and `python scripts/build.py`.\n\nNext action: check things before publishing."
+  },
+  {
+    "id": "multi-binding-bound",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "statebind_handoff/statebind_handoff.py"},
+      {"role": "next_command", "handle": "python -m unittest discover -s tests"}
+    ],
+    "handoff": "# Handoff\n\n| Role | Handle | Evidence | Confidence |\n|---|---|---|---|\n| active_patch_file | `statebind_handoff/statebind_handoff.py` | git diff --name-only | high |\n| next_command | `python -m unittest discover -s tests` | local validation gate | high |\n\nNext action: edit the handoff helper and run the bound unit test command."
+  }
+]

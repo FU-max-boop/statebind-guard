@@ -1,0 +1,4 @@
+interface:
+  display_name: "StateBind Handoff"
+  short_description: "Create and audit executable coding-agent handoffs."
+  default_prompt: "Create or check a StateBind handoff for this coding-agent task."

@@ -1,0 +1,260 @@
+{
+  "data": "data/statebind_guard_seed_benchmark.json",
+  "records": 12,
+  "summary": {
+    "keyword_role_baseline": {
+      "n": 12,
+      "accuracy": 0.75,
+      "precision_accept": 0.6666666666666666,
+      "recall_accept": 1.0,
+      "f1_accept": 0.8,
+      "unsafe_accept_rate": 0.5,
+      "tp": 6,
+      "tn": 3,
+      "fp": 3,
+      "fn": 0
+    },
+    "statebind_guard": {
+      "n": 12,
+      "accuracy": 1.0,
+      "precision_accept": 1.0,
+      "recall_accept": 1.0,
+      "f1_accept": 1.0,
+      "unsafe_accept_rate": 0.0,
+      "tp": 6,
+      "tn": 6,
+      "fp": 0,
+      "fn": 0
+    },
+    "visibility_baseline": {
+      "n": 12,
+      "accuracy": 0.5,
+      "precision_accept": 0.5,
+      "recall_accept": 1.0,
+      "f1_accept": 0.6666666666666666,
+      "unsafe_accept_rate": 1.0,
+      "tp": 6,
+      "tn": 0,
+      "fp": 6,
+      "fn": 0
+    }
+  },
+  "predictions": [
+    {
+      "method": "visibility_baseline",
+      "record_id": "base-sha-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "base-sha-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "base-sha-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "base-sha-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "base-sha-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "base-sha-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "base-sha-wrong-role",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "base-sha-wrong-role",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "base-sha-wrong-role",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "test-selector-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "test-selector-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "test-selector-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "test-selector-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "test-selector-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "test-selector-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "active-file-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "active-file-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "active-file-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "active-file-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "active-file-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "active-file-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "pr-target-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "pr-target-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "pr-target-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "pr-target-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "pr-target-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "pr-target-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "next-command-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "next-command-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "next-command-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "next-command-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "next-command-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "next-command-visible-unbound",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "multi-binding-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "multi-binding-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "multi-binding-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    }
+  ]
+}
