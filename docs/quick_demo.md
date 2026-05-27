@@ -1,0 +1,58 @@
+# StateBind Guard Quick Demo
+
+StateBind Guard tests a narrow but costly handoff failure:
+
+> The next agent can see the right handle, but the handoff does not bind it to
+> the role that makes it executable.
+
+## One Command
+
+```bash
+make benchmark
+```
+
+## Current Results
+
+| Benchmark | Method | Accuracy | Unsafe accept rate |
+|---|---|---:|---:|
+| Seed | visibility baseline | 0.500 | 1.000 |
+| Seed | keyword-role baseline | 0.750 | 0.500 |
+| Seed | StateBind Guard | 1.000 | 0.000 |
+| Natural handoff | visibility baseline | 0.500 | 1.000 |
+| Natural handoff | keyword-role baseline | 0.500 | 1.000 |
+| Natural handoff | StateBind Guard | 1.000 | 0.000 |
+
+## Example Failure
+
+This looks informative but is unsafe:
+
+```text
+The failing test is in the resume area.
+
+Observed command strings:
+- pytest tests/test_agent_resume.py::test_restore_state
+- pytest tests/test_cli.py
+- make test
+
+Next action: rerun the test after patching.
+```
+
+The target test is visible, but not bound to the `failing_test` role. A resume
+agent could run the wrong command while still appearing to use the context.
+
+## Example Pass
+
+```text
+failing_test -> pytest tests/test_agent_resume.py::test_restore_state
+evidence: latest red test after the memory patch
+
+Next action: rerun that selector before any broader test suite.
+```
+
+The role and handle are bound in the same executable statement.
+
+## Design Boundary
+
+This benchmark does not claim to solve all agent memory failures. It targets a
+specific safety layer: rejecting handoffs where an executable handle is merely
+visible rather than role-bound.

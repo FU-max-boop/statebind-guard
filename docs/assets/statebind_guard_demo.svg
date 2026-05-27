@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="560" viewBox="0 0 1120 560" role="img" aria-labelledby="title desc">
+  <title id="title">StateBind Guard demo</title>
+  <desc id="desc">A visual summary showing visible handles rejected and role-bound handles accepted.</desc>
+  <rect width="1120" height="560" fill="#0f172a"/>
+  <rect x="40" y="40" width="1040" height="480" rx="18" fill="#111827" stroke="#334155" stroke-width="2"/>
+  <text x="72" y="92" fill="#f8fafc" font-family="Menlo, Consolas, monospace" font-size="28" font-weight="700">StateBind Guard</text>
+  <text x="72" y="132" fill="#cbd5e1" font-family="Menlo, Consolas, monospace" font-size="17">Reject visible-but-unbound handoffs. Accept role-bound executable state.</text>
+
+  <rect x="72" y="172" width="460" height="230" rx="12" fill="#1f2937" stroke="#64748b"/>
+  <text x="100" y="214" fill="#fca5a5" font-family="Menlo, Consolas, monospace" font-size="21" font-weight="700">Unsafe accept baseline</text>
+  <text x="100" y="258" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">Visible handles:</text>
+  <text x="100" y="292" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">pytest tests/test_agent_resume.py</text>
+  <text x="100" y="326" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">pytest tests/test_cli.py</text>
+  <text x="100" y="364" fill="#fca5a5" font-family="Menlo, Consolas, monospace" font-size="17">No role binding: FAIL</text>
+
+  <rect x="588" y="172" width="460" height="230" rx="12" fill="#1f2937" stroke="#64748b"/>
+  <text x="616" y="214" fill="#86efac" font-family="Menlo, Consolas, monospace" font-size="21" font-weight="700">StateBind Guard</text>
+  <text x="616" y="258" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">failing_test -&gt;</text>
+  <text x="616" y="292" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">pytest tests/test_agent_resume.py</text>
+  <text x="616" y="326" fill="#e5e7eb" font-family="Menlo, Consolas, monospace" font-size="16">evidence: latest red test</text>
+  <text x="616" y="364" fill="#86efac" font-family="Menlo, Consolas, monospace" font-size="17">Role-bound handle: PASS</text>
+
+  <text x="100" y="454" fill="#f8fafc" font-family="Menlo, Consolas, monospace" font-size="20">Natural handoff benchmark:</text>
+  <text x="100" y="490" fill="#cbd5e1" font-family="Menlo, Consolas, monospace" font-size="17">visibility baseline unsafe accept 1.000  |  StateBind Guard unsafe accept 0.000</text>
+</svg>

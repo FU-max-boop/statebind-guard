@@ -3,6 +3,8 @@
 StateBind Guard is a small benchmark and checker for a simple failure mode in
 coding-agent handoffs:
 
+![StateBind Guard demo](docs/assets/statebind_guard_demo.svg)
+
 > A handoff can contain the right identifier and still fail if it does not preserve the binding from active target to semantic role to executable handle.
 
 For long-running coding agents, the basic memory unit should not only be a chunk or a summary. It should preserve executable bindings such as:
@@ -44,6 +46,9 @@ make benchmark
 make public-check
 ```
 
+See [quick demo](docs/quick_demo.md) for the benchmark result summary and
+[GitHub Action usage](docs/github_action_usage.md) for a CI smoke gate example.
+
 Install the local Codex skill:
 
 ```bash
@@ -71,9 +76,11 @@ examples/
 
 docs/
   failure_cases.md
+  github_action_usage.md
   handoff_contract.md
   limitations.md
   quality_gates.md
+  quick_demo.md
   result_cards/
   research_brief.md
 
