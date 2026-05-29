@@ -30,6 +30,27 @@ StateBindBench turns this into an interaction-aware evaluation target for human-
 Can the next agent preserve the executable binding needed to act safely?
 ```
 
+## 5-Minute Proof Gate
+
+For a quick technical screen, this repository should answer three questions:
+
+1. Can the artifact be run locally?
+2. Does it expose a concrete agent failure mode?
+3. Does it state the boundary of the claim?
+
+Run:
+
+```bash
+bash scripts/run_smoke_test.sh
+make benchmark
+```
+
+Then inspect:
+
+- [quick demo](docs/quick_demo.md)
+- [failure cases](docs/failure_cases.md)
+- [limitations](docs/limitations.md)
+
 ## Quick Start
 
 Run the smoke demo:
