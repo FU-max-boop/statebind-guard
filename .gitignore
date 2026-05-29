@@ -9,4 +9,5 @@ statebind-validation.json
 venv/
 build/
 dist/
+*.whl
 *.egg-info/

@@ -83,7 +83,8 @@ python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py validate \
   statebind.json \
   --repo . \
   --fail-on error \
-  --report statebind-validation.json
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 ## Common Roles

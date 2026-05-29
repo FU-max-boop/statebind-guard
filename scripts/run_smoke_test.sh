@@ -30,9 +30,12 @@ python "$ROOT/statebind_handoff/statebind_handoff.py" validate \
   statebind.json \
   --repo . \
   --fail-on error \
-  --report statebind-validation.json
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 
 test -s statebind-validation.json
+test -s statebind-validation.sarif
+python -m json.tool statebind-validation.sarif >/dev/null
 
 echo
 echo "=== Generated HANDOFF.md preview ==="

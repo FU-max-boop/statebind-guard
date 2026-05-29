@@ -35,7 +35,11 @@ Install the package and generate a draft:
 ```bash
 python -m pip install -e .
 statebind extract --repo . --transcript transcript.md --out HANDOFF.md --json statebind.json
-statebind validate statebind.json --repo . --fail-on error --report statebind-validation.json
+statebind validate statebind.json \
+  --repo . \
+  --fail-on error \
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 ### Level 2: CI Gate
@@ -43,11 +47,19 @@ statebind validate statebind.json --repo . --fail-on error --report statebind-va
 Require handoff contracts for risky agent-generated PRs:
 
 ```bash
-statebind validate statebind.json --repo . --fail-on warning --json --report statebind-validation.json
+statebind validate statebind.json \
+  --repo . \
+  --fail-on warning \
+  --json \
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 Use `--fail-on warning` when the handoff must be consumption-ready, not merely
 structurally valid.
+
+Upload the SARIF report with `github/codeql-action/upload-sarif@v3` to make
+StateBind findings visible in GitHub code scanning and PR annotations.
 
 The machine contract is versioned. The current schema lives at
 `schemas/statebind.schema.json` and can be printed by the CLI:
@@ -67,6 +79,7 @@ previous test" or "the SHA above".
 - Dependency-free CLI for low-friction adoption.
 - Versioned JSON schema for agent/runtime interoperability.
 - Machine-readable findings for CI and agent runtimes.
+- SARIF output for GitHub-native code scanning and PR annotation workflows.
 - Conservative validation: uncertain handles stay uncertain.
 - Explicit claim boundary: this prevents wrong-object actions; it does not
   solve all memory, retrieval, or planning failures.

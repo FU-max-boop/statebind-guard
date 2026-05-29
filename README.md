@@ -89,7 +89,11 @@ statebind extract \
   --out HANDOFF.md \
   --json statebind.json
 
-statebind validate statebind.json --repo . --fail-on error --report statebind-validation.json
+statebind validate statebind.json \
+  --repo . \
+  --fail-on error \
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 Install the local Codex skill:

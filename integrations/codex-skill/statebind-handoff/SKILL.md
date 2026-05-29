@@ -55,7 +55,8 @@ python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py validate \
   statebind.json \
   --repo . \
   --fail-on error \
-  --report statebind-validation.json
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 ### 3. Build The Binding Contract
@@ -94,6 +95,7 @@ Create both when useful:
 
 - `HANDOFF.md`: readable by the next human/Codex session.
 - `statebind.json`: machine-readable contract for future scripts or tooling.
+- `statebind-validation.sarif`: optional GitHub code-scanning report for CI.
 
 Use `references/handoff_contract.md` for the Markdown template, JSON shape, risk taxonomy, and resume prompt template.
 
@@ -105,7 +107,8 @@ A handoff passes only if:
 - Every handle has evidence or is explicitly marked uncertain.
 - Modified files, failing tests, next command, working directory, branch, and active PR/issue are either bound or marked not applicable.
 - `statebind.json` passes `validate` without errors before another agent consumes it.
-- `statebind-validation.json` is available when the result needs to be uploaded or reviewed by CI.
+- `statebind-validation.json` and, for GitHub workflows, `statebind-validation.sarif`
+  are available when the result needs to be uploaded or reviewed by CI.
 - Ambiguous candidates are listed as risks rather than silently resolved.
 - The resume prompt tells the next agent to verify freshness before editing.
 

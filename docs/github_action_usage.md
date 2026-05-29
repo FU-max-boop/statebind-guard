@@ -10,6 +10,10 @@ on:
   pull_request:
   push:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   statebind-guard:
     runs-on: ubuntu-latest
@@ -28,12 +32,19 @@ jobs:
             --repo . \
             --fail-on warning \
             --json \
-            --report statebind-validation.json
+            --report statebind-validation.json \
+            --sarif statebind-validation.sarif
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: statebind-validation
-          path: statebind-validation.json
+          path: |
+            statebind-validation.json
+            statebind-validation.sarif
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: statebind-validation.sarif
 ```
 
 For this repository, the stricter gate is:
@@ -63,3 +74,12 @@ report that can be uploaded as a CI artifact:
 Use `--fail-on error` for draft handoffs where warnings are acceptable. Use
 `--fail-on warning` when the handoff is meant to be consumed by another agent
 without manual cleanup.
+
+## Code Scanning Report
+
+`statebind validate --sarif statebind-validation.sarif` writes a SARIF 2.1.0
+report for GitHub code scanning. Each StateBind finding becomes a code-scanning
+result on the handoff contract file, so ambiguous handles can appear next to
+other PR annotations instead of staying hidden in CI logs.
+
+Uploading SARIF requires `security-events: write` workflow permission on GitHub.

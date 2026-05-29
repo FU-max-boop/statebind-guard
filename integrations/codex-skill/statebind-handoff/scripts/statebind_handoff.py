@@ -481,6 +481,107 @@ def validation_report(
     }
 
 
+def sarif_level(severity: str) -> str:
+    if severity == "error":
+        return "error"
+    if severity == "warning":
+        return "warning"
+    return "note"
+
+
+def sarif_uri(path: Path, repo: Path | None) -> str:
+    resolved = path.resolve()
+    if repo:
+        try:
+            return resolved.relative_to(repo.resolve()).as_posix()
+        except ValueError:
+            pass
+    return path.as_posix()
+
+
+def sarif_report(
+    findings: list[ValidationFinding],
+    path: Path,
+    repo: Path | None,
+    fail_on: str,
+    exit_code: int,
+) -> dict[str, Any]:
+    rules: list[dict[str, Any]] = []
+    for code in sorted({finding.code for finding in findings}):
+        sample = next(finding for finding in findings if finding.code == code)
+        rules.append(
+            {
+                "id": code,
+                "name": code,
+                "shortDescription": {"text": code.replace("_", " ")},
+                "fullDescription": {"text": sample.message},
+                "help": {
+                    "text": (
+                        "Inspect the StateBind handoff contract and replace ambiguous "
+                        "or missing executable handles with explicit role-bound values."
+                    )
+                },
+                "properties": {
+                    "problem.severity": sample.severity,
+                    "tags": ["statebind", "agent-handoff", sample.severity],
+                },
+            }
+        )
+
+    uri = sarif_uri(path, repo)
+    results: list[dict[str, Any]] = []
+    for finding in findings:
+        result: dict[str, Any] = {
+            "ruleId": finding.code,
+            "level": sarif_level(finding.severity),
+            "message": {"text": finding.message},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {"uri": uri},
+                    }
+                }
+            ],
+        }
+        properties = {
+            k: v
+            for k, v in {"role": finding.role, "handle": finding.handle}.items()
+            if v
+        }
+        if properties:
+            result["properties"] = properties
+        results.append(result)
+
+    summary = findings_summary(findings)
+    return {
+        "version": "2.1.0",
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "StateBind Guard",
+                        "version": SCHEMA_VERSION,
+                        "informationUri": "https://github.com/FU-max-boop/statebind-guard",
+                        "rules": rules,
+                    }
+                },
+                "invocations": [
+                    {
+                        "executionSuccessful": exit_code == 0,
+                        "properties": {
+                            "fail_on": fail_on,
+                            "errors": summary["errors"],
+                            "warnings": summary["warnings"],
+                        },
+                    }
+                ],
+                "results": results,
+            }
+        ],
+    }
+
+
 def render_md(contract: dict) -> str:
     lines: list[str] = []
     lines.append("# Agent Handoff")
@@ -540,13 +641,15 @@ def validate_json_file(
     json_out: bool,
     fail_on: str,
     report_out: Path | None = None,
+    sarif_out: Path | None = None,
 ) -> int:
     try:
         contract = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         message = f"StateBind contract not found: {path}"
+        findings = [ValidationFinding("error", "contract_not_found", message)]
         report = validation_report(
-            [ValidationFinding("error", "contract_not_found", message)],
+            findings,
             path,
             repo,
             fail_on,
@@ -558,11 +661,17 @@ def validate_json_file(
             print(message, file=sys.stderr)
         if report_out:
             report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        if sarif_out:
+            sarif_out.write_text(
+                json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2),
+                encoding="utf-8",
+            )
         return 1
     except json.JSONDecodeError as exc:
         message = f"Invalid StateBind JSON in {path}: {exc}"
+        findings = [ValidationFinding("error", "invalid_json", message)]
         report = validation_report(
-            [ValidationFinding("error", "invalid_json", message)],
+            findings,
             path,
             repo,
             fail_on,
@@ -574,6 +683,11 @@ def validate_json_file(
             print(message, file=sys.stderr)
         if report_out:
             report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        if sarif_out:
+            sarif_out.write_text(
+                json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2),
+                encoding="utf-8",
+            )
         return 1
     resolved_repo = repo.resolve() if repo else None
     findings = validate_contract(contract, repo=resolved_repo)
@@ -585,6 +699,14 @@ def validate_json_file(
         print(render_validation_text(findings))
     if report_out:
         report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    if sarif_out:
+        sarif_out.write_text(
+            json.dumps(
+                sarif_report(findings, path, resolved_repo, fail_on, exit_code),
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
     return exit_code
 
 
@@ -632,6 +754,7 @@ def main() -> int:
     p_validate.add_argument("--repo", type=Path, default=Path("."), help="repo root for path-handle checks")
     p_validate.add_argument("--json", action="store_true", help="print machine-readable validation findings")
     p_validate.add_argument("--report", type=Path, help="write a CI-friendly validation report JSON")
+    p_validate.add_argument("--sarif", type=Path, help="write GitHub code-scanning compatible SARIF")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
 
     p_schema = sub.add_parser("schema", help="print the StateBind JSON schema")
@@ -651,7 +774,7 @@ def main() -> int:
     if args.cmd == "check":
         return check_handoff(args.handoff)
     if args.cmd == "validate":
-        return validate_json_file(args.statebind_json, args.repo, args.json, args.fail_on, args.report)
+        return validate_json_file(args.statebind_json, args.repo, args.json, args.fail_on, args.report, args.sarif)
     if args.cmd == "schema":
         text = json.dumps(STATEBIND_SCHEMA, indent=2)
         if args.out:

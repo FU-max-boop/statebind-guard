@@ -72,19 +72,32 @@ Never silently promote an uncertain handle to a high-confidence action target.
 Validate it with:
 
 ```bash
-statebind validate statebind.json --repo . --fail-on error --report statebind-validation.json
+statebind validate statebind.json \
+  --repo . \
+  --fail-on error \
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 For strict CI, use:
 
 ```bash
-statebind validate statebind.json --repo . --fail-on warning --json --report statebind-validation.json
+statebind validate statebind.json \
+  --repo . \
+  --fail-on warning \
+  --json \
+  --report statebind-validation.json \
+  --sarif statebind-validation.sarif
 ```
 
 The validator checks structure, exact handles, confidence labels, vague
 references such as "the previous command", and path-like handles that no longer
 exist in the repository. It does not claim to prove semantic correctness; it is
 a guard against unsafe handoff shape.
+
+The optional SARIF report is intended for GitHub code scanning. It keeps the
+stable JSON report for machines while also surfacing StateBind findings as PR
+annotations on the contract file.
 
 The tracked schema is `schemas/statebind.schema.json`. Print the validator's
 built-in schema with:

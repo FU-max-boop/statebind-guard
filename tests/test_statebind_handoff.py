@@ -135,6 +135,28 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertEqual(report_data["schema_version"], "0.1")
             self.assertGreaterEqual(report_data["summary"]["warnings"], 1)
 
+            sarif = repo / "statebind-validation.sarif"
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    str(state),
+                    "--repo",
+                    ".",
+                    "--fail-on",
+                    "error",
+                    "--sarif",
+                    str(sarif),
+                ],
+                repo,
+            )
+            sarif_data = json.loads(sarif.read_text())
+            self.assertEqual(sarif_data["version"], "2.1.0")
+            results = sarif_data["runs"][0]["results"]
+            self.assertTrue(any(result["ruleId"] == "blank_task_goal" for result in results))
+            self.assertTrue(all(result["level"] == "warning" for result in results))
+
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
 
@@ -166,14 +188,45 @@ class StateBindHandoffTests(unittest.TestCase):
                     }
                 )
             )
-            with self.assertRaises(subprocess.CalledProcessError):
-                run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "error"], repo)
+            sarif = repo / "statebind-validation.sarif"
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    str(state),
+                    "--repo",
+                    ".",
+                    "--fail-on",
+                    "error",
+                    "--sarif",
+                    str(sarif),
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            sarif_data = json.loads(sarif.read_text())
+            results = sarif_data["runs"][0]["results"]
+            self.assertTrue(any(result["ruleId"] == "vague_handle" for result in results))
+            self.assertTrue(any(result["level"] == "error" for result in results))
 
     def test_validate_missing_contract_exits_cleanly(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
+            sarif = repo / "missing-statebind.sarif"
             proc = subprocess.run(
-                ["python", str(SCRIPT), "validate", "missing-statebind.json", "--repo", "."],
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    "missing-statebind.json",
+                    "--repo",
+                    ".",
+                    "--sarif",
+                    str(sarif),
+                ],
                 cwd=repo,
                 text=True,
                 capture_output=True,
@@ -181,6 +234,8 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("StateBind contract not found", proc.stderr)
             self.assertNotIn("Traceback", proc.stderr)
+            sarif_data = json.loads(sarif.read_text())
+            self.assertEqual(sarif_data["runs"][0]["results"][0]["ruleId"], "contract_not_found")
 
     def test_schema_command_matches_tracked_schema(self):
         out = run(["python", str(SCRIPT), "schema"], ROOT)
