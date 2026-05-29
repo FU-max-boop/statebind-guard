@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "statebind-guard"
+version = "0.1.0"
+description = "Validate executable-state bindings in coding-agent handoffs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Fu Xiaonan"}
+]
+keywords = [
+  "coding agents",
+  "agent handoff",
+  "AI evaluation",
+  "state binding",
+  "research engineering"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development :: Quality Assurance"
+]
+
+[project.urls]
+Homepage = "https://github.com/FU-max-boop/statebind-guard"
+Repository = "https://github.com/FU-max-boop/statebind-guard"
+Issues = "https://github.com/FU-max-boop/statebind-guard/issues"
+
+[project.scripts]
+statebind = "statebind_handoff.statebind_handoff:main"
+
+[tool.setuptools.packages.find]
+include = ["statebind_handoff*"]

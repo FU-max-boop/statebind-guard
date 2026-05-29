@@ -1,4 +1,4 @@
-.PHONY: smoke test benchmark public-check install-skill
+.PHONY: smoke test benchmark validate-demo public-check install-skill package-check
 
 smoke:
 	bash scripts/run_smoke_test.sh
@@ -21,5 +21,13 @@ benchmark:
 public-check:
 	bash scripts/check_public_ready.sh
 
+validate-demo:
+	bash scripts/run_smoke_test.sh >/dev/null
+
 install-skill:
 	bash scripts/install_codex_skill.sh
+
+package-check:
+	python -m pip install -e .
+	statebind demo >/dev/null
+	statebind --help >/dev/null

@@ -16,8 +16,10 @@ Passes when a researcher can understand the thesis in 10 minutes:
 Passes when a coding-agent user can run the handoff helper in 5 minutes:
 
 - `bash scripts/run_smoke_test.sh` works
+- `python -m pip install -e .` exposes the `statebind` CLI
 - `python statebind_handoff/statebind_handoff.py demo` works
 - `HANDOFF.md` and `statebind.json` are produced
+- `statebind validate statebind.json --repo . --fail-on error` runs
 - uncertain handles are marked instead of invented
 
 ## 3. Evidence Gate
@@ -38,6 +40,7 @@ Passes when:
 - paper and supplement are included intentionally
 - generated handoff files are gitignored
 - public-ready check passes
+- package metadata and console entry point are present
 
 Run:
 
@@ -53,4 +56,3 @@ Passes when the repo supports a cold email or research discussion:
 - `docs/research_brief.md` is readable without the full paper
 - failure cases are concrete
 - future directions invite collaboration rather than overclaiming
-

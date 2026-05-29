@@ -15,10 +15,11 @@ active task -> failing-test role -> exact pytest selector
 active patch -> current-file role -> exact file path
 ```
 
-This repository packages two things:
+This repository packages three things:
 
 1. **Benchmark artifact**: seed and natural-handoff snippets, baselines, result cards, and tests.
 2. **Practical handoff tool**: a Codex-compatible `statebind-handoff` skill plus a lightweight local script for generating and checking executable handoffs.
+3. **CI-ready validator**: a dependency-free `statebind` CLI that emits structured findings for `statebind.json` contracts.
 
 ## Why This Matters
 
@@ -70,6 +71,27 @@ make public-check
 See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 [GitHub Action usage](docs/github_action_usage.md) for a CI smoke gate example.
 
+Install the CLI locally:
+
+```bash
+python -m pip install -e .
+statebind demo
+```
+
+Generate and validate a machine-readable handoff:
+
+```bash
+statebind extract \
+  --repo . \
+  --transcript examples/codex-handoff-demo/transcript.md \
+  --repo-label . \
+  --transcript-label examples/codex-handoff-demo/transcript.md \
+  --out HANDOFF.md \
+  --json statebind.json
+
+statebind validate statebind.json --repo . --fail-on error
+```
+
 Install the local Codex skill:
 
 ```bash
@@ -96,6 +118,7 @@ examples/
   codex-handoff-demo/                # toy transcript for handoff generation
 
 docs/
+  industrial_adoption.md
   failure_cases.md
   github_action_usage.md
   handoff_contract.md
@@ -128,6 +151,12 @@ Check a handoff:
 
 ```bash
 python statebind_handoff/statebind_handoff.py check HANDOFF.md
+```
+
+Validate the machine-readable contract:
+
+```bash
+python statebind_handoff/statebind_handoff.py validate statebind.json --repo . --json
 ```
 
 Print the core visible-but-unbound demo:

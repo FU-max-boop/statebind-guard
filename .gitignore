@@ -8,4 +8,4 @@ statebind.json
 venv/
 build/
 dist/
-
+*.egg-info/

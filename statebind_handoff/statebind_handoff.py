@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate or check a lightweight StateBind coding-agent handoff.
+"""Generate, check, and validate StateBind coding-agent handoffs.
 
 This script is intentionally dependency-free. It produces a draft handoff;
 Codex or a human should still verify evidence and confidence.
@@ -11,9 +11,10 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 
 FILE_RE = re.compile(r"(?<![\w./-])(?:[\w.-]+/)+[\w.@:+-]+(?:\.[A-Za-z0-9_+-]+)?")
@@ -21,6 +22,20 @@ TEST_SELECTOR_RE = re.compile(r"(?:pytest|python -m pytest)\s+[^\n\r`]+")
 COMMAND_RE = re.compile(r"(?m)^\s*(?:\$ )?((?:pytest|python -m pytest|npm test|pnpm test|yarn test|uv run|python|node|make|git)\b[^\n\r]*)")
 SHA_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
 URL_RE = re.compile(r"https?://[^\s)>\"]+")
+CONFIDENCE_VALUES = {"high", "medium", "low", "uncertain"}
+VAGUE_HANDLE_RE = re.compile(r"\b(the|that|this|previous|above|same)\s+(file|test|command|pr|issue|sha|commit|branch)\b", re.I)
+COMMAND_PREFIXES = (
+    "pytest",
+    "python -m pytest",
+    "npm test",
+    "pnpm test",
+    "yarn test",
+    "uv run",
+    "python",
+    "node",
+    "make",
+    "git",
+)
 
 
 @dataclass
@@ -30,6 +45,15 @@ class Binding:
     evidence: str
     confidence: str = "medium"
     risk: str = ""
+
+
+@dataclass
+class ValidationFinding:
+    severity: str
+    code: str
+    message: str
+    role: str = ""
+    handle: str = ""
 
 
 def run(cmd: list[str], cwd: Path) -> str:
@@ -121,6 +145,8 @@ def build_bindings(data: dict) -> list[Binding]:
     for s in data["shas"][:8]:
         bindings.append(Binding("candidate_commit_sha", s, "transcript SHA-like token", "low", "verify role: head/base/stale"))
     for p in data["paths"][:12]:
+        if "::" in p:
+            continue
         if p not in data["diff_files"] and p not in data["staged_files"]:
             repo_path = data.get("_repo_path") or data.get("repo")
             exists = (Path(repo_path) / p).exists() if repo_path else False
@@ -160,6 +186,203 @@ def to_contract(data: dict) -> dict:
         "resume_prompt": prompt,
         "raw_signals": raw_signals,
     }
+
+
+def is_blank(value: Any) -> bool:
+    return value is None or str(value).strip() in {"", "[fill in]"}
+
+
+def looks_like_path(handle: str) -> bool:
+    if "://" in handle:
+        return False
+    if handle.startswith(("-", "$", *COMMAND_PREFIXES)):
+        return False
+    return "/" in handle or bool(re.search(r"\.[A-Za-z0-9_+-]{1,8}$", handle))
+
+
+def is_action_role(role: str) -> bool:
+    role = role.lower()
+    return any(token in role for token in ("command", "test", "next_action", "failing"))
+
+
+def add_finding(
+    findings: list[ValidationFinding],
+    severity: str,
+    code: str,
+    message: str,
+    role: str = "",
+    handle: str = "",
+) -> None:
+    findings.append(ValidationFinding(severity, code, message, role, handle))
+
+
+def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> list[ValidationFinding]:
+    """Validate the machine-readable StateBind contract.
+
+    The validator is intentionally conservative: it checks structure and
+    executability signals without pretending to prove semantic correctness.
+    """
+    findings: list[ValidationFinding] = []
+
+    if not isinstance(contract, dict):
+        return [ValidationFinding("error", "contract_not_object", "StateBind contract must be a JSON object.")]
+
+    task = contract.get("task")
+    if not isinstance(task, dict):
+        add_finding(findings, "error", "missing_task", "Missing `task` object.")
+    elif is_blank(task.get("goal")):
+        add_finding(findings, "warning", "blank_task_goal", "Task goal is blank; fill it before handoff consumption.")
+
+    active_target = contract.get("active_target")
+    if not isinstance(active_target, dict):
+        add_finding(findings, "error", "missing_active_target", "Missing `active_target` object.")
+    else:
+        for field in ("type", "handle", "evidence"):
+            if is_blank(active_target.get(field)):
+                add_finding(
+                    findings,
+                    "warning",
+                    f"blank_active_target_{field}",
+                    f"Active target `{field}` is blank; bind the current object before resuming.",
+                )
+        confidence = str(active_target.get("confidence", "")).strip()
+        if confidence and confidence not in CONFIDENCE_VALUES:
+            add_finding(
+                findings,
+                "error",
+                "invalid_active_target_confidence",
+                f"Active target confidence `{confidence}` is not one of {sorted(CONFIDENCE_VALUES)}.",
+            )
+
+    bindings = contract.get("bindings")
+    if not isinstance(bindings, list):
+        add_finding(findings, "error", "missing_bindings", "`bindings` must be a list.")
+        bindings = []
+    elif not bindings:
+        add_finding(findings, "error", "empty_bindings", "`bindings` is empty; no executable state is preserved.")
+
+    seen_pairs: set[tuple[str, str]] = set()
+    exact_action_count = 0
+    low_or_uncertain_without_risk = 0
+
+    for idx, raw in enumerate(bindings):
+        if not isinstance(raw, dict):
+            add_finding(findings, "error", "binding_not_object", f"Binding #{idx} must be an object.")
+            continue
+
+        role = str(raw.get("role", "")).strip()
+        handle = str(raw.get("handle", "")).strip()
+        evidence = str(raw.get("evidence", "")).strip()
+        confidence = str(raw.get("confidence", "")).strip()
+        risk = str(raw.get("risk", "")).strip()
+
+        if is_blank(role):
+            add_finding(findings, "error", "blank_binding_role", f"Binding #{idx} has a blank role.")
+        if is_blank(handle):
+            add_finding(findings, "error", "blank_binding_handle", f"Binding #{idx} has a blank handle.", role)
+        if is_blank(evidence):
+            add_finding(findings, "error", "blank_binding_evidence", f"Binding `{role}` has blank evidence.", role, handle)
+
+        if confidence not in CONFIDENCE_VALUES:
+            add_finding(
+                findings,
+                "error",
+                "invalid_binding_confidence",
+                f"Binding `{role}` confidence `{confidence}` is not one of {sorted(CONFIDENCE_VALUES)}.",
+                role,
+                handle,
+            )
+
+        if VAGUE_HANDLE_RE.search(handle):
+            add_finding(
+                findings,
+                "error",
+                "vague_handle",
+                "Handle uses vague reference language; replace it with an exact executable handle.",
+                role,
+                handle,
+            )
+
+        pair = (role, handle)
+        if pair in seen_pairs:
+            add_finding(findings, "warning", "duplicate_binding", "Duplicate role/handle binding.", role, handle)
+        seen_pairs.add(pair)
+
+        if confidence in {"low", "uncertain"} and not risk:
+            low_or_uncertain_without_risk += 1
+            add_finding(
+                findings,
+                "warning",
+                "uncertain_without_risk",
+                "Low/uncertain binding should explain the ambiguity in `risk`.",
+                role,
+                handle,
+            )
+
+        if is_action_role(role):
+            exact_action_count += 1
+            if not handle.startswith(COMMAND_PREFIXES):
+                add_finding(
+                    findings,
+                    "warning",
+                    "action_handle_not_command_like",
+                    "Action/test role should usually bind to an exact command or pytest selector.",
+                    role,
+                    handle,
+                )
+
+        if repo and looks_like_path(handle):
+            candidate = (repo / handle).resolve()
+            try:
+                candidate.relative_to(repo.resolve())
+            except ValueError:
+                add_finding(findings, "error", "path_escapes_repo", "Path handle escapes the repository root.", role, handle)
+            else:
+                if not candidate.exists() and "unverified" not in risk.lower():
+                    add_finding(
+                        findings,
+                        "warning",
+                        "path_not_found",
+                        "Path-like handle does not exist in the repository; mark risk if this is expected.",
+                        role,
+                        handle,
+                    )
+
+    if exact_action_count == 0:
+        add_finding(
+            findings,
+            "warning",
+            "no_action_binding",
+            "No test/command/next-action binding found; resuming agents may know context but not what to execute.",
+        )
+
+    risks_value = contract.get("risks", [])
+    if low_or_uncertain_without_risk and not risks_value:
+        add_finding(
+            findings,
+            "warning",
+            "missing_risk_summary",
+            "Low/uncertain bindings exist but the top-level risk summary is empty.",
+        )
+
+    return findings
+
+
+def render_validation_text(findings: list[ValidationFinding]) -> str:
+    if not findings:
+        return "StateBind validation passed: no structural findings."
+    lines = ["StateBind validation findings:"]
+    for finding in findings:
+        target = f" role={finding.role!r} handle={finding.handle!r}" if finding.role or finding.handle else ""
+        lines.append(f"- [{finding.severity}] {finding.code}:{target} {finding.message}")
+    return "\n".join(lines)
+
+
+def validation_exit_code(findings: list[ValidationFinding], fail_on: str) -> int:
+    severities = {f.severity for f in findings}
+    if fail_on == "warning":
+        return 1 if severities & {"warning", "error"} else 0
+    return 1 if "error" in severities else 0
 
 
 def render_md(contract: dict) -> str:
@@ -215,6 +438,31 @@ def check_handoff(path: Path) -> int:
     return 1 if missing or vague else 0
 
 
+def validate_json_file(path: Path, repo: Path | None, json_out: bool, fail_on: str) -> int:
+    try:
+        contract = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        message = f"StateBind contract not found: {path}"
+        if json_out:
+            print(json.dumps({"findings": [asdict(ValidationFinding("error", "contract_not_found", message))]}, indent=2))
+        else:
+            print(message, file=sys.stderr)
+        return 1
+    except json.JSONDecodeError as exc:
+        message = f"Invalid StateBind JSON in {path}: {exc}"
+        if json_out:
+            print(json.dumps({"findings": [asdict(ValidationFinding("error", "invalid_json", message))]}, indent=2))
+        else:
+            print(message, file=sys.stderr)
+        return 1
+    findings = validate_contract(contract, repo=repo.resolve() if repo else None)
+    if json_out:
+        print(json.dumps({"findings": [asdict(f) for f in findings]}, indent=2))
+    else:
+        print(render_validation_text(findings))
+    return validation_exit_code(findings, fail_on)
+
+
 def write_demo() -> str:
     return """# Demo: Visible ID But Unbound
 
@@ -254,6 +502,12 @@ def main() -> int:
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
 
+    p_validate = sub.add_parser("validate", help="validate statebind.json structure and executable handles")
+    p_validate.add_argument("statebind_json", type=Path)
+    p_validate.add_argument("--repo", type=Path, default=Path("."), help="repo root for path-handle checks")
+    p_validate.add_argument("--json", action="store_true", help="print machine-readable validation findings")
+    p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
+
     sub.add_parser("demo", help="print visible-but-unbound demo")
 
     args = parser.parse_args()
@@ -267,6 +521,8 @@ def main() -> int:
         return 0
     if args.cmd == "check":
         return check_handoff(args.handoff)
+    if args.cmd == "validate":
+        return validate_json_file(args.statebind_json, args.repo, args.json, args.fail_on)
     if args.cmd == "demo":
         print(write_demo())
         return 0

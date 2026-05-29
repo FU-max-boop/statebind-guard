@@ -26,6 +26,7 @@ python "$ROOT/statebind_handoff/statebind_handoff.py" extract \
   --json statebind.json
 
 python "$ROOT/statebind_handoff/statebind_handoff.py" check HANDOFF.md
+python "$ROOT/statebind_handoff/statebind_handoff.py" validate statebind.json --repo . --fail-on error
 
 echo
 echo "=== Generated HANDOFF.md preview ==="

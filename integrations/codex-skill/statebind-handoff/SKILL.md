@@ -48,6 +48,15 @@ python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py extract \
 
 Then manually verify and tighten the output.
 
+Validate the machine-readable contract:
+
+```bash
+python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py validate \
+  statebind.json \
+  --repo . \
+  --fail-on error
+```
+
 ### 3. Build The Binding Contract
 
 For each binding, record:
@@ -94,6 +103,7 @@ A handoff passes only if:
 - Every critical next action has an exact executable handle.
 - Every handle has evidence or is explicitly marked uncertain.
 - Modified files, failing tests, next command, working directory, branch, and active PR/issue are either bound or marked not applicable.
+- `statebind.json` passes `validate` without errors before another agent consumes it.
 - Ambiguous candidates are listed as risks rather than silently resolved.
 - The resume prompt tells the next agent to verify freshness before editing.
 
