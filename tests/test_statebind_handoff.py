@@ -62,6 +62,7 @@ class StateBindHandoffTests(unittest.TestCase):
             )
             text = handoff.read_text()
             data = json.loads(state.read_text())
+            self.assertEqual(data["schema_version"], "0.1")
             self.assertIn("pytest tests/test_api.py::test_stream", text)
             self.assertNotIn("before handoff", text)
             self.assertEqual(data["raw_signals"]["repo"], ".")
@@ -113,6 +114,27 @@ class StateBindHandoffTests(unittest.TestCase):
             text_out = run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "error"], repo)
             self.assertIn("blank_task_goal", text_out)
 
+            report = repo / "statebind-validation.json"
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    str(state),
+                    "--repo",
+                    ".",
+                    "--fail-on",
+                    "error",
+                    "--report",
+                    str(report),
+                ],
+                repo,
+            )
+            report_data = json.loads(report.read_text())
+            self.assertTrue(report_data["passed"])
+            self.assertEqual(report_data["schema_version"], "0.1")
+            self.assertGreaterEqual(report_data["summary"]["warnings"], 1)
+
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
 
@@ -123,6 +145,7 @@ class StateBindHandoffTests(unittest.TestCase):
             state.write_text(
                 json.dumps(
                     {
+                        "schema_version": "0.1",
                         "task": {"goal": "resume work", "status": "ready"},
                         "active_target": {
                             "type": "test",
@@ -158,6 +181,13 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertNotEqual(proc.returncode, 0)
             self.assertIn("StateBind contract not found", proc.stderr)
             self.assertNotIn("Traceback", proc.stderr)
+
+    def test_schema_command_matches_tracked_schema(self):
+        out = run(["python", str(SCRIPT), "schema"], ROOT)
+        generated = json.loads(out)
+        tracked = json.loads((ROOT / "schemas" / "statebind.schema.json").read_text())
+        self.assertEqual(generated, tracked)
+        self.assertEqual(tracked["properties"]["schema_version"]["enum"], ["0.1"])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-.PHONY: smoke test benchmark validate-demo public-check install-skill package-check
+.PHONY: smoke test benchmark schema-check validate-demo public-check install-skill package-check
 
 smoke:
 	bash scripts/run_smoke_test.sh
@@ -18,6 +18,10 @@ benchmark:
 		--json docs/result_cards/statebind_guard_natural_handoff_benchmark_metrics.json \
 		--title "Natural Handoff"
 
+schema-check:
+	python statebind_handoff/statebind_handoff.py schema --out /tmp/statebind.schema.json >/dev/null
+	diff -u schemas/statebind.schema.json /tmp/statebind.schema.json
+
 public-check:
 	bash scripts/check_public_ready.sh
 
@@ -28,6 +32,9 @@ install-skill:
 	bash scripts/install_codex_skill.sh
 
 package-check:
-	python -m pip install -e .
-	statebind demo >/dev/null
-	statebind --help >/dev/null
+	set -e; \
+	tmpdir="$$(mktemp -d)"; \
+	python -m venv --system-site-packages "$$tmpdir/venv"; \
+	PIP_NO_INDEX=1 PIP_CACHE_DIR="$$tmpdir/pip-cache" "$$tmpdir/venv/bin/python" -m pip install --no-build-isolation -e . >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" demo >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" --help >/dev/null

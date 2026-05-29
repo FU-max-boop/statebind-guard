@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
+  "title": "StateBind handoff contract",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "task",
+    "active_target",
+    "bindings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "0.1"
+      ]
+    },
+    "task": {
+      "type": "object",
+      "required": [
+        "goal",
+        "status"
+      ],
+      "properties": {
+        "goal": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "active_target": {
+      "type": "object",
+      "required": [
+        "type",
+        "handle",
+        "evidence",
+        "confidence"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "handle": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      },
+      "additionalProperties": true
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "resume_prompt": {
+      "type": "string"
+    },
+    "raw_signals": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "low",
+        "medium",
+        "uncertain"
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "required": [
+        "role",
+        "handle",
+        "evidence",
+        "confidence",
+        "risk"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "handle": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "risk": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

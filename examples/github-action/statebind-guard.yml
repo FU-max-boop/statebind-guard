@@ -17,4 +17,14 @@ jobs:
       - name: Check handoff markdown
         run: statebind check HANDOFF.md
       - name: Validate machine-readable bindings
-        run: statebind validate statebind.json --repo . --fail-on warning --json
+        run: |
+          statebind validate statebind.json \
+            --repo . \
+            --fail-on warning \
+            --json \
+            --report statebind-validation.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: statebind-validation
+          path: statebind-validation.json

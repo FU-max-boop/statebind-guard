@@ -3,6 +3,7 @@ __pycache__/
 .DS_Store
 HANDOFF.md
 statebind.json
+statebind-validation.json
 .env
 .venv/
 venv/

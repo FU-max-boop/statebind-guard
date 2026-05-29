@@ -51,6 +51,7 @@ Paste this into the next coding-agent session:
 
 ```json
 {
+  "schema_version": "0.1",
   "task": {
     "goal": "",
     "status": ""
@@ -73,6 +74,16 @@ Paste this into the next coding-agent session:
   "risks": [],
   "resume_prompt": ""
 }
+```
+
+Validate and write a CI-readable report:
+
+```bash
+python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py validate \
+  statebind.json \
+  --repo . \
+  --fail-on error \
+  --report statebind-validation.json
 ```
 
 ## Common Roles
@@ -121,4 +132,3 @@ Before editing, verify:
 Use only the executable handles explicitly bound in the handoff unless you can verify a newer one.
 If a handle is missing, stale, or ambiguous, pause and repair the handoff before acting.
 ```
-

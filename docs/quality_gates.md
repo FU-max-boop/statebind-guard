@@ -20,6 +20,7 @@ Passes when a coding-agent user can run the handoff helper in 5 minutes:
 - `python statebind_handoff/statebind_handoff.py demo` works
 - `HANDOFF.md` and `statebind.json` are produced
 - `statebind validate statebind.json --repo . --fail-on error` runs
+- `statebind validate ... --report statebind-validation.json` writes a CI-readable report
 - uncertain handles are marked instead of invented
 
 ## 3. Evidence Gate
@@ -32,6 +33,9 @@ Passes when every binding has:
 - confidence
 - risk if ambiguous
 
+The machine contract must also stay compatible with
+`schemas/statebind.schema.json`.
+
 ## 4. Public-Release Gate
 
 Passes when:
@@ -41,6 +45,7 @@ Passes when:
 - generated handoff files are gitignored
 - public-ready check passes
 - package metadata and console entry point are present
+- schema generation matches the tracked schema file
 
 Run:
 

@@ -45,6 +45,7 @@ Never silently promote an uncertain handle to a high-confidence action target.
 
 ```json
 {
+  "schema_version": "0.1",
   "task": {
     "goal": "fix failing streaming test",
     "status": "patch ready; rerun focused test"
@@ -71,16 +72,23 @@ Never silently promote an uncertain handle to a high-confidence action target.
 Validate it with:
 
 ```bash
-statebind validate statebind.json --repo . --fail-on error
+statebind validate statebind.json --repo . --fail-on error --report statebind-validation.json
 ```
 
 For strict CI, use:
 
 ```bash
-statebind validate statebind.json --repo . --fail-on warning --json
+statebind validate statebind.json --repo . --fail-on warning --json --report statebind-validation.json
 ```
 
 The validator checks structure, exact handles, confidence labels, vague
 references such as "the previous command", and path-like handles that no longer
 exist in the repository. It does not claim to prove semantic correctness; it is
 a guard against unsafe handoff shape.
+
+The tracked schema is `schemas/statebind.schema.json`. Print the validator's
+built-in schema with:
+
+```bash
+statebind schema
+```

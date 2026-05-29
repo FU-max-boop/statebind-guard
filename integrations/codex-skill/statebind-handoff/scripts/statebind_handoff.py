@@ -36,6 +36,63 @@ COMMAND_PREFIXES = (
     "make",
     "git",
 )
+SCHEMA_VERSION = "0.1"
+STATEBIND_SCHEMA: dict[str, Any] = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
+    "title": "StateBind handoff contract",
+    "type": "object",
+    "required": ["schema_version", "task", "active_target", "bindings"],
+    "properties": {
+        "schema_version": {"type": "string", "enum": [SCHEMA_VERSION]},
+        "task": {
+            "type": "object",
+            "required": ["goal", "status"],
+            "properties": {
+                "goal": {"type": "string"},
+                "status": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+        "active_target": {
+            "type": "object",
+            "required": ["type", "handle", "evidence", "confidence"],
+            "properties": {
+                "type": {"type": "string"},
+                "handle": {"type": "string"},
+                "evidence": {"type": "string"},
+                "confidence": {"$ref": "#/$defs/confidence"},
+            },
+            "additionalProperties": True,
+        },
+        "bindings": {
+            "type": "array",
+            "items": {"$ref": "#/$defs/binding"},
+        },
+        "risks": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "resume_prompt": {"type": "string"},
+        "raw_signals": {"type": "object"},
+    },
+    "$defs": {
+        "confidence": {"type": "string", "enum": sorted(CONFIDENCE_VALUES)},
+        "binding": {
+            "type": "object",
+            "required": ["role", "handle", "evidence", "confidence", "risk"],
+            "properties": {
+                "role": {"type": "string"},
+                "handle": {"type": "string"},
+                "evidence": {"type": "string"},
+                "confidence": {"$ref": "#/$defs/confidence"},
+                "risk": {"type": "string"},
+            },
+            "additionalProperties": True,
+        },
+    },
+    "additionalProperties": True,
+}
 
 
 @dataclass
@@ -179,6 +236,7 @@ def to_contract(data: dict) -> dict:
         "If any handle is missing or ambiguous, pause and repair the handoff."
     )
     return {
+        "schema_version": SCHEMA_VERSION,
         "task": {"goal": "", "status": "draft handoff generated from repo/transcript"},
         "active_target": {"type": "", "handle": "", "evidence": "", "confidence": "uncertain"},
         "bindings": [asdict(b) for b in bindings],
@@ -226,6 +284,17 @@ def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> lis
 
     if not isinstance(contract, dict):
         return [ValidationFinding("error", "contract_not_object", "StateBind contract must be a JSON object.")]
+
+    schema_version = str(contract.get("schema_version", "")).strip()
+    if not schema_version:
+        add_finding(findings, "error", "missing_schema_version", "`schema_version` is required.")
+    elif schema_version != SCHEMA_VERSION:
+        add_finding(
+            findings,
+            "error",
+            "unsupported_schema_version",
+            f"`schema_version` {schema_version!r} is not supported by this validator; expected {SCHEMA_VERSION!r}.",
+        )
 
     task = contract.get("task")
     if not isinstance(task, dict):
@@ -385,6 +454,33 @@ def validation_exit_code(findings: list[ValidationFinding], fail_on: str) -> int
     return 1 if "error" in severities else 0
 
 
+def findings_summary(findings: list[ValidationFinding]) -> dict[str, int]:
+    return {
+        "errors": sum(1 for f in findings if f.severity == "error"),
+        "warnings": sum(1 for f in findings if f.severity == "warning"),
+    }
+
+
+def validation_report(
+    findings: list[ValidationFinding],
+    path: Path,
+    repo: Path | None,
+    fail_on: str,
+    exit_code: int,
+) -> dict[str, Any]:
+    summary = findings_summary(findings)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "statebind_json": str(path),
+        "repo": str(repo) if repo else "",
+        "fail_on": fail_on,
+        "exit_code": exit_code,
+        "passed": exit_code == 0,
+        "summary": summary,
+        "findings": [asdict(f) for f in findings],
+    }
+
+
 def render_md(contract: dict) -> str:
     lines: list[str] = []
     lines.append("# Agent Handoff")
@@ -438,29 +534,58 @@ def check_handoff(path: Path) -> int:
     return 1 if missing or vague else 0
 
 
-def validate_json_file(path: Path, repo: Path | None, json_out: bool, fail_on: str) -> int:
+def validate_json_file(
+    path: Path,
+    repo: Path | None,
+    json_out: bool,
+    fail_on: str,
+    report_out: Path | None = None,
+) -> int:
     try:
         contract = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         message = f"StateBind contract not found: {path}"
+        report = validation_report(
+            [ValidationFinding("error", "contract_not_found", message)],
+            path,
+            repo,
+            fail_on,
+            1,
+        )
         if json_out:
-            print(json.dumps({"findings": [asdict(ValidationFinding("error", "contract_not_found", message))]}, indent=2))
+            print(json.dumps(report, indent=2))
         else:
             print(message, file=sys.stderr)
+        if report_out:
+            report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
         return 1
     except json.JSONDecodeError as exc:
         message = f"Invalid StateBind JSON in {path}: {exc}"
+        report = validation_report(
+            [ValidationFinding("error", "invalid_json", message)],
+            path,
+            repo,
+            fail_on,
+            1,
+        )
         if json_out:
-            print(json.dumps({"findings": [asdict(ValidationFinding("error", "invalid_json", message))]}, indent=2))
+            print(json.dumps(report, indent=2))
         else:
             print(message, file=sys.stderr)
+        if report_out:
+            report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
         return 1
-    findings = validate_contract(contract, repo=repo.resolve() if repo else None)
+    resolved_repo = repo.resolve() if repo else None
+    findings = validate_contract(contract, repo=resolved_repo)
+    exit_code = validation_exit_code(findings, fail_on)
+    report = validation_report(findings, path, resolved_repo, fail_on, exit_code)
     if json_out:
-        print(json.dumps({"findings": [asdict(f) for f in findings]}, indent=2))
+        print(json.dumps(report, indent=2))
     else:
         print(render_validation_text(findings))
-    return validation_exit_code(findings, fail_on)
+    if report_out:
+        report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return exit_code
 
 
 def write_demo() -> str:
@@ -506,7 +631,11 @@ def main() -> int:
     p_validate.add_argument("statebind_json", type=Path)
     p_validate.add_argument("--repo", type=Path, default=Path("."), help="repo root for path-handle checks")
     p_validate.add_argument("--json", action="store_true", help="print machine-readable validation findings")
+    p_validate.add_argument("--report", type=Path, help="write a CI-friendly validation report JSON")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
+
+    p_schema = sub.add_parser("schema", help="print the StateBind JSON schema")
+    p_schema.add_argument("--out", type=Path, help="write schema JSON to a file")
 
     sub.add_parser("demo", help="print visible-but-unbound demo")
 
@@ -522,7 +651,15 @@ def main() -> int:
     if args.cmd == "check":
         return check_handoff(args.handoff)
     if args.cmd == "validate":
-        return validate_json_file(args.statebind_json, args.repo, args.json, args.fail_on)
+        return validate_json_file(args.statebind_json, args.repo, args.json, args.fail_on, args.report)
+    if args.cmd == "schema":
+        text = json.dumps(STATEBIND_SCHEMA, indent=2)
+        if args.out:
+            args.out.write_text(text + "\n", encoding="utf-8")
+            print(f"Wrote {args.out}")
+        else:
+            print(text)
+        return 0
     if args.cmd == "demo":
         print(write_demo())
         return 0

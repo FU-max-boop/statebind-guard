@@ -19,7 +19,7 @@ This repository packages three things:
 
 1. **Benchmark artifact**: seed and natural-handoff snippets, baselines, result cards, and tests.
 2. **Practical handoff tool**: a Codex-compatible `statebind-handoff` skill plus a lightweight local script for generating and checking executable handoffs.
-3. **CI-ready validator**: a dependency-free `statebind` CLI that emits structured findings for `statebind.json` contracts.
+3. **CI-ready validator**: a dependency-free `statebind` CLI that emits structured findings for versioned `statebind.json` contracts.
 
 ## Why This Matters
 
@@ -89,7 +89,7 @@ statebind extract \
   --out HANDOFF.md \
   --json statebind.json
 
-statebind validate statebind.json --repo . --fail-on error
+statebind validate statebind.json --repo . --fail-on error --report statebind-validation.json
 ```
 
 Install the local Codex skill:
@@ -128,6 +128,9 @@ docs/
   result_cards/
   research_brief.md
 
+schemas/
+  statebind.schema.json              # versioned machine contract
+
 data/
   statebind_guard_seed_benchmark.json
   statebind_guard_natural_handoff_benchmark.json
@@ -157,6 +160,12 @@ Validate the machine-readable contract:
 
 ```bash
 python statebind_handoff/statebind_handoff.py validate statebind.json --repo . --json
+```
+
+Print the JSON schema:
+
+```bash
+python statebind_handoff/statebind_handoff.py schema
 ```
 
 Print the core visible-but-unbound demo:

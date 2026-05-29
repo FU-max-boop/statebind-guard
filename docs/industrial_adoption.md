@@ -35,7 +35,7 @@ Install the package and generate a draft:
 ```bash
 python -m pip install -e .
 statebind extract --repo . --transcript transcript.md --out HANDOFF.md --json statebind.json
-statebind validate statebind.json --repo . --fail-on error
+statebind validate statebind.json --repo . --fail-on error --report statebind-validation.json
 ```
 
 ### Level 2: CI Gate
@@ -43,11 +43,18 @@ statebind validate statebind.json --repo . --fail-on error
 Require handoff contracts for risky agent-generated PRs:
 
 ```bash
-statebind validate statebind.json --repo . --fail-on warning --json
+statebind validate statebind.json --repo . --fail-on warning --json --report statebind-validation.json
 ```
 
 Use `--fail-on warning` when the handoff must be consumption-ready, not merely
 structurally valid.
+
+The machine contract is versioned. The current schema lives at
+`schemas/statebind.schema.json` and can be printed by the CLI:
+
+```bash
+statebind schema
+```
 
 ### Level 3: Agent Runtime Hook
 
@@ -58,6 +65,7 @@ previous test" or "the SHA above".
 ## What Makes This Industrial
 
 - Dependency-free CLI for low-friction adoption.
+- Versioned JSON schema for agent/runtime interoperability.
 - Machine-readable findings for CI and agent runtimes.
 - Conservative validation: uncertain handles stay uncertain.
 - Explicit claim boundary: this prevents wrong-object actions; it does not
@@ -67,7 +75,7 @@ previous test" or "the SHA above".
 
 1. Collect a natural corpus of failed and successful coding-agent handoffs.
 2. Add adapters for Codex, Claude Code, OpenHands, Cursor, and GitHub Actions.
-3. Publish a stable JSON schema and compatibility tests.
-4. Add benchmark slices for wrong-file, wrong-test, wrong-commit, wrong-PR, and
+3. Add benchmark slices for wrong-file, wrong-test, wrong-commit, wrong-PR, and
    stale-artifact continuation failures.
-5. Document real-world case studies with before/after handoff contracts.
+4. Document real-world case studies with before/after handoff contracts.
+5. Collect third-party feedback from coding-agent and CI-tooling maintainers.
