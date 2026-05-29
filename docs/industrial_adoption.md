@@ -77,5 +77,9 @@ previous test" or "the SHA above".
 2. Add adapters for Codex, Claude Code, OpenHands, Cursor, and GitHub Actions.
 3. Add benchmark slices for wrong-file, wrong-test, wrong-commit, wrong-PR, and
    stale-artifact continuation failures.
-4. Document real-world case studies with before/after handoff contracts.
+4. Expand from real-shaped failure cases to collected deployed-agent sessions.
 5. Collect third-party feedback from coding-agent and CI-tooling maintainers.
+
+Current case study:
+
+- [schema and CI report upgrade](case_studies/schema_report_upgrade.md)

@@ -160,6 +160,18 @@ def summarize(predictions: list[Prediction]) -> dict[str, dict]:
     return summary
 
 
+def category_counts(records: list[dict]) -> dict[str, dict[str, int]]:
+    counts: dict[str, dict[str, int]] = {}
+    for record in records:
+        category = record.get("category", "uncategorized")
+        label = record.get("label", "")
+        bucket = counts.setdefault(category, {"pass": 0, "fail": 0, "total": 0})
+        bucket["total"] += 1
+        if label in {"pass", "fail"}:
+            bucket[label] += 1
+    return dict(sorted(counts.items()))
+
+
 def render_card(records: list[dict], summary: dict[str, dict], title: str) -> str:
     guard = summary["statebind_guard"]
     visibility = summary["visibility_baseline"]
@@ -200,6 +212,21 @@ def render_card(records: list[dict], summary: dict[str, dict], title: str) -> st
             f"| {method} | {row['accuracy']:.3f} | {row['unsafe_accept_rate']:.3f} | "
             f"{row['f1_accept']:.3f} | {row['tp']} | {row['tn']} | {row['fp']} | {row['fn']} |"
         )
+    categories = category_counts(records)
+    if categories:
+        lines.extend(
+            [
+                "",
+                "## Category Coverage",
+                "",
+                "| Category | Records | Pass | Fail |",
+                "|---|---:|---:|---:|",
+            ]
+        )
+        for category, counts in categories.items():
+            lines.append(
+                f"| {category} | {counts['total']} | {counts['pass']} | {counts['fail']} |"
+            )
     lines.extend(
         [
             "",
@@ -239,6 +266,7 @@ def main() -> int:
     payload = {
         "data": data_path,
         "records": len(records),
+        "category_counts": category_counts(records),
         "summary": summary,
         "predictions": [prediction.__dict__ for prediction in predictions],
     }

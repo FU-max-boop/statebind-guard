@@ -1,6 +1,13 @@
 {
   "data": "data/statebind_guard_natural_handoff_benchmark.json",
   "records": 16,
+  "category_counts": {
+    "uncategorized": {
+      "pass": 8,
+      "fail": 8,
+      "total": 16
+    }
+  },
   "summary": {
     "keyword_role_baseline": {
       "n": 16,

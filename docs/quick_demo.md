@@ -21,6 +21,13 @@ make benchmark
 | Natural handoff | visibility baseline | 0.500 | 1.000 |
 | Natural handoff | keyword-role baseline | 0.500 | 1.000 |
 | Natural handoff | StateBind Guard | 1.000 | 0.000 |
+| Failure corpus | visibility baseline | 0.500 | 1.000 |
+| Failure corpus | keyword-role baseline | 0.605 | 0.789 |
+| Failure corpus | StateBind Guard | 1.000 | 0.000 |
+
+The failure corpus covers wrong-file, wrong-test, wrong-commit, wrong-PR,
+stale-artifact, config/environment, dataset-version, run-ID, branch-name,
+risky-command, and multi-binding handoff failures.
 
 ## Example Failure
 

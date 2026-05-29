@@ -47,6 +47,27 @@ class StateBindBenchmarkTests(unittest.TestCase):
         self.assertLess(guard["unsafe_accept_rate"], visibility["unsafe_accept_rate"])
         self.assertLess(guard["unsafe_accept_rate"], keyword["unsafe_accept_rate"])
 
+    def test_failure_corpus_has_broad_coverage_and_guard_clears_gate(self):
+        module = load_module()
+        records = module.load_records(ROOT / "data" / "statebind_guard_failure_corpus.json")
+        summary = module.summarize(module.predict(records))
+        categories = module.category_counts(records)
+
+        self.assertGreaterEqual(len(records), 30)
+        self.assertGreaterEqual(len(categories), 8)
+        self.assertTrue(all(counts["pass"] >= 1 and counts["fail"] >= 1 for counts in categories.values()))
+
+        guard = summary["statebind_guard"]
+        visibility = summary["visibility_baseline"]
+        keyword = summary["keyword_role_baseline"]
+
+        self.assertGreaterEqual(guard["accuracy"], 0.95)
+        self.assertGreater(guard["accuracy"], visibility["accuracy"])
+        self.assertGreater(guard["accuracy"], keyword["accuracy"])
+        self.assertLessEqual(guard["unsafe_accept_rate"], 0.05)
+        self.assertLess(guard["unsafe_accept_rate"], visibility["unsafe_accept_rate"])
+        self.assertLess(guard["unsafe_accept_rate"], keyword["unsafe_accept_rate"])
+
 
 if __name__ == "__main__":
     unittest.main()

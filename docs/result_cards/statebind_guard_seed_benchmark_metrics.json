@@ -1,6 +1,13 @@
 {
   "data": "data/statebind_guard_seed_benchmark.json",
   "records": 12,
+  "category_counts": {
+    "uncategorized": {
+      "pass": 6,
+      "fail": 6,
+      "total": 12
+    }
+  },
   "summary": {
     "keyword_role_baseline": {
       "n": 12,

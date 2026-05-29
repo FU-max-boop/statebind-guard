@@ -17,6 +17,11 @@ benchmark:
 		--card docs/result_cards/statebind_guard_natural_handoff_benchmark.md \
 		--json docs/result_cards/statebind_guard_natural_handoff_benchmark_metrics.json \
 		--title "Natural Handoff"
+	python scripts/run_statebind_benchmark.py \
+		--data data/statebind_guard_failure_corpus.json \
+		--card docs/result_cards/statebind_guard_failure_corpus.md \
+		--json docs/result_cards/statebind_guard_failure_corpus_metrics.json \
+		--title "Failure Corpus"
 
 schema-check:
 	python statebind_handoff/statebind_handoff.py schema --out /tmp/statebind.schema.json >/dev/null

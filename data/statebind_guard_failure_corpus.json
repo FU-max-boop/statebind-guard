@@ -1,0 +1,282 @@
+[
+  {
+    "id": "wrong-file-bound-router",
+    "category": "wrong_file",
+    "label": "pass",
+    "required_bindings": [{"role": "active_patch_file", "handle": "src/api/router.py"}],
+    "handoff": "# Handoff\n\nactive_patch_file: `src/api/router.py`; evidence: `git diff --name-only` after the routing patch.\nrelated_file: `src/api/router_test_helpers.py`; evidence: import context only.\n\nNext action: edit `src/api/router.py` and do not move into the helper unless a new diff proves it."
+  },
+  {
+    "id": "wrong-file-visible-router",
+    "category": "wrong_file",
+    "label": "fail",
+    "required_bindings": [{"role": "active_patch_file", "handle": "src/api/router.py"}],
+    "handoff": "# Handoff\n\nThe active patch file is the router file from the previous step.\nVisible files: `src/api/router.py`, `src/api/router_test_helpers.py`, and `docs/routing.md`.\n\nNext action: continue with the file."
+  },
+  {
+    "id": "wrong-file-bound-schema",
+    "category": "wrong_file",
+    "label": "pass",
+    "required_bindings": [{"role": "schema_file", "handle": "schemas/statebind.schema.json"}],
+    "handoff": "# Handoff\n\nschema_file -> `schemas/statebind.schema.json`; evidence: schema compatibility check target.\nimplementation_file -> `statebind_handoff/statebind_handoff.py`; evidence: CLI schema command.\n\nNext action: compare generated schema against `schemas/statebind.schema.json`."
+  },
+  {
+    "id": "wrong-file-visible-schema",
+    "category": "wrong_file",
+    "label": "fail",
+    "required_bindings": [{"role": "schema_file", "handle": "schemas/statebind.schema.json"}],
+    "handoff": "# Handoff\n\nThe schema file is visible in the repo listing.\nVisible paths: `schemas/statebind.schema.json`, `statebind_handoff/statebind_handoff.py`, and `docs/handoff_contract.md`.\n\nNext action: update the schema-related file."
+  },
+  {
+    "id": "wrong-test-bound-stream",
+    "category": "wrong_test",
+    "label": "pass",
+    "required_bindings": [{"role": "failing_test", "handle": "pytest tests/test_router.py::test_stream"}],
+    "handoff": "# Handoff\n\nfailing_test: `pytest tests/test_router.py::test_stream`; evidence: latest red CI annotation.\nnon_blocking_test: `pytest tests/test_auth.py::test_login`; evidence: nearby green run.\n\nNext action: run the failing selector after the stream patch."
+  },
+  {
+    "id": "wrong-test-visible-stream",
+    "category": "wrong_test",
+    "label": "fail",
+    "required_bindings": [{"role": "failing_test", "handle": "pytest tests/test_router.py::test_stream"}],
+    "handoff": "# Handoff\n\nThe failing test is in the router area.\nObserved selectors: `pytest tests/test_router.py::test_stream`, `pytest tests/test_auth.py::test_login`, and `make test`.\n\nNext action: rerun the test."
+  },
+  {
+    "id": "wrong-test-bound-schema",
+    "category": "wrong_test",
+    "label": "pass",
+    "required_bindings": [{"role": "next_command", "handle": "make schema-check"}],
+    "handoff": "# Handoff\n\nnext_command: `make schema-check`; evidence: schema compatibility gate for this patch.\nsecondary_command: `make public-check`; evidence: broader release gate.\n\nNext action: run `make schema-check` before touching benchmark data."
+  },
+  {
+    "id": "wrong-test-visible-schema",
+    "category": "wrong_test",
+    "label": "fail",
+    "required_bindings": [{"role": "next_command", "handle": "make schema-check"}],
+    "handoff": "# Handoff\n\nThe next command is the schema check.\nCommands seen: `make schema-check`, `make public-check`, and `python -m unittest discover -s tests`.\n\nNext action: run the command."
+  },
+  {
+    "id": "wrong-commit-bound-base",
+    "category": "wrong_commit",
+    "label": "pass",
+    "required_bindings": [{"role": "comparison_base_sha", "handle": "def5678"}],
+    "handoff": "# PR handoff\n\ncomparison_base_sha: `def5678`; evidence: PR metadata `base.sha`.\ncurrent_head_sha: `abc1234`; evidence: PR metadata `head.sha`.\n\nNext action: diff the patch against `def5678`, not the head SHA."
+  },
+  {
+    "id": "wrong-commit-swapped-base",
+    "category": "wrong_commit",
+    "label": "fail",
+    "required_bindings": [{"role": "comparison_base_sha", "handle": "def5678"}],
+    "handoff": "# PR handoff\n\ncomparison_base_sha: `abc1234`; evidence: row shown next to the current head.\ncurrent_head_sha: `def5678`; evidence: row shown next to the base.\n\nNext action: compare against the base commit."
+  },
+  {
+    "id": "wrong-commit-bound-release",
+    "category": "wrong_commit",
+    "label": "pass",
+    "required_bindings": [{"role": "release_tag_commit", "handle": "8899abc"}],
+    "handoff": "# Release handoff\n\nrelease_tag_commit: `8899abc`; evidence: `git rev-parse v0.1.0`.\nlatest_main_commit: `1122def`; evidence: `git rev-parse main`.\n\nNext action: generate release notes for `8899abc`."
+  },
+  {
+    "id": "wrong-commit-visible-release",
+    "category": "wrong_commit",
+    "label": "fail",
+    "required_bindings": [{"role": "release_tag_commit", "handle": "8899abc"}],
+    "handoff": "# Release handoff\n\nThe release commit is visible in the terminal output.\nVisible SHAs: `8899abc`, `1122def`, and `4455aaa`.\n\nNext action: generate release notes from the commit."
+  },
+  {
+    "id": "wrong-pr-bound-review",
+    "category": "wrong_pr",
+    "label": "pass",
+    "required_bindings": [{"role": "active_target_pr", "handle": "https://github.com/example/project/pull/42"}],
+    "handoff": "# Review handoff\n\nactive_target_pr: `https://github.com/example/project/pull/42`; evidence: current unresolved review thread.\nrelated_issue: `https://github.com/example/project/issues/17`; evidence: linked from PR body.\n\nNext action: answer unresolved comments on PR 42."
+  },
+  {
+    "id": "wrong-pr-visible-review",
+    "category": "wrong_pr",
+    "label": "fail",
+    "required_bindings": [{"role": "active_target_pr", "handle": "https://github.com/example/project/pull/42"}],
+    "handoff": "# Review handoff\n\nContinue the previous PR.\nVisible URLs: `https://github.com/example/project/pull/42`, `https://github.com/example/project/pull/41`, and `https://github.com/example/project/issues/17`.\n\nNext action: inspect unresolved comments."
+  },
+  {
+    "id": "wrong-pr-bound-compare",
+    "category": "wrong_pr",
+    "label": "pass",
+    "required_bindings": [{"role": "comparison_pr", "handle": "https://github.com/example/project/pull/41"}],
+    "handoff": "# Regression handoff\n\ncomparison_pr: `https://github.com/example/project/pull/41`; evidence: older merged implementation used as behavioral reference.\nactive_target_pr: `https://github.com/example/project/pull/42`; evidence: current patch.\n\nNext action: compare PR 42 behavior against PR 41."
+  },
+  {
+    "id": "wrong-pr-visible-compare",
+    "category": "wrong_pr",
+    "label": "fail",
+    "required_bindings": [{"role": "comparison_pr", "handle": "https://github.com/example/project/pull/41"}],
+    "handoff": "# Regression handoff\n\nThe comparison PR is the older one.\nVisible URLs: `https://github.com/example/project/pull/41`, `https://github.com/example/project/pull/42`, and `https://github.com/example/project/pull/43`.\n\nNext action: compare behavior against the previous PR."
+  },
+  {
+    "id": "stale-artifact-bound-card",
+    "category": "stale_artifact",
+    "label": "pass",
+    "required_bindings": [{"role": "primary_result_card", "handle": "docs/result_cards/statebind_guard_failure_corpus.md"}],
+    "handoff": "# Artifact handoff\n\nprimary_result_card: `docs/result_cards/statebind_guard_failure_corpus.md`; evidence: latest corpus benchmark output.\nstale_console_copy: `/tmp/statebind_guard_failure_corpus.md`; evidence: temporary scratch output.\n\nNext action: quote the tracked result card."
+  },
+  {
+    "id": "stale-artifact-visible-card",
+    "category": "stale_artifact",
+    "label": "fail",
+    "required_bindings": [{"role": "primary_result_card", "handle": "docs/result_cards/statebind_guard_failure_corpus.md"}],
+    "handoff": "# Artifact handoff\n\nThe primary result card was generated.\nVisible paths: `docs/result_cards/statebind_guard_failure_corpus.md`, `docs/result_cards/statebind_guard_seed_benchmark.md`, and `/tmp/statebind_guard_failure_corpus.md`.\n\nNext action: quote the result card."
+  },
+  {
+    "id": "stale-artifact-bound-report",
+    "category": "stale_artifact",
+    "label": "pass",
+    "required_bindings": [{"role": "validation_report", "handle": "statebind-validation.json"}],
+    "handoff": "# CI handoff\n\nvalidation_report: `statebind-validation.json`; evidence: `statebind validate --report` output artifact.\nraw_state: `statebind.json`; evidence: input contract, not the report.\n\nNext action: upload `statebind-validation.json` as the CI artifact."
+  },
+  {
+    "id": "stale-artifact-visible-report",
+    "category": "stale_artifact",
+    "label": "fail",
+    "required_bindings": [{"role": "validation_report", "handle": "statebind-validation.json"}],
+    "handoff": "# CI handoff\n\nThe validation report should be uploaded.\nVisible files: `statebind-validation.json`, `statebind.json`, and `HANDOFF.md`.\n\nNext action: upload the report."
+  },
+  {
+    "id": "config-bound-prod",
+    "category": "config_env",
+    "label": "pass",
+    "required_bindings": [{"role": "active_config", "handle": "configs/prod/statebind.yml"}],
+    "handoff": "# Config handoff\n\nactive_config: `configs/prod/statebind.yml`; evidence: failing production dry-run.\ndev_config: `configs/dev/statebind.yml`; evidence: local-only smoke config.\n\nNext action: patch `configs/prod/statebind.yml` and rerun the dry-run."
+  },
+  {
+    "id": "config-visible-prod",
+    "category": "config_env",
+    "label": "fail",
+    "required_bindings": [{"role": "active_config", "handle": "configs/prod/statebind.yml"}],
+    "handoff": "# Config handoff\n\nThe active config is the production one.\nVisible config files: `configs/prod/statebind.yml`, `configs/dev/statebind.yml`, and `configs/test/statebind.yml`.\n\nNext action: patch the config."
+  },
+  {
+    "id": "config-bound-env",
+    "category": "config_env",
+    "label": "pass",
+    "required_bindings": [{"role": "target_environment", "handle": "staging"}],
+    "handoff": "# Deploy handoff\n\ntarget_environment: `staging`; evidence: safe validation environment selected by release owner.\nblocked_environment: `production`; evidence: requires human approval.\n\nNext action: run the validation job for `staging` only."
+  },
+  {
+    "id": "config-visible-env",
+    "category": "config_env",
+    "label": "fail",
+    "required_bindings": [{"role": "target_environment", "handle": "staging"}],
+    "handoff": "# Deploy handoff\n\nThe target environment is the one selected earlier.\nVisible environments: `staging`, `production`, and `preview`.\n\nNext action: run the validation job."
+  },
+  {
+    "id": "dataset-bound-v2",
+    "category": "dataset_version",
+    "label": "pass",
+    "required_bindings": [{"role": "evaluation_dataset", "handle": "data/handoffs/v2_eval.jsonl"}],
+    "handoff": "# Evaluation handoff\n\nevaluation_dataset: `data/handoffs/v2_eval.jsonl`; evidence: locked eval manifest for this run.\ntraining_dataset: `data/handoffs/v2_train.jsonl`; evidence: construction source, not eval.\n\nNext action: score only `data/handoffs/v2_eval.jsonl`."
+  },
+  {
+    "id": "dataset-visible-v2",
+    "category": "dataset_version",
+    "label": "fail",
+    "required_bindings": [{"role": "evaluation_dataset", "handle": "data/handoffs/v2_eval.jsonl"}],
+    "handoff": "# Evaluation handoff\n\nUse the v2 handoff dataset.\nVisible datasets: `data/handoffs/v2_eval.jsonl`, `data/handoffs/v2_train.jsonl`, and `data/handoffs/v1_eval.jsonl`.\n\nNext action: score the dataset."
+  },
+  {
+    "id": "run-id-bound-ci",
+    "category": "run_id",
+    "label": "pass",
+    "required_bindings": [{"role": "failed_workflow_run", "handle": "26641905406"}],
+    "handoff": "# CI handoff\n\nfailed_workflow_run: `26641905406`; evidence: latest failed smoke run before rerun.\nprevious_successful_run: `26639387998`; evidence: earlier green baseline.\n\nNext action: inspect annotations for run `26641905406`."
+  },
+  {
+    "id": "run-id-visible-ci",
+    "category": "run_id",
+    "label": "fail",
+    "required_bindings": [{"role": "failed_workflow_run", "handle": "26641905406"}],
+    "handoff": "# CI handoff\n\nThe failed workflow run is visible in the run list.\nVisible run IDs: `26641905406`, `26639387998`, and `26636737462`.\n\nNext action: inspect the failed run."
+  },
+  {
+    "id": "branch-bound-release",
+    "category": "branch_name",
+    "label": "pass",
+    "required_bindings": [{"role": "target_branch", "handle": "release/v0.1"}],
+    "handoff": "# Branch handoff\n\ntarget_branch: `release/v0.1`; evidence: release manager selected patch branch.\nworking_branch: `main`; evidence: local checkout before branch switch.\n\nNext action: cherry-pick onto `release/v0.1`."
+  },
+  {
+    "id": "branch-visible-release",
+    "category": "branch_name",
+    "label": "fail",
+    "required_bindings": [{"role": "target_branch", "handle": "release/v0.1"}],
+    "handoff": "# Branch handoff\n\nThe target branch is the release branch.\nVisible branches: `release/v0.1`, `main`, and `experiment/schema-report`.\n\nNext action: cherry-pick onto the branch."
+  },
+  {
+    "id": "command-bound-build",
+    "category": "risky_command",
+    "label": "pass",
+    "required_bindings": [{"role": "safe_next_command", "handle": "make public-check"}],
+    "handoff": "# Command handoff\n\nsafe_next_command: `make public-check`; evidence: non-mutating release gate.\nunsafe_command: `git push origin main`; evidence: requires human review after checks.\n\nNext action: run `make public-check` before any push."
+  },
+  {
+    "id": "command-visible-build",
+    "category": "risky_command",
+    "label": "fail",
+    "required_bindings": [{"role": "safe_next_command", "handle": "make public-check"}],
+    "handoff": "# Command handoff\n\nThe safe next command is the public check.\nVisible commands: `make public-check`, `git push origin main`, and `python scripts/release.py --publish`.\n\nNext action: run the command."
+  },
+  {
+    "id": "command-bound-readonly",
+    "category": "risky_command",
+    "label": "pass",
+    "required_bindings": [{"role": "readonly_diagnostic", "handle": "gh run view 26641905406 --log-failed"}],
+    "handoff": "# Diagnostic handoff\n\nreadonly_diagnostic: `gh run view 26641905406 --log-failed`; evidence: inspect-only CI command.\nmutating_rerun: `gh run rerun 26641905406`; evidence: changes CI state and should wait.\n\nNext action: inspect logs with the readonly diagnostic."
+  },
+  {
+    "id": "command-visible-readonly",
+    "category": "risky_command",
+    "label": "fail",
+    "required_bindings": [{"role": "readonly_diagnostic", "handle": "gh run view 26641905406 --log-failed"}],
+    "handoff": "# Diagnostic handoff\n\nUse the read-only diagnostic command.\nVisible commands: `gh run view 26641905406 --log-failed`, `gh run rerun 26641905406`, and `gh workflow disable smoke`.\n\nNext action: run the diagnostic."
+  },
+  {
+    "id": "multi-bound-schema-upgrade",
+    "category": "multi_binding",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "statebind_handoff/statebind_handoff.py"},
+      {"role": "schema_file", "handle": "schemas/statebind.schema.json"},
+      {"role": "next_command", "handle": "make public-check"}
+    ],
+    "handoff": "# Schema upgrade handoff\n\nactive_patch_file: `statebind_handoff/statebind_handoff.py`; evidence: CLI implementation changed.\nschema_file: `schemas/statebind.schema.json`; evidence: generated schema compatibility file.\nnext_command: `make public-check`; evidence: release gate after schema/report changes.\n\nNext action: edit the helper, verify the schema file, then run `make public-check`."
+  },
+  {
+    "id": "multi-visible-schema-upgrade",
+    "category": "multi_binding",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_patch_file", "handle": "statebind_handoff/statebind_handoff.py"},
+      {"role": "schema_file", "handle": "schemas/statebind.schema.json"},
+      {"role": "next_command", "handle": "make public-check"}
+    ],
+    "handoff": "# Schema upgrade handoff\n\nThe active patch file is the helper, the schema file is the schema, and the next command is the public gate.\nVisible handles: `statebind_handoff/statebind_handoff.py`, `schemas/statebind.schema.json`, `docs/handoff_contract.md`, `make public-check`, and `make schema-check`.\n\nNext action: continue the upgrade and run the gate."
+  },
+  {
+    "id": "multi-bound-pr-ci",
+    "category": "multi_binding",
+    "label": "pass",
+    "required_bindings": [
+      {"role": "active_target_pr", "handle": "https://github.com/example/project/pull/42"},
+      {"role": "failed_workflow_run", "handle": "26641905406"}
+    ],
+    "handoff": "# PR CI handoff\n\nactive_target_pr: `https://github.com/example/project/pull/42`; evidence: current review page.\nfailed_workflow_run: `26641905406`; evidence: red smoke run for that PR.\n\nNext action: inspect run `26641905406` before commenting on PR 42."
+  },
+  {
+    "id": "multi-visible-pr-ci",
+    "category": "multi_binding",
+    "label": "fail",
+    "required_bindings": [
+      {"role": "active_target_pr", "handle": "https://github.com/example/project/pull/42"},
+      {"role": "failed_workflow_run", "handle": "26641905406"}
+    ],
+    "handoff": "# PR CI handoff\n\nThe active PR and failed run are visible in the browser and notification email.\nVisible handles: `https://github.com/example/project/pull/42`, `https://github.com/example/project/pull/41`, `26641905406`, and `26639387998`.\n\nNext action: inspect the failed run before commenting."
+  }
+]

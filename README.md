@@ -118,6 +118,7 @@ examples/
   codex-handoff-demo/                # toy transcript for handoff generation
 
 docs/
+  case_studies/
   industrial_adoption.md
   failure_cases.md
   github_action_usage.md
@@ -134,6 +135,7 @@ schemas/
 data/
   statebind_guard_seed_benchmark.json
   statebind_guard_natural_handoff_benchmark.json
+  statebind_guard_failure_corpus.json
 ```
 
 ## Use With Codex
@@ -185,6 +187,12 @@ reject handoffs that mention the right file, command, PR, test, artifact, or SHA
 but fail to bind it to the active role. On the included real-shaped snippets,
 `statebind_guard` beats both visibility and keyword-role baselines and reduces
 unsafe accepts.
+
+The larger failure corpus adds coverage across wrong-file, wrong-test,
+wrong-commit, wrong-PR, stale-artifact, config/environment, dataset-version,
+run-ID, branch-name, risky-command, and multi-binding failures. See
+[failure corpus result card](docs/result_cards/statebind_guard_failure_corpus.md)
+and the [schema/report upgrade case study](docs/case_studies/schema_report_upgrade.md).
 
 ## What StateBind Is And Is Not
 

@@ -21,9 +21,10 @@ active target -> semantic role -> executable handle
 This repository includes:
 
 - failure cases
-- seed and natural-handoff benchmark snippets
+- seed, natural-handoff, and multi-category failure-corpus benchmark snippets
 - baseline and StateBind Guard result cards
 - a lightweight handoff helper
+- a versioned `statebind.json` schema and CI validation report
 - an installable Codex skill for creating and checking executable handoffs
 
 ## Why It Matters
@@ -32,7 +33,7 @@ Reliable coding agents need more than memory recall or context retrieval. They n
 
 ## Next Directions
 
-- fully natural deployed-agent handoff corpus
+- larger deployed-agent handoff corpus from real sessions
 - learned StateBind construction
 - binding-aware memory/RAG interfaces
 - coding-agent safety evaluation for wrong-object actions

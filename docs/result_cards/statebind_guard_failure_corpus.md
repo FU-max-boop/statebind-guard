@@ -1,4 +1,4 @@
-# StateBind Guard Seed Benchmark
+# StateBind Guard Failure Corpus Benchmark
 
 ## Hypothesis
 
@@ -17,15 +17,25 @@ on failing handoffs.
 
 | Method | Accuracy | Unsafe accept rate | Accept F1 | TP | TN | FP | FN |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| visibility_baseline | 0.500 | 1.000 | 0.667 | 6 | 0 | 6 | 0 |
-| keyword_role_baseline | 0.750 | 0.500 | 0.800 | 6 | 3 | 3 | 0 |
-| statebind_guard | 1.000 | 0.000 | 1.000 | 6 | 6 | 0 | 0 |
+| visibility_baseline | 0.500 | 1.000 | 0.667 | 19 | 0 | 19 | 0 |
+| keyword_role_baseline | 0.605 | 0.789 | 0.717 | 19 | 4 | 15 | 0 |
+| statebind_guard | 1.000 | 0.000 | 1.000 | 19 | 19 | 0 | 0 |
 
 ## Category Coverage
 
 | Category | Records | Pass | Fail |
 |---|---:|---:|---:|
-| uncategorized | 12 | 6 | 6 |
+| branch_name | 2 | 1 | 1 |
+| config_env | 4 | 2 | 2 |
+| dataset_version | 2 | 1 | 1 |
+| multi_binding | 4 | 2 | 2 |
+| risky_command | 4 | 2 | 2 |
+| run_id | 2 | 1 | 1 |
+| stale_artifact | 4 | 2 | 2 |
+| wrong_commit | 4 | 2 | 2 |
+| wrong_file | 4 | 2 | 2 |
+| wrong_pr | 4 | 2 | 2 |
+| wrong_test | 4 | 2 | 2 |
 
 ## Verdict
 
@@ -33,7 +43,7 @@ StateBind Guard beats both baselines on this benchmark.
 
 ## Scope
 
-This benchmark contains 12 anonymized, real-shaped
+This benchmark contains 38 anonymized, real-shaped
 handoff snippets. It is designed to test the visible-but-unbound failure
 mode, not to claim broad deployed-agent coverage.
 

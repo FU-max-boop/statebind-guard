@@ -21,6 +21,12 @@ on failing handoffs.
 | keyword_role_baseline | 0.500 | 1.000 | 0.667 | 8 | 0 | 8 | 0 |
 | statebind_guard | 1.000 | 0.000 | 1.000 | 8 | 8 | 0 | 0 |
 
+## Category Coverage
+
+| Category | Records | Pass | Fail |
+|---|---:|---:|---:|
+| uncategorized | 16 | 8 | 8 |
+
 ## Verdict
 
 StateBind Guard beats both baselines on this benchmark.

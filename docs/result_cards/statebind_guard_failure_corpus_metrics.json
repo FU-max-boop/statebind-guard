@@ -1,0 +1,785 @@
+{
+  "data": "data/statebind_guard_failure_corpus.json",
+  "records": 38,
+  "category_counts": {
+    "branch_name": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "config_env": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "dataset_version": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "multi_binding": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "risky_command": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "run_id": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "stale_artifact": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "wrong_commit": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "wrong_file": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "wrong_pr": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "wrong_test": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    }
+  },
+  "summary": {
+    "keyword_role_baseline": {
+      "n": 38,
+      "accuracy": 0.6052631578947368,
+      "precision_accept": 0.5588235294117647,
+      "recall_accept": 1.0,
+      "f1_accept": 0.7169811320754718,
+      "unsafe_accept_rate": 0.7894736842105263,
+      "tp": 19,
+      "tn": 4,
+      "fp": 15,
+      "fn": 0
+    },
+    "statebind_guard": {
+      "n": 38,
+      "accuracy": 1.0,
+      "precision_accept": 1.0,
+      "recall_accept": 1.0,
+      "f1_accept": 1.0,
+      "unsafe_accept_rate": 0.0,
+      "tp": 19,
+      "tn": 19,
+      "fp": 0,
+      "fn": 0
+    },
+    "visibility_baseline": {
+      "n": 38,
+      "accuracy": 0.5,
+      "precision_accept": 0.5,
+      "recall_accept": 1.0,
+      "f1_accept": 0.6666666666666666,
+      "unsafe_accept_rate": 1.0,
+      "tp": 19,
+      "tn": 0,
+      "fp": 19,
+      "fn": 0
+    }
+  },
+  "predictions": [
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-file-bound-router",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-file-bound-router",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-file-bound-router",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-file-visible-router",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-file-visible-router",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-file-visible-router",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-file-bound-schema",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-file-bound-schema",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-file-bound-schema",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-file-visible-schema",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-file-visible-schema",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-file-visible-schema",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-test-bound-stream",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-test-bound-stream",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-test-bound-stream",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-test-visible-stream",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-test-visible-stream",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-test-visible-stream",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-test-bound-schema",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-test-bound-schema",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-test-bound-schema",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-test-visible-schema",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-test-visible-schema",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-test-visible-schema",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-commit-bound-base",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-commit-bound-base",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-commit-bound-base",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-commit-swapped-base",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-commit-swapped-base",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-commit-swapped-base",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-commit-bound-release",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-commit-bound-release",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-commit-bound-release",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-commit-visible-release",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-commit-visible-release",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-commit-visible-release",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-pr-bound-review",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-pr-bound-review",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-pr-bound-review",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-pr-visible-review",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-pr-visible-review",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-pr-visible-review",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-pr-bound-compare",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-pr-bound-compare",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-pr-bound-compare",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "wrong-pr-visible-compare",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "wrong-pr-visible-compare",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "wrong-pr-visible-compare",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "stale-artifact-bound-card",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "stale-artifact-bound-card",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "stale-artifact-bound-card",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "stale-artifact-visible-card",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "stale-artifact-visible-card",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "stale-artifact-visible-card",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "stale-artifact-bound-report",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "stale-artifact-bound-report",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "stale-artifact-bound-report",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "stale-artifact-visible-report",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "stale-artifact-visible-report",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "stale-artifact-visible-report",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "config-bound-prod",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "config-bound-prod",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "config-bound-prod",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "config-visible-prod",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "config-visible-prod",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "config-visible-prod",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "config-bound-env",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "config-bound-env",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "config-bound-env",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "config-visible-env",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "config-visible-env",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "config-visible-env",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "dataset-bound-v2",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "dataset-bound-v2",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "dataset-bound-v2",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "dataset-visible-v2",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "dataset-visible-v2",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "dataset-visible-v2",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "run-id-bound-ci",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "run-id-bound-ci",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "run-id-bound-ci",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "run-id-visible-ci",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "run-id-visible-ci",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "run-id-visible-ci",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "branch-bound-release",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "branch-bound-release",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "branch-bound-release",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "branch-visible-release",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "branch-visible-release",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "branch-visible-release",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "command-bound-build",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "command-bound-build",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "command-bound-build",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "command-visible-build",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "command-visible-build",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "command-visible-build",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "command-bound-readonly",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "command-bound-readonly",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "command-bound-readonly",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "command-visible-readonly",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "command-visible-readonly",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "command-visible-readonly",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "multi-bound-schema-upgrade",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "multi-bound-schema-upgrade",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "multi-bound-schema-upgrade",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "multi-visible-schema-upgrade",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "multi-visible-schema-upgrade",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "multi-visible-schema-upgrade",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "multi-bound-pr-ci",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "multi-bound-pr-ci",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "multi-bound-pr-ci",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "multi-visible-pr-ci",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "multi-visible-pr-ci",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "multi-visible-pr-ci",
+      "expected_pass": false,
+      "predicted_pass": false
+    }
+  ]
+}
