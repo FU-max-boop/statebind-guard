@@ -39,7 +39,7 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.9"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.10"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": POLICY_SCHEMA_VERSION,
@@ -1650,6 +1650,99 @@ Use `def5678` only for the comparison-base role. Do not infer from visibility al
 """
 
 
+def proof_contracts() -> dict[str, dict[str, Any]]:
+    bad = {
+        "schema_version": SCHEMA_VERSION,
+        "task": {
+            "goal": "resume the streaming-test fix",
+            "status": "ambiguous summary",
+        },
+        "active_target": {
+            "type": "test",
+            "handle": "the previous test",
+            "evidence": (
+                "The handoff visibly lists `pytest tests/test_router.py::test_stream_response` "
+                "and `make test`, but never binds either command to the failing-test role."
+            ),
+            "confidence": "high",
+        },
+        "bindings": [
+            {
+                "role": "failing_test",
+                "handle": "the previous test",
+                "evidence": (
+                    "Visible command strings include `pytest tests/test_router.py::test_stream_response` "
+                    "and `make test`."
+                ),
+                "confidence": "high",
+                "risk": "",
+            }
+        ],
+        "risks": [],
+    }
+    good = {
+        "schema_version": SCHEMA_VERSION,
+        "task": {
+            "goal": "resume the streaming-test fix",
+            "status": "ready",
+        },
+        "active_target": {
+            "type": "test",
+            "handle": "pytest tests/test_router.py::test_stream_response",
+            "evidence": "Latest red test after the streaming resume patch.",
+            "confidence": "high",
+        },
+        "bindings": [
+            {
+                "role": "failing_test",
+                "handle": "pytest tests/test_router.py::test_stream_response",
+                "evidence": "Bound as the exact failing selector to run before broad tests.",
+                "confidence": "high",
+                "risk": "",
+            },
+            {
+                "role": "next_command",
+                "handle": "pytest tests/test_router.py::test_stream_response",
+                "evidence": "Smallest safe verification command before `make test`.",
+                "confidence": "high",
+                "risk": "",
+            },
+        ],
+        "risks": [],
+    }
+    return {"bad_visible_unbound": bad, "good_role_bound": good}
+
+
+def proof_report(json_out: bool = False) -> int:
+    cases: dict[str, dict[str, Any]] = {}
+    for name, contract in proof_contracts().items():
+        findings = validate_contract(contract)
+        exit_code = validation_exit_code(findings, "warning")
+        cases[name] = validation_report(findings, Path(f"{name}.json"), None, "warning", exit_code)
+
+    if json_out:
+        print(json.dumps({"schema_version": SCHEMA_VERSION, "cases": cases}, indent=2))
+        return 0
+
+    print("StateBind proof: visible handle is not executable state")
+    print("")
+    for label, report in cases.items():
+        summary = report["summary"]
+        status = "PASS" if report["passed"] else "FAIL"
+        print(f"{label}: {status} ({summary['errors']} error(s), {summary['warnings']} warning(s))")
+        for finding in report["findings"]:
+            target = ""
+            if finding.get("role") or finding.get("handle"):
+                target = f" role={finding.get('role', '')!r} handle={finding.get('handle', '')!r}"
+            print(f"  - [{finding['severity']}] {finding['code']}:{target} {finding['message']}")
+        if not report["findings"]:
+            print("  - no structural or policy findings")
+    print("")
+    print("Takeaway: the bad handoff shows the command in evidence, but the executable handle is vague.")
+    print("The good handoff binds the failing-test role to the exact pytest selector.")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="StateBind handoff helper")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -1715,6 +1808,8 @@ def main() -> int:
     p_schema.add_argument("--policy", action="store_true", help="print the StateBind policy schema")
 
     sub.add_parser("demo", help="print visible-but-unbound demo")
+    p_proof = sub.add_parser("proof", help="run a self-contained bad-vs-good StateBind validation proof")
+    p_proof.add_argument("--json", action="store_true", help="print machine-readable proof reports")
 
     args = parser.parse_args()
     if args.cmd == "extract":
@@ -1796,6 +1891,8 @@ def main() -> int:
     if args.cmd == "demo":
         print(write_demo())
         return 0
+    if args.cmd == "proof":
+        return proof_report(args.json)
     raise AssertionError(args.cmd)
 
 

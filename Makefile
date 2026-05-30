@@ -44,6 +44,8 @@ package-check:
 	python -m venv --system-site-packages "$$tmpdir/venv"; \
 	PIP_NO_INDEX=1 PIP_CACHE_DIR="$$tmpdir/pip-cache" "$$tmpdir/venv/bin/python" -m pip install --no-build-isolation -e . >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" demo >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" proof >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" proof --json >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" --help >/dev/null; \
 	cd "$$tmpdir"; \
 	git init -q; \

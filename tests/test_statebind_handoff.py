@@ -19,6 +19,24 @@ class StateBindHandoffTests(unittest.TestCase):
         self.assertIn("Visible ID But Unbound", out)
         self.assertIn("comparison_base_sha", out)
 
+    def test_proof_runs_bad_vs_good_case(self):
+        out = run(["python", str(SCRIPT), "proof"], ROOT)
+        self.assertIn("StateBind proof", out)
+        self.assertIn("bad_visible_unbound: FAIL", out)
+        self.assertIn("good_role_bound: PASS", out)
+        self.assertIn("vague_handle", out)
+
+        proof_json = run(["python", str(SCRIPT), "proof", "--json"], ROOT)
+        data = json.loads(proof_json)
+        self.assertFalse(data["cases"]["bad_visible_unbound"]["passed"])
+        self.assertTrue(data["cases"]["good_role_bound"]["passed"])
+        self.assertTrue(
+            any(
+                finding["code"] == "vague_handle"
+                for finding in data["cases"]["bad_visible_unbound"]["findings"]
+            )
+        )
+
     def test_extract_redacts_with_labels(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
@@ -301,7 +319,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.9", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.10", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 

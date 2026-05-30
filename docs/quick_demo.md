@@ -8,6 +8,23 @@ StateBind Guard tests a narrow but costly handoff failure:
 ## One Command
 
 ```bash
+statebind proof
+```
+
+Expected shape:
+
+```text
+bad_visible_unbound: FAIL
+good_role_bound: PASS
+```
+
+The bad handoff includes the right command in evidence, but the executable
+handle is still vague. The good handoff binds the `failing_test` role to the
+exact pytest selector.
+
+## Benchmark Command
+
+```bash
 make benchmark
 ```
 

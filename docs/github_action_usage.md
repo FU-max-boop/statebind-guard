@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.9
+        uses: FU-max-boop/statebind-guard@v0.1.10
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.9`.
+`FU-max-boop/statebind-guard@v0.1.10`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -65,7 +65,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.9
+  uses: FU-max-boop/statebind-guard@v0.1.10
   with:
     statebind-json: statebind.json
     fail-on: warning

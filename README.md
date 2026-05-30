@@ -51,6 +51,8 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.10"
+statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
 ```
@@ -67,7 +69,8 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.9"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.10"
+statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
@@ -91,7 +94,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.9
+    rev: v0.1.10
     hooks:
       - id: statebind-guard
 ```
@@ -99,6 +102,7 @@ repos:
 Run the smoke demo:
 
 ```bash
+statebind proof
 bash scripts/run_smoke_test.sh
 ```
 
@@ -118,7 +122,7 @@ See [policy usage](docs/policy_usage.md) for team-specific gates.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.9
+- uses: FU-max-boop/statebind-guard@v0.1.10
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
