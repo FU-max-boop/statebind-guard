@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.13
+        uses: FU-max-boop/statebind-guard@v0.1.14
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.13`.
+`FU-max-boop/statebind-guard@v0.1.14`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -53,6 +53,13 @@ statebind doctor --repo .
 
 The doctor confirms the workflow points at StateBind Guard and that
 `statebind.json` still validates under the selected failure threshold.
+
+Public receipt: the separate repository
+[statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example)
+consumes `FU-max-boop/statebind-guard@v0.1.13` and passed
+[run 26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
+That workflow asserts `passed=true`, `errors=0`, `warnings=0`, and
+`exit_code=0`, then uploads JSON, SARIF, Markdown, and HTML reports.
 
 The action also writes `statebind-summary.md` and appends it to the GitHub
 Actions step summary. Maintainers can see pass/fail status, threshold, and
@@ -65,7 +72,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.13
+  uses: FU-max-boop/statebind-guard@v0.1.14
   with:
     statebind-json: statebind.json
     fail-on: warning

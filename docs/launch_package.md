@@ -21,7 +21,7 @@ It ships as a dependency-free Python CLI, GitHub Action, SARIF/HTML/Markdown rep
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.14"
 statebind proof
 ```
 
@@ -83,7 +83,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.13
+- uses: FU-max-boop/statebind-guard@v0.1.14
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -104,5 +104,6 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
 
 - `make public-check` runs tests, schema checks, benchmark cards, smoke demo, proof, and package smoke.
 - GitHub Action smoke dogfoods the local composite action and verifies action outputs.
+- Separate-repository adoption smoke passes in [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
 - Release artifacts include JSON, SARIF, Markdown, and standalone HTML reports.
-- The landing page and README link the proof, launch note, quick demo, pre-commit usage, policy usage, and CI usage.
+- The landing page and README link the proof, launch note, quick demo, adoption examples, pre-commit usage, policy usage, and CI usage.

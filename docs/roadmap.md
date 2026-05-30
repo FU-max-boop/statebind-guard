@@ -10,13 +10,15 @@ into real repositories, or improve the evidence behind the claim.
 - Keep GitHub Action outputs, SARIF, Markdown, HTML, and JSON reports stable.
 - Keep scenario policy presets practical for bug-fix, CI-failure, release,
   migration, and benchmark workflows.
+- Keep the separate-repository adoption example green as a public release-action
+  receipt.
 - Collect adoption reports from coding-agent, CI, and research-engineering users.
 - Collect sanitized visible-but-unbound failure cases for the benchmark corpus.
 
 ## Next
 
 - Add adapters or examples for Codex, Claude Code, OpenHands, Cursor, and custom agent runners.
-- Add report examples from third-party repositories.
+- Add report examples from third-party repositories beyond the current public adoption receipt.
 - Add richer line/field localization in SARIF and GitHub annotations.
 
 ## Later

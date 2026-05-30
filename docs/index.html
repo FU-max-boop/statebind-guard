@@ -202,7 +202,7 @@
 
       .metric-row {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 14px;
         margin-top: 20px;
       }
@@ -266,7 +266,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
-        <div class="eyebrow">StateBind Guard v0.1.13</div>
+        <div class="eyebrow">StateBind Guard v0.1.14</div>
         <h1>Make coding-agent handoffs executable.</h1>
         <p class="lead">
           StateBind Guard catches the quiet failure where a handoff mentions the
@@ -275,9 +275,10 @@
         </p>
         <div class="actions" aria-label="Primary links">
           <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
-          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.13">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.14">Latest release</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_package.md">Launch package</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_note.md">Launch note</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/adoption_examples.md">Adoption receipt</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/roadmap.md">Roadmap</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/issues/new/choose">Feedback</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/pre_commit_usage.md">Pre-commit</a>
@@ -314,6 +315,10 @@
             <h3>Feedback-ready</h3>
             <p>Citation metadata, roadmap, adoption reports, and failure-case templates make real-world feedback easy to capture.</p>
           </div>
+          <div class="panel">
+            <h3>External adoption receipt</h3>
+            <p>A separate public repository consumes the released action and publishes JSON, SARIF, Markdown, and HTML reports.</p>
+          </div>
         </div>
       </section>
 
@@ -324,7 +329,7 @@
             The starter scaffold is intentionally small: one human-readable
             handoff, one JSON contract, one policy, one workflow.
           </p>
-          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.14"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -358,6 +363,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
         <div class="metric-row">
           <div class="metric"><strong>30</strong><span>unit tests in CI</span></div>
           <div class="metric"><strong>3</strong><span>benchmark suites</span></div>
+          <div class="metric"><strong>1</strong><span>external adoption repo</span></div>
           <div class="metric warning"><strong>SARIF</strong><span>GitHub-native output</span></div>
           <div class="metric warning"><strong>HTML</strong><span>human-readable report</span></div>
         </div>
@@ -372,12 +378,28 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
             after copying it.
           </p>
         </div>
-        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.13
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.14
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
     policy: .statebind-policy.json
     fail-on: warning</code></pre>
+      </section>
+
+      <section class="split">
+        <div>
+          <h2>External adoption receipt</h2>
+          <p class="compact">
+            A separate public repository pins the released action, asserts its
+            outputs, and uploads validation artifacts. This proves the action
+            works across a normal repository boundary, not only with
+            <code>uses: ./</code> dogfooding.
+          </p>
+        </div>
+        <pre><code>repo: FU-max-boop/statebind-guard-adoption-example
+run: 26683277633
+commit: 859c500
+result: passed=true, errors=0, warnings=0</code></pre>
       </section>
     </main>
 

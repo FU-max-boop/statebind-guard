@@ -81,7 +81,7 @@ If your team already uses the standard pre-commit framework, add:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.13
+    rev: v0.1.14
     hooks:
       - id: statebind-guard
 ```
@@ -93,7 +93,7 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.13
+- uses: FU-max-boop/statebind-guard@v0.1.14
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -121,6 +121,14 @@ structurally valid.
 
 Upload the SARIF report with `github/codeql-action/upload-sarif@v3` to make
 StateBind findings visible in GitHub code scanning and PR annotations.
+
+Public separate-repository receipt:
+
+- Example repo: [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example)
+- Passing run: [26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633)
+- The workflow consumes `FU-max-boop/statebind-guard@v0.1.13`, asserts action
+  outputs `passed=true`, `errors=0`, `warnings=0`, and `exit_code=0`, then
+  uploads JSON, SARIF, Markdown, and HTML reports.
 
 The machine contract is versioned. The current schema lives at
 `schemas/statebind.schema.json` and can be printed by the CLI:
@@ -158,3 +166,4 @@ previous test" or "the SHA above".
 Current case study:
 
 - [schema and CI report upgrade](case_studies/schema_report_upgrade.md)
+- [separate-repository adoption examples](adoption_examples.md)

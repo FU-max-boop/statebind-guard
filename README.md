@@ -7,6 +7,7 @@
 **Project page:** https://fu-max-boop.github.io/statebind-guard/
 **Launch note:** [Visible context is not executable state](docs/launch_note.md)
 **Launch package:** [copy-paste proof, posts, and maintainer pitch](docs/launch_package.md)
+**Adoption receipt:** [separate-repository GitHub Action proof](docs/adoption_examples.md)
 **Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
@@ -19,7 +20,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.14"
 statebind proof
 ```
 
@@ -46,6 +47,12 @@ This repository packages five things:
 4. **Policy-as-code gate**: a small `.statebind-policy.json` file for required roles, confidence floors, and risk requirements.
 5. **GitHub Action**: a composite action that validates handoff contracts and writes JSON/SARIF/Markdown reports for CI and code scanning.
 
+External receipt: a separate public repository,
+[statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example),
+pins the released action and has a passing workflow run with JSON, SARIF,
+Markdown, and HTML artifacts:
+[run 26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
+
 ## Why This Matters
 
 Coding agents increasingly resume work from summaries, retrieval contexts, memory files, and tool traces. These handoffs often preserve narrative context but lose operational state: the next agent may know what happened but not exactly which file, command, commit, PR, issue, or artifact to act on.
@@ -67,7 +74,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.14"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -78,6 +85,7 @@ Then inspect:
 - [launch note](docs/launch_note.md)
 - [launch package](docs/launch_package.md)
 - [quick demo](docs/quick_demo.md)
+- [adoption examples](docs/adoption_examples.md)
 - [roadmap](docs/roadmap.md)
 - [adoption feedback](docs/adoption_feedback.md)
 - [failure cases](docs/failure_cases.md)
@@ -88,7 +96,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.14"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -114,7 +122,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.13
+    rev: v0.1.14
     hooks:
       - id: statebind-guard
 ```
@@ -139,11 +147,14 @@ See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 [GitHub Action usage](docs/github_action_usage.md) for local and CI gate examples.
 See [policy usage](docs/policy_usage.md) for team-specific gates and scenario
 presets.
+See [adoption examples](docs/adoption_examples.md) for a separate public
+repository that consumes the released GitHub Action and verifies action outputs
+in CI.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.13
+- uses: FU-max-boop/statebind-guard@v0.1.14
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -312,6 +323,7 @@ The artifact is checked against five practical gates:
 3. **Evidence gate**: each binding has role, handle, evidence, confidence, and risk.
 4. **Public-release gate**: no obvious local paths, secrets, or accidental generated files.
 5. **Outreach gate**: the README, brief, examples, and slides make the work discussable.
+6. **Adoption gate**: a separate public repository consumes the released action and publishes validation artifacts.
 
 See `docs/quality_gates.md` for the full checklist.
 
