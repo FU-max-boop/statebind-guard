@@ -65,9 +65,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.22"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.23"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.22"
+SOURCE_VERSION = "0.1.23"
 
 
 def resolve_package_version() -> str:
@@ -2048,6 +2048,59 @@ def render_audit_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_audit_issue_template(report: dict[str, Any]) -> str:
+    suggested = report["suggested_next_command"]
+    commands = "\n".join(report["recommended_commands"])
+    candidates = report["handoff_candidates"]
+    candidate_text = "\n".join(
+        f"- `{candidate['path']}` ({candidate['reason']})" for candidate in candidates[:8]
+    ) or "- None detected."
+    warning_checks = [check for check in report["checks"] if check["status"] == "warning"]
+    warning_text = "\n".join(
+        f"- `{check['code']}`: {check['message']}" for check in warning_checks
+    ) or "- No adoption warnings detected."
+    return f"""## StateBind Guard pre-adoption audit
+
+I ran a lightweight StateBind Guard adoption audit against this repository to
+check whether executable coding-agent handoffs could be made safer without a
+large workflow change.
+
+This is not a request to adopt a dependency blindly. The goal is to give
+maintainers a small, concrete review surface.
+
+**Adoption level:** `{report['adoption_level']}`
+**Suggested smallest local gate:** `{suggested['command']}` ({suggested['evidence']})
+
+### What the audit found
+
+{warning_text}
+
+### Handoff-like surfaces
+
+{candidate_text}
+
+### Smallest possible adoption PR
+
+```bash
+{commands}
+```
+
+I would not recommend adopting this automatically. The useful maintainer review
+question is narrower: is there a real resume/handoff boundary here where a
+future agent could see the right file, test, PR, SHA, or artifact but lose the
+role binding that makes it executable?
+
+### Maintainer questions
+
+- Is this failure mode relevant to this repository's coding-agent, review, or CI workflow?
+- If yes, should the first step be docs-only, a CI warning, or a required gate?
+- If no, I am happy to close this and leave the audit output as context.
+
+Privacy boundary: this audit does not require posting private traces, secrets,
+customer data, local paths, or proprietary code.
+"""
+
+
 def run_audit(
     repo: Path,
     statebind_path: Path,
@@ -2056,11 +2109,15 @@ def run_audit(
     policy_path: Path | None,
     json_out: bool,
     markdown_out: Path | None,
+    issue_template_out: Path | None,
 ) -> int:
     report = audit_report(repo, statebind_path, handoff_path, workflow_path, policy_path)
     markdown = render_audit_markdown(report)
+    issue_template = render_audit_issue_template(report)
     if markdown_out:
         write_output(markdown_out, markdown)
+    if issue_template_out:
+        write_output(issue_template_out, issue_template)
     if json_out:
         print(json.dumps(report, indent=2))
     else:
@@ -2251,6 +2308,7 @@ def main() -> int:
     p_audit.add_argument("--policy", type=Path, help="check a StateBind policy file")
     p_audit.add_argument("--json", action="store_true", help="print machine-readable adoption audit")
     p_audit.add_argument("--markdown", type=Path, help="write a maintainer-friendly Markdown audit")
+    p_audit.add_argument("--issue-template", type=Path, help="write a maintainer-safe GitHub issue/PR note")
 
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
@@ -2332,6 +2390,7 @@ def main() -> int:
             args.policy,
             args.json,
             args.markdown,
+            args.issue_template,
         )
     if args.cmd == "check":
         return check_handoff(args.handoff)

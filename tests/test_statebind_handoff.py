@@ -445,7 +445,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.22", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.23", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -509,6 +509,7 @@ class StateBindHandoffTests(unittest.TestCase):
             (repo / "Makefile").write_text("test:\n\tpython -m unittest discover -s tests\n")
 
             audit_md = repo / "statebind-audit.md"
+            issue_template = repo / "statebind-issue.md"
             audit_json = run(
                 [
                     "python",
@@ -519,6 +520,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     "--json",
                     "--markdown",
                     str(audit_md),
+                    "--issue-template",
+                    str(issue_template),
                 ],
                 repo,
             )
@@ -535,6 +538,16 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("Smallest Adoption PR", audit_text)
             self.assertIn('statebind init --goal "Preserve executable coding-agent handoffs" --next-command "make test"', audit_text)
             self.assertNotIn(str(repo), audit_text)
+
+            issue_text = issue_template.read_text()
+            self.assertIn("StateBind Guard pre-adoption audit", issue_text)
+            self.assertIn("not a request to adopt a dependency blindly", issue_text)
+            self.assertIn("Suggested smallest local gate", issue_text)
+            self.assertIn("Smallest possible adoption PR", issue_text)
+            self.assertIn("Maintainer questions", issue_text)
+            self.assertIn("make test", issue_text)
+            self.assertIn("Privacy boundary", issue_text)
+            self.assertNotIn(str(repo), issue_text)
 
     def test_audit_reports_wired_repo_after_init(self):
         with tempfile.TemporaryDirectory() as td:

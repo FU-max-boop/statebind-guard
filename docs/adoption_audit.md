@@ -20,6 +20,22 @@ It scans for:
 The report is intentionally maintainer-friendly. It gives an adoption level,
 existing signals, handoff candidates, and the smallest copy-paste adoption PR.
 
+For outreach or a maintainer discussion, also generate a low-pressure issue/PR
+note:
+
+```bash
+statebind audit --repo . \
+  --markdown statebind-adoption-audit.md \
+  --issue-template statebind-maintainer-note.md
+```
+
+The issue template deliberately asks a narrow review question instead of
+assuming adoption: whether the repository has a real resume or handoff boundary
+where visible handles can lose their executable role binding.
+It includes maintainer questions so the first reply can be "docs-only",
+"CI warning", "required gate", or "not relevant" instead of a vague adoption
+debate.
+
 ## JSON Mode
 
 Use JSON for automation or issue bots:

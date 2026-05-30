@@ -23,7 +23,7 @@ release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.22"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.23"
 statebind proof
 ```
 
@@ -76,6 +76,7 @@ The bad case contains the right command in evidence, but the actual handle is st
 
 ```bash
 statebind audit --repo . --markdown statebind-adoption-audit.md
+statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -86,7 +87,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.22
+- uses: FU-max-boop/statebind-guard@v0.1.23
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
