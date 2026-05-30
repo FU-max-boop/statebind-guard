@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.4
+      - uses: FU-max-boop/statebind-guard@v0.1.5
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -32,6 +32,7 @@ jobs:
           path: |
             statebind-validation.json
             statebind-validation.sarif
+            statebind-summary.md
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
@@ -39,7 +40,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.4`.
+`FU-max-boop/statebind-guard@v0.1.5`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -49,6 +50,10 @@ statebind doctor --repo .
 
 The doctor confirms the workflow points at StateBind Guard and that
 `statebind.json` still validates under the selected failure threshold.
+
+The action also writes `statebind-summary.md` and appends it to the GitHub
+Actions step summary. Maintainers can see pass/fail status, threshold, and
+findings without opening raw logs.
 
 For this repository, the stricter gate is:
 
@@ -77,6 +82,20 @@ report that can be uploaded as a CI artifact:
 Use `--fail-on error` for draft handoffs where warnings are acceptable. Use
 `--fail-on warning` when the handoff is meant to be consumed by another agent
 without manual cleanup.
+
+## Markdown Summary
+
+`statebind validate --summary statebind-summary.md` writes a compact Markdown
+report for human review:
+
+```markdown
+# StateBind Guard
+
+**Status:** PASS
+**Contract:** `statebind.json`
+**Fail on:** `warning`
+**Findings:** 0 error(s), 0 warning(s)
+```
 
 ## Code Scanning Report
 

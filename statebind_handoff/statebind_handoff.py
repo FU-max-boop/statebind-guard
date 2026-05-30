@@ -37,7 +37,7 @@ COMMAND_PREFIXES = (
     "git",
 )
 SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.4"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.5"
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
@@ -600,6 +600,52 @@ def render_validation_text(findings: list[ValidationFinding]) -> str:
     return "\n".join(lines)
 
 
+def markdown_cell(value: Any) -> str:
+    return str(value).replace("\n", " ").replace("|", "\\|")
+
+
+def render_validation_markdown(report: dict[str, Any]) -> str:
+    status = "PASS" if report["passed"] else "FAIL"
+    summary = report["summary"]
+    lines = [
+        "# StateBind Guard",
+        "",
+        f"**Status:** {status}",
+        f"**Contract:** `{report['statebind_json']}`",
+        f"**Fail on:** `{report['fail_on']}`",
+        f"**Findings:** {summary['errors']} error(s), {summary['warnings']} warning(s)",
+        "",
+    ]
+    findings = report["findings"]
+    if not findings:
+        lines.append("No structural findings.")
+        lines.append("")
+        return "\n".join(lines)
+
+    lines.extend(
+        [
+            "| Severity | Code | Role | Handle | Message |",
+            "|---|---|---|---|---|",
+        ]
+    )
+    for finding in findings:
+        lines.append(
+            "| "
+            + " | ".join(
+                markdown_cell(finding.get(key, ""))
+                for key in ("severity", "code", "role", "handle", "message")
+            )
+            + " |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_output(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
 def validation_exit_code(findings: list[ValidationFinding], fail_on: str) -> int:
     severities = {f.severity for f in findings}
     if fail_on == "warning":
@@ -795,6 +841,7 @@ def validate_json_file(
     fail_on: str,
     report_out: Path | None = None,
     sarif_out: Path | None = None,
+    summary_out: Path | None = None,
     quiet: bool = False,
 ) -> int:
     try:
@@ -814,12 +861,11 @@ def validate_json_file(
         else:
             print(message, file=sys.stderr)
         if report_out:
-            report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+            write_output(report_out, json.dumps(report, indent=2))
         if sarif_out:
-            sarif_out.write_text(
-                json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2),
-                encoding="utf-8",
-            )
+            write_output(sarif_out, json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2))
+        if summary_out:
+            write_output(summary_out, render_validation_markdown(report))
         return 1
     except json.JSONDecodeError as exc:
         message = f"Invalid StateBind JSON in {path}: {exc}"
@@ -836,12 +882,11 @@ def validate_json_file(
         else:
             print(message, file=sys.stderr)
         if report_out:
-            report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+            write_output(report_out, json.dumps(report, indent=2))
         if sarif_out:
-            sarif_out.write_text(
-                json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2),
-                encoding="utf-8",
-            )
+            write_output(sarif_out, json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2))
+        if summary_out:
+            write_output(summary_out, render_validation_markdown(report))
         return 1
     resolved_repo = repo.resolve() if repo else None
     findings = validate_contract(contract, repo=resolved_repo)
@@ -852,15 +897,17 @@ def validate_json_file(
     elif not quiet or findings:
         print(render_validation_text(findings))
     if report_out:
-        report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        write_output(report_out, json.dumps(report, indent=2))
     if sarif_out:
-        sarif_out.write_text(
+        write_output(
+            sarif_out,
             json.dumps(
                 sarif_report(findings, path, resolved_repo, fail_on, exit_code),
                 indent=2,
             ),
-            encoding="utf-8",
         )
+    if summary_out:
+        write_output(summary_out, render_validation_markdown(report))
     return exit_code
 
 
@@ -1169,6 +1216,7 @@ def main() -> int:
     p_validate.add_argument("--json", action="store_true", help="print machine-readable validation findings")
     p_validate.add_argument("--report", type=Path, help="write a CI-friendly validation report JSON")
     p_validate.add_argument("--sarif", type=Path, help="write GitHub code-scanning compatible SARIF")
+    p_validate.add_argument("--summary", type=Path, help="write a Markdown validation summary")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
     p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
 
@@ -1224,6 +1272,7 @@ def main() -> int:
             args.fail_on,
             args.report,
             args.sarif,
+            args.summary,
             args.quiet,
         )
     if args.cmd == "schema":

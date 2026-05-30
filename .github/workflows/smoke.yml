@@ -78,5 +78,7 @@ jobs:
         run: |
           test -s statebind-validation.json
           test -s statebind-validation.sarif
+          test -s statebind-summary.md
           python -m json.tool statebind-validation.json >/dev/null
           python -m json.tool statebind-validation.sarif >/dev/null
+          grep -q "StateBind Guard" statebind-summary.md

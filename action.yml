@@ -31,6 +31,10 @@ inputs:
     description: Path for the SARIF 2.1.0 code-scanning report.
     required: false
     default: statebind-validation.sarif
+  summary:
+    description: Path for the Markdown validation summary appended to the GitHub Actions step summary.
+    required: false
+    default: statebind-summary.md
   setup-python:
     description: Whether to install Python for the action run.
     required: false
@@ -47,6 +51,9 @@ outputs:
   sarif:
     description: SARIF report path.
     value: ${{ inputs.sarif }}
+  summary:
+    description: Markdown validation summary path.
+    value: ${{ inputs.summary }}
 
 runs:
   using: composite
@@ -72,12 +79,21 @@ runs:
         FAIL_ON: ${{ inputs.fail-on }}
         REPORT: ${{ inputs.report }}
         SARIF: ${{ inputs.sarif }}
+        SUMMARY: ${{ inputs.summary }}
       run: |
-        mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")"
+        mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")" "$(dirname "$SUMMARY")"
+        set +e
         python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" validate \
           "$STATEBIND_JSON" \
           --repo "$REPO" \
           --fail-on "$FAIL_ON" \
           --json \
           --report "$REPORT" \
-          --sarif "$SARIF"
+          --sarif "$SARIF" \
+          --summary "$SUMMARY"
+        status="$?"
+        set -e
+        if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f "$SUMMARY" ]; then
+          cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        exit "$status"

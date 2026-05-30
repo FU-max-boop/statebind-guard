@@ -136,6 +136,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertGreaterEqual(report_data["summary"]["warnings"], 1)
 
             sarif = repo / "statebind-validation.sarif"
+            summary = repo / "statebind-summary.md"
             run(
                 [
                     "python",
@@ -148,6 +149,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     "error",
                     "--sarif",
                     str(sarif),
+                    "--summary",
+                    str(summary),
                 ],
                 repo,
             )
@@ -156,6 +159,10 @@ class StateBindHandoffTests(unittest.TestCase):
             results = sarif_data["runs"][0]["results"]
             self.assertTrue(any(result["ruleId"] == "blank_task_goal" for result in results))
             self.assertTrue(all(result["level"] == "warning" for result in results))
+            summary_text = summary.read_text()
+            self.assertIn("# StateBind Guard", summary_text)
+            self.assertIn("blank_task_goal", summary_text)
+            self.assertIn("**Status:** PASS", summary_text)
 
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
@@ -185,7 +192,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.4", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.5", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -414,6 +421,7 @@ class StateBindHandoffTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
             sarif = repo / "missing-statebind.sarif"
+            summary = repo / "missing-statebind.md"
             proc = subprocess.run(
                 [
                     "python",
@@ -424,6 +432,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     ".",
                     "--sarif",
                     str(sarif),
+                    "--summary",
+                    str(summary),
                 ],
                 cwd=repo,
                 text=True,
@@ -434,6 +444,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertNotIn("Traceback", proc.stderr)
             sarif_data = json.loads(sarif.read_text())
             self.assertEqual(sarif_data["runs"][0]["results"][0]["ruleId"], "contract_not_found")
+            self.assertIn("contract_not_found", summary.read_text())
 
     def test_schema_command_matches_tracked_schema(self):
         out = run(["python", str(SCRIPT), "schema"], ROOT)

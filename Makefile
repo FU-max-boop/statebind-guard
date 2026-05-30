@@ -48,5 +48,6 @@ package-check:
 	"$$tmpdir/venv/bin/statebind" init --goal "package smoke" --next-command "make test" >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" install-hook --repo . --json statebind.json >/dev/null; \
 	test -x .git/hooks/pre-commit; \
-	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning --summary statebind-summary.md >/dev/null; \
+	test -s statebind-summary.md; \
 	"$$tmpdir/venv/bin/statebind" doctor --repo . >/dev/null

@@ -39,7 +39,8 @@ statebind validate statebind.json \
   --repo . \
   --fail-on error \
   --report statebind-validation.json \
-  --sarif statebind-validation.sarif
+  --sarif statebind-validation.sarif \
+  --summary statebind-summary.md
 statebind doctor --repo .
 ```
 
@@ -64,7 +65,7 @@ If your team already uses the standard pre-commit framework, add:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.4
+    rev: v0.1.5
     hooks:
       - id: statebind-guard
 ```
@@ -76,7 +77,7 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.4
+- uses: FU-max-boop/statebind-guard@v0.1.5
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -91,7 +92,8 @@ statebind validate statebind.json \
   --fail-on warning \
   --json \
   --report statebind-validation.json \
-  --sarif statebind-validation.sarif
+  --sarif statebind-validation.sarif \
+  --summary statebind-summary.md
 ```
 
 Use `--fail-on warning` when the handoff must be consumption-ready, not merely

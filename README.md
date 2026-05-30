@@ -66,7 +66,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.4"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.5"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind install-hook
 statebind doctor
@@ -85,7 +85,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.4
+    rev: v0.1.5
     hooks:
       - id: statebind-guard
 ```
@@ -111,7 +111,7 @@ See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.4
+- uses: FU-max-boop/statebind-guard@v0.1.5
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -140,7 +140,8 @@ statebind validate statebind.json \
   --repo . \
   --fail-on error \
   --report statebind-validation.json \
-  --sarif statebind-validation.sarif
+  --sarif statebind-validation.sarif \
+  --summary statebind-summary.md
 
 statebind doctor --repo .
 ```

@@ -23,3 +23,4 @@ jobs:
           path: |
             statebind-validation.json
             statebind-validation.sarif
+            statebind-summary.md

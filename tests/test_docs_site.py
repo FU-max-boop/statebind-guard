@@ -9,17 +9,18 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocsSiteTests(unittest.TestCase):
     def test_landing_page_links_product_surface(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("StateBind Guard v0.1.4", html)
+        self.assertIn("StateBind Guard v0.1.5", html)
         self.assertIn("Make coding-agent handoffs executable.", html)
         self.assertIn("assets/statebind_guard_demo.svg", html)
         self.assertIn("assets/statebind_social_preview.png", html)
         self.assertIn('property="og:image"', html)
         self.assertIn('name="twitter:card" content="summary_large_image"', html)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.4", html)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.5", html)
         self.assertIn("statebind init", html)
         self.assertIn("statebind install-hook", html)
         self.assertIn("statebind doctor", html)
-        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.4", html)
+        self.assertIn("Markdown summaries", html)
+        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.5", html)
         self.assertIn("docs/launch_note.md", html)
         self.assertIn("docs/pre_commit_usage.md", html)
 
