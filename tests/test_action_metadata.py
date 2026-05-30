@@ -43,7 +43,7 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("macos-latest", text)
         for version in ("3.10", "3.11", "3.12", "3.13"):
             self.assertIn(version, text)
-        self.assertIn("python -m pip install \"setuptools>=68\"", text)
+        self.assertIn("python -m pip install \"setuptools>=77\"", text)
         self.assertIn("make package-check", text)
         self.assertIn("action-smoke:", text)
         self.assertIn("uses: ./", text)
@@ -81,6 +81,20 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("statebind-summary.md", text)
         self.assertIn("statebind-report.html", text)
         self.assertIn("github/codeql-action/upload-sarif@v3", text)
+
+    def test_release_asset_workflow_builds_and_uploads_dists(self):
+        text = (ROOT / ".github" / "workflows" / "release-assets.yml").read_text(encoding="utf-8")
+        self.assertIn("tags:", text)
+        self.assertIn("- \"v*\"", text)
+        self.assertIn("contents: write", text)
+        self.assertIn("python-version: \"3.11\"", text)
+        self.assertIn("python -m pip install \"setuptools>=77\"", text)
+        self.assertIn("make dist-check", text)
+        self.assertIn("python scripts/build_dist.py --out dist", text)
+        self.assertIn("actions/upload-artifact@v4", text)
+        self.assertIn("gh release view \"$GITHUB_REF_NAME\"", text)
+        self.assertIn("gh release create \"$GITHUB_REF_NAME\"", text)
+        self.assertIn("gh release upload \"$GITHUB_REF_NAME\" dist/* --clobber", text)
 
     def test_generated_workflow_uses_code_scanning_sarif(self):
         script = (ROOT / "statebind_handoff" / "statebind_handoff.py").read_text(encoding="utf-8")

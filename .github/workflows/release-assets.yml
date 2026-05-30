@@ -1,0 +1,35 @@
+name: release-assets
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build backend
+        run: python -m pip install "setuptools>=77"
+      - name: Verify release artifacts
+        run: make dist-check
+      - name: Build release artifacts
+        run: python scripts/build_dist.py --out dist
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-release-assets
+          path: dist/*
+      - name: Attach assets to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "StateBind Guard $GITHUB_REF_NAME" --notes "Automated release assets for $GITHUB_REF_NAME."
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber

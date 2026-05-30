@@ -21,7 +21,7 @@ It ships as a dependency-free Python CLI, GitHub Action, SARIF/HTML/Markdown rep
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.19"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
 statebind proof
 ```
 
@@ -83,7 +83,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.19
+- uses: FU-max-boop/statebind-guard@v0.1.20
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -103,7 +103,10 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
 ## Quality Receipts
 
 - `make public-check` runs tests, schema checks, benchmark cards, smoke demo, proof, and package smoke.
+- `make dist-check` builds the wheel and source distribution, checks sdist
+  contents, rebuilds from the sdist, and validates the installed CLI.
 - Compatibility CI runs unit tests and clean wheel package smoke on Python 3.10, 3.11, 3.12, and 3.13 across Ubuntu and macOS.
+- Release-tag CI attaches verified wheel and sdist assets to the GitHub release.
 - GitHub Action smoke dogfoods the local composite action on both passing and
   failing fixtures, verifying outputs and reports in each path.
 - The repository and generated workflows upload SARIF through GitHub code scanning, not only as an artifact.

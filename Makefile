@@ -1,4 +1,4 @@
-.PHONY: smoke test benchmark schema-check validate-demo public-check install-skill package-check
+.PHONY: smoke test benchmark schema-check validate-demo public-check install-skill package-check dist-check
 
 smoke:
 	bash scripts/run_smoke_test.sh
@@ -60,3 +60,33 @@ package-check:
 	test -s statebind-summary.md; \
 	test -s statebind-report.html; \
 	"$$tmpdir/venv/bin/statebind" doctor --repo . >/dev/null
+
+dist-check:
+	set -e; \
+	tmpdir="$$(mktemp -d)"; \
+	version="$$(python -c 'import re; print(re.search(r"version = \"([^\"]+)\"", open("pyproject.toml", encoding="utf-8").read()).group(1))')"; \
+	python scripts/build_dist.py --out "$$tmpdir/dist" >/dev/null; \
+	test "$$(find "$$tmpdir/dist" -maxdepth 1 -name '*.whl' | wc -l | tr -d ' ')" = "1"; \
+	test "$$(find "$$tmpdir/dist" -maxdepth 1 -name '*.tar.gz' | wc -l | tr -d ' ')" = "1"; \
+	wheel="$$(find "$$tmpdir/dist" -maxdepth 1 -name '*.whl' -print -quit)"; \
+	sdist="$$(find "$$tmpdir/dist" -maxdepth 1 -name '*.tar.gz' -print -quit)"; \
+	case "$$wheel" in *"$$version"*) ;; *) echo "Wheel version mismatch: $$wheel" >&2; exit 1 ;; esac; \
+	case "$$sdist" in *"$$version"*) ;; *) echo "Sdist version mismatch: $$sdist" >&2; exit 1 ;; esac; \
+	tar -tf "$$sdist" | grep -q '/statebind_handoff/statebind_handoff.py'; \
+	tar -tf "$$sdist" | grep -q '/README.md'; \
+	tar -tf "$$sdist" | grep -q '/action.yml'; \
+	tar -tf "$$sdist" | grep -q '/schemas/statebind.schema.json'; \
+	PIP_CACHE_DIR="$$tmpdir/pip-cache" python -m pip wheel --no-deps --no-build-isolation -w "$$tmpdir/sdist-wheel" "$$sdist" >/dev/null; \
+	python -m venv "$$tmpdir/venv"; \
+	PIP_NO_INDEX=1 PIP_FIND_LINKS="$$tmpdir/dist" PIP_CACHE_DIR="$$tmpdir/pip-cache" "$$tmpdir/venv/bin/python" -m pip install statebind-guard >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" --version | grep -q "$$version"; \
+	"$$tmpdir/venv/bin/statebind" proof >/dev/null; \
+	cd "$$tmpdir"; \
+	git init -q; \
+	"$$tmpdir/venv/bin/statebind" init --goal "release artifact smoke" --next-command "make test" >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" policy --preset minimal --out .statebind-policy.json >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --policy .statebind-policy.json --fail-on warning --report statebind-validation.json --summary statebind-summary.md --html-report statebind-report.html >/dev/null; \
+	test -s statebind-validation.json; \
+	test -s statebind-summary.md; \
+	test -s statebind-report.html; \
+	"$$tmpdir/venv/bin/statebind" doctor --repo . --policy .statebind-policy.json >/dev/null

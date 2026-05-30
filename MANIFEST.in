@@ -1,0 +1,16 @@
+include README.md
+include LICENSE
+include CITATION.cff
+include action.yml
+include HANDOFF.md
+include statebind.json
+include .statebind-policy.json
+include .pre-commit-config.yaml
+recursive-include .github *.md *.yml
+recursive-include data *.json
+recursive-include docs *.md *.html *.json *.png *.svg
+recursive-include examples *.md *.yml
+recursive-include integrations/codex-skill/statebind-handoff *.md *.py *.yaml
+recursive-include schemas *.json
+recursive-include scripts *.py *.sh
+recursive-include tests *.py

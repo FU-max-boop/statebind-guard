@@ -39,9 +39,9 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.19"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.20"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.19"
+SOURCE_VERSION = "0.1.20"
 
 
 def resolve_package_version() -> str:

@@ -20,7 +20,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.19"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
 statebind proof
 ```
 
@@ -53,6 +53,14 @@ pins the released action and has a passing workflow run with JSON, SARIF,
 Markdown, and HTML artifacts:
 [run 26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
 
+Release receipt: each `v*` tag builds and verifies both a Python wheel and
+source distribution, then attaches those assets to the GitHub release. The
+local gate is:
+
+```bash
+make dist-check
+```
+
 ## Why This Matters
 
 Coding agents increasingly resume work from summaries, retrieval contexts, memory files, and tool traces. These handoffs often preserve narrative context but lose operational state: the next agent may know what happened but not exactly which file, command, commit, PR, issue, or artifact to act on.
@@ -74,7 +82,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.19"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -96,7 +104,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.19"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -122,7 +130,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.19
+    rev: v0.1.20
     hooks:
       - id: statebind-guard
 ```
@@ -139,6 +147,7 @@ Run the local quality checks:
 ```bash
 make test
 make benchmark
+make dist-check
 make public-check
 ```
 
@@ -154,7 +163,7 @@ in CI.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.19
+- uses: FU-max-boop/statebind-guard@v0.1.20
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

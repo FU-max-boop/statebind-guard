@@ -48,12 +48,15 @@ Passes when:
 - schema generation matches the tracked schema file
 - package smoke builds a wheel, installs it into a clean virtual environment,
   and verifies the installed CLI
+- release artifact smoke builds both a wheel and source distribution, checks
+  sdist contents, rebuilds from the sdist, and validates the installed CLI
 - the GitHub Action smoke tests both a passing fixture and a failing fixture,
   including outputs and JSON/SARIF/Markdown/HTML reports
 - CI runs the package smoke on Python 3.10, 3.11, 3.12, and 3.13 across
   Ubuntu and macOS
 - production workflows upload SARIF through GitHub code scanning with
   `security-events: write`
+- release tags attach verified wheel and sdist assets to the GitHub release
 
 Run:
 

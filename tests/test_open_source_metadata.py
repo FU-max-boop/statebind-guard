@@ -17,7 +17,7 @@ class OpenSourceMetadataTests(unittest.TestCase):
         text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
         self.assertIn("cff-version: 1.2.0", text)
         self.assertIn('title: "StateBind Guard"', text)
-        self.assertIn('version: "0.1.19"', text)
+        self.assertIn('version: "0.1.20"', text)
         self.assertIn("repository-code: \"https://github.com/FU-max-boop/statebind-guard\"", text)
         self.assertIn("license: MIT", text)
 
@@ -26,6 +26,10 @@ class OpenSourceMetadataTests(unittest.TestCase):
         version_line = next(line for line in pyproject.splitlines() if line.startswith("version = "))
         version = version_line.split('"')[1]
         self.assertEqual(__version__, version)
+        self.assertIn('license = "MIT"', pyproject)
+        self.assertIn('requires = ["setuptools>=77"]', pyproject)
+        self.assertNotIn("license = {", pyproject)
+        self.assertNotIn("License :: OSI Approved", pyproject)
         self.assertIn(f'version: "{version}"', (ROOT / "CITATION.cff").read_text(encoding="utf-8"))
         self.assertIn(f"rev: v{version}", (ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
 
@@ -39,6 +43,21 @@ class OpenSourceMetadataTests(unittest.TestCase):
         self.assertIn("PIP_FIND_LINKS=\"$$tmpdir/dist\"", makefile)
         self.assertIn("pip install statebind-guard", makefile)
         self.assertIn("statebind\" --version", makefile)
+
+    def test_dist_check_builds_release_artifacts(self):
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        build_script = (ROOT / "scripts" / "build_dist.py").read_text(encoding="utf-8")
+        manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+
+        self.assertIn("dist-check:", makefile)
+        self.assertIn("scripts/build_dist.py", makefile)
+        self.assertIn("build_wheel", build_script)
+        self.assertIn("build_sdist", build_script)
+        self.assertIn("PIP_FIND_LINKS=\"$$tmpdir/dist\"", makefile)
+        self.assertIn("statebind\" proof", makefile)
+        self.assertIn("statebind\" doctor", makefile)
+        self.assertIn("recursive-include schemas *.json", manifest)
+        self.assertIn("recursive-include docs", manifest)
 
     def test_codex_skill_script_is_current_and_installable(self):
         self.assertEqual(SKILL_SCRIPT.read_text(encoding="utf-8"), SCRIPT.read_text(encoding="utf-8"))
