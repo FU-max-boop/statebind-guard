@@ -1,0 +1,564 @@
+{
+  "data": "data/statebind_guard_deployed_corpus.json",
+  "records": 26,
+  "category_counts": {
+    "external_adoption": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "packaging_compatibility": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "public_surface": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "release_artifact": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "release_gate": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "release_version": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "runtime_adapter": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "schema_contract": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "validation_report": {
+      "pass": 2,
+      "fail": 2,
+      "total": 4
+    },
+    "workflow_run": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    }
+  },
+  "summary": {
+    "keyword_role_baseline": {
+      "n": 26,
+      "accuracy": 0.5,
+      "precision_accept": 0.5,
+      "recall_accept": 1.0,
+      "f1_accept": 0.6666666666666666,
+      "unsafe_accept_rate": 1.0,
+      "tp": 13,
+      "tn": 0,
+      "fp": 13,
+      "fn": 0
+    },
+    "statebind_guard": {
+      "n": 26,
+      "accuracy": 1.0,
+      "precision_accept": 1.0,
+      "recall_accept": 1.0,
+      "f1_accept": 1.0,
+      "unsafe_accept_rate": 0.0,
+      "tp": 13,
+      "tn": 13,
+      "fp": 0,
+      "fn": 0
+    },
+    "visibility_baseline": {
+      "n": 26,
+      "accuracy": 0.5,
+      "precision_accept": 0.5,
+      "recall_accept": 1.0,
+      "f1_accept": 0.6666666666666666,
+      "unsafe_accept_rate": 1.0,
+      "tp": 13,
+      "tn": 0,
+      "fp": 13,
+      "fn": 0
+    }
+  },
+  "predictions": [
+    {
+      "method": "visibility_baseline",
+      "record_id": "release-wheel-bound-v020",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "release-wheel-bound-v020",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "release-wheel-bound-v020",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "release-wheel-visible-v020",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "release-wheel-visible-v020",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "release-wheel-visible-v020",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "release-sdist-bound-v020",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "release-sdist-bound-v020",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "release-sdist-bound-v020",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "release-sdist-visible-v020",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "release-sdist-visible-v020",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "release-sdist-visible-v020",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "release-assets-run-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "release-assets-run-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "release-assets-run-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "release-assets-run-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "release-assets-run-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "release-assets-run-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "statebind-report-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "statebind-report-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "statebind-report-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "statebind-report-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "statebind-report-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "statebind-report-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "sarif-upload-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "sarif-upload-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "sarif-upload-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "sarif-upload-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "sarif-upload-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "sarif-upload-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "skill-sync-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "skill-sync-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "skill-sync-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "skill-sync-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "skill-sync-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "skill-sync-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "schema-contract-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "schema-contract-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "schema-contract-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "schema-contract-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "schema-contract-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "schema-contract-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "public-gate-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "public-gate-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "public-gate-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "public-gate-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "public-gate-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "public-gate-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "dist-gate-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "dist-gate-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "dist-gate-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "dist-gate-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "dist-gate-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "dist-gate-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "pages-deploy-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "pages-deploy-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "pages-deploy-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "pages-deploy-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "pages-deploy-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "pages-deploy-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "external-adoption-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "external-adoption-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "external-adoption-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "external-adoption-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "external-adoption-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "external-adoption-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "build-backend-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "build-backend-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "build-backend-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "build-backend-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "build-backend-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "build-backend-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "tag-commit-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "tag-commit-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "tag-commit-bound",
+      "expected_pass": true,
+      "predicted_pass": true
+    },
+    {
+      "method": "visibility_baseline",
+      "record_id": "tag-commit-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "keyword_role_baseline",
+      "record_id": "tag-commit-visible",
+      "expected_pass": false,
+      "predicted_pass": true
+    },
+    {
+      "method": "statebind_guard",
+      "record_id": "tag-commit-visible",
+      "expected_pass": false,
+      "predicted_pass": false
+    }
+  ]
+}

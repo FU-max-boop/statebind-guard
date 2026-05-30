@@ -17,11 +17,13 @@ active target -> semantic role -> executable handle
 ```
 
 It ships as a dependency-free Python CLI, GitHub Action, SARIF/HTML/Markdown reports, policy-as-code gates, and benchmark cards.
+The current benchmark package includes a deployed-derived corpus from sanitized
+release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
 statebind proof
 ```
 
@@ -83,7 +85,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.20
+- uses: FU-max-boop/statebind-guard@v0.1.21
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -103,6 +105,8 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
 ## Quality Receipts
 
 - `make public-check` runs tests, schema checks, benchmark cards, smoke demo, proof, and package smoke.
+- The deployed-derived result card tests sanitized release, CI, packaging,
+  SARIF/report, Pages, skill-sync, and external-adoption handoffs.
 - `make dist-check` builds the wheel and source distribution, checks sdist
   contents, rebuilds from the sdist, and validates the installed CLI.
 - Compatibility CI runs unit tests and clean wheel package smoke on Python 3.10, 3.11, 3.12, and 3.13 across Ubuntu and macOS.

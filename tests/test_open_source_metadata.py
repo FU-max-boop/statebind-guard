@@ -17,7 +17,7 @@ class OpenSourceMetadataTests(unittest.TestCase):
         text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
         self.assertIn("cff-version: 1.2.0", text)
         self.assertIn('title: "StateBind Guard"', text)
-        self.assertIn('version: "0.1.20"', text)
+        self.assertIn('version: "0.1.21"', text)
         self.assertIn("repository-code: \"https://github.com/FU-max-boop/statebind-guard\"", text)
         self.assertIn("license: MIT", text)
 

@@ -1,0 +1,236 @@
+[
+  {
+    "id": "release-wheel-bound-v020",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard v0.1.20 release-asset workflow",
+    "category": "release_artifact",
+    "label": "pass",
+    "required_bindings": [{"role": "release_wheel_artifact", "handle": "statebind_guard-0.1.20-py3-none-any.whl"}],
+    "handoff": "# Release handoff\n\nrelease_wheel_artifact: `statebind_guard-0.1.20-py3-none-any.whl`; evidence: GitHub release asset list for tag `v0.1.20`.\nsource_distribution: `statebind_guard-0.1.20.tar.gz`; evidence: same release asset list.\n\nNext action: install from the wheel in a clean virtual environment."
+  },
+  {
+    "id": "release-wheel-visible-v020",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard v0.1.20 release-asset workflow",
+    "category": "release_artifact",
+    "label": "fail",
+    "required_bindings": [{"role": "release_wheel_artifact", "handle": "statebind_guard-0.1.20-py3-none-any.whl"}],
+    "handoff": "# Release handoff\n\nThe release wheel artifact was uploaded.\nVisible files: `statebind_guard-0.1.20-py3-none-any.whl`, `statebind_guard-0.1.20.tar.gz`, and `statebind-validation.json`.\n\nNext action: install from the artifact."
+  },
+  {
+    "id": "release-sdist-bound-v020",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard v0.1.20 sdist verification",
+    "category": "release_artifact",
+    "label": "pass",
+    "required_bindings": [{"role": "source_distribution", "handle": "statebind_guard-0.1.20.tar.gz"}],
+    "handoff": "# Release handoff\n\nsource_distribution: `statebind_guard-0.1.20.tar.gz`; evidence: release-assets workflow artifact.\nrelease_wheel_artifact: `statebind_guard-0.1.20-py3-none-any.whl`; evidence: wheel upload.\n\nNext action: inspect the source distribution contents before announcing the release."
+  },
+  {
+    "id": "release-sdist-visible-v020",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard v0.1.20 sdist verification",
+    "category": "release_artifact",
+    "label": "fail",
+    "required_bindings": [{"role": "source_distribution", "handle": "statebind_guard-0.1.20.tar.gz"}],
+    "handoff": "# Release handoff\n\nThe source distribution is visible in the downloaded artifact folder.\nVisible files: `statebind_guard-0.1.20.tar.gz`, `statebind_guard-0.1.20-py3-none-any.whl`, and `python-release-assets.zip`.\n\nNext action: inspect the archive."
+  },
+  {
+    "id": "release-assets-run-bound",
+    "source_type": "deployed",
+    "source_event": "GitHub Actions run 26686998456",
+    "category": "workflow_run",
+    "label": "pass",
+    "required_bindings": [{"role": "release_assets_workflow_run", "handle": "26686998456"}],
+    "handoff": "# CI handoff\n\nrelease_assets_workflow_run: `26686998456`; evidence: tag-triggered release-assets workflow for `v0.1.20`.\nmain_smoke_workflow_run: `26686998474`; evidence: push-triggered smoke workflow for the same commit.\n\nNext action: download artifacts from run `26686998456`."
+  },
+  {
+    "id": "release-assets-run-visible",
+    "source_type": "deployed",
+    "source_event": "GitHub Actions run 26686998456",
+    "category": "workflow_run",
+    "label": "fail",
+    "required_bindings": [{"role": "release_assets_workflow_run", "handle": "26686998456"}],
+    "handoff": "# CI handoff\n\nThe release assets workflow run is the tag run.\nVisible run IDs: `26686998456`, `26686998474`, and `26686998462`.\n\nNext action: download the workflow artifact."
+  },
+  {
+    "id": "statebind-report-bound",
+    "source_type": "deployed",
+    "source_event": "Repository dogfood StateBind workflow artifact",
+    "category": "validation_report",
+    "label": "pass",
+    "required_bindings": [{"role": "validation_report", "handle": "statebind-validation.json"}],
+    "handoff": "# Validation handoff\n\nvalidation_report: `statebind-validation.json`; evidence: repository dogfood workflow artifact.\nvalidation_sarif: `statebind-validation.sarif`; evidence: code-scanning upload input.\n\nNext action: parse `statebind-validation.json` and confirm `passed=true`."
+  },
+  {
+    "id": "statebind-report-visible",
+    "source_type": "deployed",
+    "source_event": "Repository dogfood StateBind workflow artifact",
+    "category": "validation_report",
+    "label": "fail",
+    "required_bindings": [{"role": "validation_report", "handle": "statebind-validation.json"}],
+    "handoff": "# Validation handoff\n\nThe validation report was downloaded from the workflow artifact.\nVisible files: `statebind-validation.json`, `statebind-validation.sarif`, `statebind-summary.md`, and `statebind-report.html`.\n\nNext action: parse the report."
+  },
+  {
+    "id": "sarif-upload-bound",
+    "source_type": "deployed",
+    "source_event": "StateBind SARIF code-scanning workflow",
+    "category": "validation_report",
+    "label": "pass",
+    "required_bindings": [{"role": "code_scanning_sarif", "handle": "statebind-validation.sarif"}],
+    "handoff": "# Code scanning handoff\n\ncode_scanning_sarif: `statebind-validation.sarif`; evidence: `github/codeql-action/upload-sarif@v3` input.\njson_report: `statebind-validation.json`; evidence: machine report artifact.\n\nNext action: upload the SARIF file, not the JSON report."
+  },
+  {
+    "id": "sarif-upload-visible",
+    "source_type": "deployed",
+    "source_event": "StateBind SARIF code-scanning workflow",
+    "category": "validation_report",
+    "label": "fail",
+    "required_bindings": [{"role": "code_scanning_sarif", "handle": "statebind-validation.sarif"}],
+    "handoff": "# Code scanning handoff\n\nThe code scanning SARIF output is present in the artifact bundle.\nVisible files: `statebind-validation.sarif`, `statebind-validation.json`, and `statebind-summary.md`.\n\nNext action: upload the report."
+  },
+  {
+    "id": "skill-sync-bound",
+    "source_type": "deployed",
+    "source_event": "Codex skill sync release",
+    "category": "runtime_adapter",
+    "label": "pass",
+    "required_bindings": [{"role": "codex_skill_script", "handle": "integrations/codex-skill/statebind-handoff/scripts/statebind_handoff.py"}],
+    "handoff": "# Adapter handoff\n\ncodex_skill_script: `integrations/codex-skill/statebind-handoff/scripts/statebind_handoff.py`; evidence: installed Codex skill smoke.\nsource_cli_script: `statebind_handoff/statebind_handoff.py`; evidence: package entry point.\n\nNext action: compare both files before release."
+  },
+  {
+    "id": "skill-sync-visible",
+    "source_type": "deployed",
+    "source_event": "Codex skill sync release",
+    "category": "runtime_adapter",
+    "label": "fail",
+    "required_bindings": [{"role": "codex_skill_script", "handle": "integrations/codex-skill/statebind-handoff/scripts/statebind_handoff.py"}],
+    "handoff": "# Adapter handoff\n\nThe Codex skill script is visible in the integration tree.\nVisible files: `integrations/codex-skill/statebind-handoff/scripts/statebind_handoff.py`, `statebind_handoff/statebind_handoff.py`, and `scripts/install_codex_skill.sh`.\n\nNext action: compare the scripts."
+  },
+  {
+    "id": "schema-contract-bound",
+    "source_type": "deployed",
+    "source_event": "Schema/report upgrade release",
+    "category": "schema_contract",
+    "label": "pass",
+    "required_bindings": [{"role": "schema_contract_file", "handle": "schemas/statebind.schema.json"}],
+    "handoff": "# Schema handoff\n\nschema_contract_file: `schemas/statebind.schema.json`; evidence: `make schema-check` diff target.\npolicy_schema_file: `schemas/statebind-policy.schema.json`; evidence: policy schema diff target.\n\nNext action: regenerate and compare `schemas/statebind.schema.json`."
+  },
+  {
+    "id": "schema-contract-visible",
+    "source_type": "deployed",
+    "source_event": "Schema/report upgrade release",
+    "category": "schema_contract",
+    "label": "fail",
+    "required_bindings": [{"role": "schema_contract_file", "handle": "schemas/statebind.schema.json"}],
+    "handoff": "# Schema handoff\n\nThe schema contract file was part of the release gate.\nVisible files: `schemas/statebind.schema.json`, `schemas/statebind-policy.schema.json`, and `docs/handoff_contract.md`.\n\nNext action: regenerate the schema."
+  },
+  {
+    "id": "public-gate-bound",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard release gate",
+    "category": "release_gate",
+    "label": "pass",
+    "required_bindings": [{"role": "release_gate_command", "handle": "make public-check"}],
+    "handoff": "# Release gate handoff\n\nrelease_gate_command: `make public-check`; evidence: final local gate before pushing `v0.1.20`.\nquick_unit_gate: `python -m unittest discover -s tests`; evidence: narrower preflight.\n\nNext action: run `make public-check` before tagging."
+  },
+  {
+    "id": "public-gate-visible",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard release gate",
+    "category": "release_gate",
+    "label": "fail",
+    "required_bindings": [{"role": "release_gate_command", "handle": "make public-check"}],
+    "handoff": "# Release gate handoff\n\nThe release gate command was run before tagging.\nVisible commands: `make public-check`, `make dist-check`, and `python -m unittest discover -s tests`.\n\nNext action: run the gate."
+  },
+  {
+    "id": "dist-gate-bound",
+    "source_type": "deployed",
+    "source_event": "Release asset verification gate",
+    "category": "release_gate",
+    "label": "pass",
+    "required_bindings": [{"role": "dist_artifact_gate", "handle": "make dist-check"}],
+    "handoff": "# Release asset handoff\n\ndist_artifact_gate: `make dist-check`; evidence: wheel/sdist build and clean-install smoke.\npublic_release_gate: `make public-check`; evidence: broader repository gate.\n\nNext action: run `make dist-check` after changing packaging metadata."
+  },
+  {
+    "id": "dist-gate-visible",
+    "source_type": "deployed",
+    "source_event": "Release asset verification gate",
+    "category": "release_gate",
+    "label": "fail",
+    "required_bindings": [{"role": "dist_artifact_gate", "handle": "make dist-check"}],
+    "handoff": "# Release asset handoff\n\nThe dist artifact gate is one of the release checks.\nVisible commands: `make dist-check`, `make package-check`, and `make public-check`.\n\nNext action: run the release artifact check."
+  },
+  {
+    "id": "pages-deploy-bound",
+    "source_type": "deployed",
+    "source_event": "GitHub Pages deployment",
+    "category": "public_surface",
+    "label": "pass",
+    "required_bindings": [{"role": "project_page_url", "handle": "https://fu-max-boop.github.io/statebind-guard/"}],
+    "handoff": "# Public surface handoff\n\nproject_page_url: `https://fu-max-boop.github.io/statebind-guard/`; evidence: GitHub Pages HTTP 200 check.\nrepository_url: `https://github.com/FU-max-boop/statebind-guard`; evidence: release source.\n\nNext action: verify the project page before outreach."
+  },
+  {
+    "id": "pages-deploy-visible",
+    "source_type": "deployed",
+    "source_event": "GitHub Pages deployment",
+    "category": "public_surface",
+    "label": "fail",
+    "required_bindings": [{"role": "project_page_url", "handle": "https://fu-max-boop.github.io/statebind-guard/"}],
+    "handoff": "# Public surface handoff\n\nThe project page URL was checked after deployment.\nVisible URLs: `https://fu-max-boop.github.io/statebind-guard/`, `https://github.com/FU-max-boop/statebind-guard`, and `https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.20`.\n\nNext action: verify the public page."
+  },
+  {
+    "id": "external-adoption-bound",
+    "source_type": "deployed",
+    "source_event": "Separate-repository adoption receipt",
+    "category": "external_adoption",
+    "label": "pass",
+    "required_bindings": [{"role": "external_adoption_repo", "handle": "https://github.com/FU-max-boop/statebind-guard-adoption-example"}],
+    "handoff": "# Adoption handoff\n\nexternal_adoption_repo: `https://github.com/FU-max-boop/statebind-guard-adoption-example`; evidence: separate public repository consuming the released action.\nadoption_run_id: `26683277633`; evidence: passing external workflow run.\n\nNext action: cite the separate repository as the adoption receipt."
+  },
+  {
+    "id": "external-adoption-visible",
+    "source_type": "deployed",
+    "source_event": "Separate-repository adoption receipt",
+    "category": "external_adoption",
+    "label": "fail",
+    "required_bindings": [{"role": "external_adoption_repo", "handle": "https://github.com/FU-max-boop/statebind-guard-adoption-example"}],
+    "handoff": "# Adoption handoff\n\nThe external adoption repository is visible in the launch notes.\nVisible references: `https://github.com/FU-max-boop/statebind-guard-adoption-example`, `26683277633`, and `https://github.com/FU-max-boop/statebind-guard`.\n\nNext action: cite the receipt."
+  },
+  {
+    "id": "build-backend-bound",
+    "source_type": "deployed",
+    "source_event": "Python packaging compatibility fix",
+    "category": "packaging_compatibility",
+    "label": "pass",
+    "required_bindings": [{"role": "build_backend_requirement", "handle": "setuptools>=77"}],
+    "handoff": "# Packaging handoff\n\nbuild_backend_requirement: `setuptools>=77`; evidence: modern SPDX license metadata and release workflow setup.\nlegacy_backend_requirement: `setuptools>=68`; evidence: previous compatibility baseline.\n\nNext action: install `setuptools>=77` before building release artifacts."
+  },
+  {
+    "id": "build-backend-visible",
+    "source_type": "deployed",
+    "source_event": "Python packaging compatibility fix",
+    "category": "packaging_compatibility",
+    "label": "fail",
+    "required_bindings": [{"role": "build_backend_requirement", "handle": "setuptools>=77"}],
+    "handoff": "# Packaging handoff\n\nThe build backend requirement was updated during the release asset work.\nVisible requirements: `setuptools>=77`, `setuptools>=68`, and `python>=3.10`.\n\nNext action: install the backend."
+  },
+  {
+    "id": "tag-commit-bound",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard v0.1.20 tag",
+    "category": "release_version",
+    "label": "pass",
+    "required_bindings": [{"role": "release_tag", "handle": "v0.1.20"}],
+    "handoff": "# Version handoff\n\nrelease_tag: `v0.1.20`; evidence: latest GitHub release with wheel and sdist assets.\nprevious_release_tag: `v0.1.19`; evidence: prior release before release-assets workflow.\n\nNext action: link `v0.1.20` in README and docs."
+  },
+  {
+    "id": "tag-commit-visible",
+    "source_type": "deployed",
+    "source_event": "StateBind Guard v0.1.20 tag",
+    "category": "release_version",
+    "label": "fail",
+    "required_bindings": [{"role": "release_tag", "handle": "v0.1.20"}],
+    "handoff": "# Version handoff\n\nThe release tag is the latest one.\nVisible tags: `v0.1.20`, `v0.1.19`, and `v0.1.18`.\n\nNext action: update the docs to the current tag."
+  }
+]

@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 
 
-SOURCE_VERSION = "0.1.20"
+SOURCE_VERSION = "0.1.21"
 
 
 def _resolve_version() -> str:

@@ -227,6 +227,19 @@ def render_card(records: list[dict], summary: dict[str, dict], title: str) -> st
             lines.append(
                 f"| {category} | {counts['total']} | {counts['pass']} | {counts['fail']} |"
             )
+    if any(record.get("source_type") == "deployed" for record in records):
+        scope_lines = [
+            f"This benchmark contains {len(records)} sanitized, deployed-derived",
+            "handoff snippets from real StateBind Guard release, CI, action,",
+            "packaging, documentation, and adoption workflows. It preserves the",
+            "role/handle structure while removing private local paths and secrets.",
+        ]
+    else:
+        scope_lines = [
+            f"This benchmark contains {len(records)} anonymized, real-shaped",
+            "handoff snippets. It is designed to test the visible-but-unbound failure",
+            "mode, not to claim broad deployed-agent coverage.",
+        ]
     lines.extend(
         [
             "",
@@ -236,9 +249,7 @@ def render_card(records: list[dict], summary: dict[str, dict], title: str) -> st
             "",
             "## Scope",
             "",
-            f"This benchmark contains {len(records)} anonymized, real-shaped",
-            "handoff snippets. It is designed to test the visible-but-unbound failure",
-            "mode, not to claim broad deployed-agent coverage.",
+            *scope_lines,
             "",
             "## Next Upgrade",
             "",

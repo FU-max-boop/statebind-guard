@@ -8,6 +8,7 @@
 **Launch note:** [Visible context is not executable state](docs/launch_note.md)
 **Launch package:** [copy-paste proof, posts, and maintainer pitch](docs/launch_package.md)
 **Adoption receipt:** [separate-repository GitHub Action proof](docs/adoption_examples.md)
+**Deployed corpus:** [sanitized release, CI, packaging, and adoption handoffs](docs/result_cards/statebind_guard_deployed_corpus.md)
 **Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
@@ -20,7 +21,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
 statebind proof
 ```
 
@@ -41,7 +42,7 @@ active patch -> current-file role -> exact file path
 
 This repository packages five things:
 
-1. **Benchmark artifact**: seed and natural-handoff snippets, baselines, result cards, and tests.
+1. **Benchmark artifact**: seed, natural-handoff, failure-corpus, and deployed-derived snippets with baselines, result cards, and tests.
 2. **Practical handoff tool**: a Codex-compatible `statebind-handoff` skill plus a lightweight local script for generating and checking executable handoffs.
 3. **CI-ready validator**: a dependency-free `statebind` CLI that emits structured findings for versioned `statebind.json` contracts.
 4. **Policy-as-code gate**: a small `.statebind-policy.json` file for required roles, confidence floors, and risk requirements.
@@ -82,7 +83,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -94,6 +95,7 @@ Then inspect:
 - [launch package](docs/launch_package.md)
 - [quick demo](docs/quick_demo.md)
 - [adoption examples](docs/adoption_examples.md)
+- [deployed corpus result card](docs/result_cards/statebind_guard_deployed_corpus.md)
 - [roadmap](docs/roadmap.md)
 - [adoption feedback](docs/adoption_feedback.md)
 - [failure cases](docs/failure_cases.md)
@@ -104,7 +106,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.20"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -130,7 +132,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.20
+    rev: v0.1.21
     hooks:
       - id: statebind-guard
 ```
@@ -163,7 +165,7 @@ in CI.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.20
+- uses: FU-max-boop/statebind-guard@v0.1.21
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

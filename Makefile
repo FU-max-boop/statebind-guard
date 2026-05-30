@@ -22,6 +22,11 @@ benchmark:
 		--card docs/result_cards/statebind_guard_failure_corpus.md \
 		--json docs/result_cards/statebind_guard_failure_corpus_metrics.json \
 		--title "Failure Corpus"
+	python scripts/run_statebind_benchmark.py \
+		--data data/statebind_guard_deployed_corpus.json \
+		--card docs/result_cards/statebind_guard_deployed_corpus.md \
+		--json docs/result_cards/statebind_guard_deployed_corpus_metrics.json \
+		--title "Deployed Corpus"
 
 schema-check:
 	python statebind_handoff/statebind_handoff.py schema --out /tmp/statebind.schema.json >/dev/null
