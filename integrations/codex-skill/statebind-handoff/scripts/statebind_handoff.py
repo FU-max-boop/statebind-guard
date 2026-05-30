@@ -39,9 +39,9 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.17"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.18"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.17"
+SOURCE_VERSION = "0.1.18"
 
 
 def resolve_package_version() -> str:
@@ -388,6 +388,10 @@ on:
   pull_request:
   push:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   validate-handoff:
     runs-on: ubuntu-latest
@@ -407,6 +411,12 @@ jobs:
           path: |
             {report_path}
             {sarif_path}
+            statebind-summary.md
+            statebind-report.html
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: {sarif_path}
 """
 
 

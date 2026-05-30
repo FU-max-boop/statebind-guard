@@ -50,6 +50,10 @@ Passes when:
   and verifies the installed CLI
 - the GitHub Action smoke tests both a passing fixture and a failing fixture,
   including outputs and JSON/SARIF/Markdown/HTML reports
+- CI runs the package smoke on Python 3.10, 3.11, 3.12, and 3.13 across
+  Ubuntu and macOS
+- production workflows upload SARIF through GitHub code scanning with
+  `security-events: write`
 
 Run:
 

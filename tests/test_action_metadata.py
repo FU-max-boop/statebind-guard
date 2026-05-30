@@ -38,6 +38,12 @@ class GitHubActionMetadataTests(unittest.TestCase):
 
     def test_repository_ci_smokes_local_action(self):
         text = (ROOT / ".github" / "workflows" / "smoke.yml").read_text(encoding="utf-8")
+        self.assertIn("compatibility:", text)
+        self.assertIn("ubuntu-latest", text)
+        self.assertIn("macos-latest", text)
+        for version in ("3.10", "3.11", "3.12", "3.13"):
+            self.assertIn(version, text)
+        self.assertIn("make package-check", text)
         self.assertIn("action-smoke:", text)
         self.assertIn("uses: ./", text)
         self.assertIn("id: statebind", text)
@@ -65,6 +71,7 @@ class GitHubActionMetadataTests(unittest.TestCase):
 
     def test_repository_dogfoods_statebind_workflow(self):
         text = (ROOT / ".github" / "workflows" / "statebind-guard.yml").read_text(encoding="utf-8")
+        self.assertIn("security-events: write", text)
         self.assertIn("uses: ./", text)
         self.assertIn("handoff: HANDOFF.md", text)
         self.assertIn("statebind-json: statebind.json", text)
@@ -72,6 +79,14 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("statebind-validation.sarif", text)
         self.assertIn("statebind-summary.md", text)
         self.assertIn("statebind-report.html", text)
+        self.assertIn("github/codeql-action/upload-sarif@v3", text)
+
+    def test_generated_workflow_uses_code_scanning_sarif(self):
+        script = (ROOT / "statebind_handoff" / "statebind_handoff.py").read_text(encoding="utf-8")
+        self.assertIn("security-events: write", script)
+        self.assertIn("github/codeql-action/upload-sarif@v3", script)
+        self.assertIn("statebind-summary.md", script)
+        self.assertIn("statebind-report.html", script)
 
 
 if __name__ == "__main__":

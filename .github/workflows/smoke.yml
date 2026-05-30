@@ -17,6 +17,24 @@ jobs:
       - name: Run public-ready check
         run: bash scripts/check_public_ready.sh
 
+  compatibility:
+    name: compatibility (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run unit tests
+        run: python -m unittest discover -s tests
+      - name: Run clean wheel package smoke
+        run: make package-check
+
   action-smoke:
     runs-on: ubuntu-latest
     steps:
