@@ -6,6 +6,12 @@ StateBind Guard needs real workflow pressure, not only local examples. The most 
 
 Open an adoption report when you try StateBind Guard in a repository, even if you decide not to keep it.
 
+Start with:
+
+```bash
+statebind audit --repo . --markdown statebind-adoption-audit.md
+```
+
 Include:
 
 - repository or workflow type
@@ -42,4 +48,3 @@ Bad handoff: rerun the previous test
 Expected binding: failing_test -> pytest tests/test_api.py::test_stream
 Impact: resumed agent ran the broad suite and missed the focused regression
 ```
-

@@ -445,7 +445,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.21", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.22", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -501,6 +501,76 @@ class StateBindHandoffTests(unittest.TestCase):
             )
             self.assertEqual(quiet_proc.returncode, 0)
             self.assertEqual(quiet_proc.stdout, "")
+
+    def test_audit_guides_pre_adoption_repo(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            (repo / "AGENTS.md").write_text("# Agent notes\nUse handoffs for long coding tasks.\n")
+            (repo / "Makefile").write_text("test:\n\tpython -m unittest discover -s tests\n")
+
+            audit_md = repo / "statebind-audit.md"
+            audit_json = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "audit",
+                    "--repo",
+                    ".",
+                    "--json",
+                    "--markdown",
+                    str(audit_md),
+                ],
+                repo,
+            )
+            data = json.loads(audit_json)
+
+            self.assertEqual(data["adoption_level"], "partial")
+            self.assertEqual(data["suggested_next_command"]["command"], "make test")
+            self.assertTrue(any(candidate["path"] == "AGENTS.md" for candidate in data["handoff_candidates"]))
+            self.assertTrue(any(check["code"] == "statebind_json" for check in data["checks"]))
+            self.assertIn("statebind init", "\n".join(data["recommended_commands"]))
+
+            audit_text = audit_md.read_text()
+            self.assertIn("# StateBind Adoption Audit", audit_text)
+            self.assertIn("Smallest Adoption PR", audit_text)
+            self.assertIn('statebind init --goal "Preserve executable coding-agent handoffs" --next-command "make test"', audit_text)
+            self.assertNotIn(str(repo), audit_text)
+
+    def test_audit_reports_wired_repo_after_init(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            run(["git", "init", "-q"], repo)
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--goal",
+                    "keep handoffs executable",
+                    "--next-command",
+                    "make test",
+                ],
+                repo,
+            )
+            run(["python", str(SCRIPT), "policy", "--out", ".statebind-policy.json"], repo)
+
+            audit_json = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "audit",
+                    "--repo",
+                    ".",
+                    "--json",
+                ],
+                repo,
+            )
+            data = json.loads(audit_json)
+            self.assertEqual(data["adoption_level"], "wired")
+            codes = {check["code"]: check["status"] for check in data["checks"]}
+            self.assertEqual(codes["statebind_json"], "ok")
+            self.assertEqual(codes["github_action"], "ok")
+            self.assertEqual(codes["policy_file"], "ok")
 
     def test_init_refuses_to_partially_overwrite_existing_files(self):
         with tempfile.TemporaryDirectory() as td:

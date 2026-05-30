@@ -8,6 +8,7 @@
 **Launch note:** [Visible context is not executable state](docs/launch_note.md)
 **Launch package:** [copy-paste proof, posts, and maintainer pitch](docs/launch_package.md)
 **Adoption receipt:** [separate-repository GitHub Action proof](docs/adoption_examples.md)
+**Adoption audit:** [pre-adoption scanner for third-party repositories](docs/adoption_audit.md)
 **Deployed corpus:** [sanitized release, CI, packaging, and adoption handoffs](docs/result_cards/statebind_guard_deployed_corpus.md)
 **Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
@@ -21,7 +22,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.22"
 statebind proof
 ```
 
@@ -83,7 +84,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.22"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -106,7 +107,8 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.21"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.22"
+statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -132,7 +134,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.21
+    rev: v0.1.22
     hooks:
       - id: statebind-guard
 ```
@@ -161,11 +163,14 @@ presets.
 See [adoption examples](docs/adoption_examples.md) for a separate public
 repository that consumes the released GitHub Action and verifies action outputs
 in CI.
+Run `statebind audit --repo .` first when evaluating a repository that has not
+adopted StateBind yet; it reports the current adoption level, handoff-like files,
+the smallest inferred test command, and the smallest copy-paste adoption PR.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.21
+- uses: FU-max-boop/statebind-guard@v0.1.22
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -237,6 +242,7 @@ docs/
   failure_cases.md
   github_action_usage.md
   handoff_contract.md
+  adoption_audit.md
   adoption_feedback.md
   launch_package.md
   launch_note.md

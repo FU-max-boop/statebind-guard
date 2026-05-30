@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import re
 import subprocess
 import sys
@@ -37,11 +38,36 @@ COMMAND_PREFIXES = (
     "make",
     "git",
 )
+AUDIT_EXCLUDED_DIRS = {
+    ".git",
+    ".hg",
+    ".svn",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "__pycache__",
+    "build",
+    "dist",
+}
+HANDOFF_NAME_HINTS = {
+    "handoff.md",
+    "agent_handoff.md",
+    "agent-handoff.md",
+    "ai_handoff.md",
+    "ai-handoff.md",
+    "agents.md",
+    "claude.md",
+    "codex.md",
+}
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.21"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.22"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.21"
+SOURCE_VERSION = "0.1.22"
 
 
 def resolve_package_version() -> str:
@@ -1750,6 +1776,298 @@ def run_doctor(
     return 1 if report["summary"]["errors"] else 0
 
 
+def iter_repo_files(repo: Path, limit: int = 4000) -> Iterable[Path]:
+    seen = 0
+    for root, dirs, files in os.walk(repo):
+        dirs[:] = [d for d in dirs if d not in AUDIT_EXCLUDED_DIRS]
+        root_path = Path(root)
+        for file_name in files:
+            if file_name.endswith((".pyc", ".pyo", ".png", ".jpg", ".jpeg", ".gif", ".pdf", ".zip", ".tar.gz")):
+                continue
+            yield root_path / file_name
+            seen += 1
+            if seen >= limit:
+                return
+
+
+def repo_rel(repo: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(repo.resolve()).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def find_handoff_candidates(repo: Path) -> list[dict[str, str]]:
+    candidates: list[dict[str, str]] = []
+    for path in iter_repo_files(repo):
+        rel = repo_rel(repo, path)
+        name = path.name.lower()
+        rel_lower = rel.lower()
+        if path.suffix.lower() not in {"", ".md", ".markdown", ".txt"}:
+            continue
+        if name in HANDOFF_NAME_HINTS or "handoff" in rel_lower or rel_lower.endswith("/agents.md"):
+            candidates.append(
+                {
+                    "path": rel,
+                    "reason": "handoff-like filename" if "handoff" in rel_lower else "agent instruction file",
+                }
+            )
+        if len(candidates) >= 20:
+            break
+    return candidates
+
+
+def infer_next_command(repo: Path) -> dict[str, str]:
+    makefile = next((repo / name for name in ("Makefile", "makefile") if (repo / name).exists()), None)
+    if makefile:
+        text = read_optional_text(makefile)
+        for target, command in (
+            ("public-check", "make public-check"),
+            ("test", "make test"),
+            ("smoke", "make smoke"),
+        ):
+            if re.search(rf"(?m)^{re.escape(target)}\s*:", text):
+                return {"command": command, "evidence": f"{makefile.name} target `{target}`"}
+
+    package_json = repo / "package.json"
+    if package_json.exists():
+        try:
+            package = json.loads(package_json.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            package = {}
+        scripts = package.get("scripts") if isinstance(package, dict) else {}
+        if isinstance(scripts, dict) and "test" in scripts:
+            lock_command = "pnpm test" if (repo / "pnpm-lock.yaml").exists() else "npm test"
+            return {"command": lock_command, "evidence": "package.json test script"}
+
+    pyproject = repo / "pyproject.toml"
+    if pyproject.exists():
+        return {"command": "python -m pytest", "evidence": "pyproject.toml present"}
+
+    return {"command": "make test", "evidence": "default starter command; verify before committing"}
+
+
+def statebind_workflow_paths(repo: Path) -> list[str]:
+    workflow_dir = repo / ".github" / "workflows"
+    if not workflow_dir.exists():
+        return []
+    paths: list[str] = []
+    for path in sorted(workflow_dir.glob("*.y*ml")):
+        text = read_optional_text(path)
+        if "statebind-guard" in text or "statebind-json" in text:
+            paths.append(repo_rel(repo, path))
+    return paths
+
+
+def audit_report(
+    repo: Path,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    policy_path: Path | None,
+) -> dict[str, Any]:
+    repo = repo.resolve()
+    checks: list[DoctorCheck] = []
+    if not repo.exists():
+        add_doctor_check(checks, "error", "repo", f"Repository path does not exist: {repo}")
+        summary = {"ok": 0, "warnings": 0, "errors": 1}
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "repo": str(repo),
+            "adoption_level": "unavailable",
+            "summary": summary,
+            "checks": [asdict(check) for check in checks],
+            "handoff_candidates": [],
+            "statebind_workflows": [],
+            "suggested_next_command": infer_next_command(Path(".")),
+            "recommended_commands": [],
+        }
+
+    statebind_abs = resolve_repo_path(repo, statebind_path)
+    handoff_abs = resolve_repo_path(repo, handoff_path)
+    workflow_abs = resolve_repo_path(repo, workflow_path)
+    resolved_policy = policy_path
+    if resolved_policy is None and (repo / ".statebind-policy.json").exists():
+        resolved_policy = Path(".statebind-policy.json")
+    policy_abs = resolve_repo_path(repo, resolved_policy) if resolved_policy else None
+
+    candidates = find_handoff_candidates(repo)
+    workflows = statebind_workflow_paths(repo)
+    suggested = infer_next_command(repo)
+
+    if statebind_abs.exists():
+        add_doctor_check(checks, "ok", "statebind_json", f"Found {statebind_path.as_posix()}.")
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "statebind_json",
+            f"Missing {statebind_path.as_posix()}.",
+            f'Run `statebind init --goal "Preserve executable coding-agent handoffs" --next-command "{suggested["command"]}"`.',
+        )
+
+    if handoff_abs.exists():
+        add_doctor_check(checks, "ok", "handoff_markdown", f"Found {handoff_path.as_posix()}.")
+    elif candidates:
+        preview = ", ".join(candidate["path"] for candidate in candidates[:5])
+        add_doctor_check(
+            checks,
+            "warning",
+            "handoff_candidates",
+            f"Found handoff-like files but no canonical {handoff_path.as_posix()}: {preview}.",
+            "Bind the active file/test/command into StateBind JSON before handoff consumption.",
+        )
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "handoff_markdown",
+            "No handoff-like Markdown file found.",
+            "Start with `statebind init` when a coding-agent task needs to be resumed.",
+        )
+
+    if workflows:
+        add_doctor_check(checks, "ok", "github_action", f"StateBind workflow present: {', '.join(workflows)}.")
+    elif workflow_abs.exists():
+        add_doctor_check(
+            checks,
+            "warning",
+            "github_action",
+            f"Workflow exists but is not wired to StateBind Guard: {workflow_path.as_posix()}.",
+            "Copy the workflow generated by `statebind init` or use the GitHub Action example.",
+        )
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "github_action",
+            f"No StateBind workflow found at {workflow_path.as_posix()}.",
+            "Add the generated workflow in the first adoption PR.",
+        )
+
+    if policy_abs and policy_abs.exists():
+        add_doctor_check(checks, "ok", "policy_file", f"Found {resolved_policy.as_posix() if resolved_policy else policy_abs.name}.")
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "policy_file",
+            "No StateBind policy file found.",
+            "Run `statebind policy --preset bugfix --out .statebind-policy.json` for team-specific gates.",
+        )
+
+    if suggested["evidence"].startswith("default"):
+        add_doctor_check(
+            checks,
+            "warning",
+            "suggested_next_command",
+            f"Using fallback next command `{suggested['command']}`.",
+            "Replace it with the repository's smallest reliable test or smoke command.",
+        )
+    else:
+        add_doctor_check(
+            checks,
+            "ok",
+            "suggested_next_command",
+            f"Suggested next command `{suggested['command']}` from {suggested['evidence']}.",
+        )
+
+    has_statebind = statebind_abs.exists()
+    has_workflow = bool(workflows)
+    if has_statebind and has_workflow:
+        adoption_level = "wired"
+    elif has_statebind or has_workflow or handoff_abs.exists() or candidates:
+        adoption_level = "partial"
+    else:
+        adoption_level = "not_started"
+
+    summary = {
+        "ok": sum(1 for check in checks if check.status == "ok"),
+        "warnings": sum(1 for check in checks if check.status == "warning"),
+        "errors": sum(1 for check in checks if check.status == "error"),
+    }
+    recommended_commands = [
+        (
+            'statebind init --goal "Preserve executable coding-agent handoffs" '
+            f'--next-command "{suggested["command"]}"'
+        ),
+        "statebind policy --preset bugfix --out .statebind-policy.json",
+        "statebind doctor --repo . --policy .statebind-policy.json",
+    ]
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "repo": repo.name,
+        "adoption_level": adoption_level,
+        "summary": summary,
+        "checks": [asdict(check) for check in checks],
+        "handoff_candidates": candidates,
+        "statebind_workflows": workflows,
+        "suggested_next_command": suggested,
+        "recommended_commands": recommended_commands,
+    }
+
+
+def render_audit_markdown(report: dict[str, Any]) -> str:
+    lines = [
+        "# StateBind Adoption Audit",
+        "",
+        f"**Adoption level:** `{report['adoption_level']}`",
+        f"**Repository:** `{report['repo']}`",
+        "",
+        "## Signals",
+        "",
+    ]
+    for check in report["checks"]:
+        lines.append(f"- **{check['status']} / {check['code']}**: {check['message']}")
+        if check.get("action"):
+            lines.append(f"  - Next: {check['action']}")
+    lines.extend(["", "## Handoff Candidates", ""])
+    candidates = report["handoff_candidates"]
+    if candidates:
+        for candidate in candidates:
+            lines.append(f"- `{candidate['path']}` ({candidate['reason']})")
+    else:
+        lines.append("- None detected.")
+    lines.extend(
+        [
+            "",
+            "## Smallest Adoption PR",
+            "",
+            "```bash",
+            *report["recommended_commands"],
+            "```",
+            "",
+            "## Review Gate",
+            "",
+            "- Confirm the suggested next command is the smallest reliable local gate.",
+            "- Replace vague handoff phrases such as `the previous test` with exact role-bound handles.",
+            "- Do not include private traces, customer data, secrets, or local machine paths in public reports.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def run_audit(
+    repo: Path,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    policy_path: Path | None,
+    json_out: bool,
+    markdown_out: Path | None,
+) -> int:
+    report = audit_report(repo, statebind_path, handoff_path, workflow_path, policy_path)
+    markdown = render_audit_markdown(report)
+    if markdown_out:
+        write_output(markdown_out, markdown)
+    if json_out:
+        print(json.dumps(report, indent=2))
+    else:
+        print(markdown)
+    return 1 if report["summary"]["errors"] else 0
+
+
 def write_demo() -> str:
     return """# Demo: Visible ID But Unbound
 
@@ -1925,6 +2243,15 @@ def main() -> int:
     p_doctor.add_argument("--fail-on", choices=["error", "warning"], default="warning")
     p_doctor.add_argument("--json", action="store_true", help="print machine-readable adoption diagnostics")
 
+    p_audit = sub.add_parser("audit", help="pre-adoption scan for the smallest StateBind Guard PR")
+    p_audit.add_argument("--repo", type=Path, default=Path("."))
+    p_audit.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
+    p_audit.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
+    p_audit.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
+    p_audit.add_argument("--policy", type=Path, help="check a StateBind policy file")
+    p_audit.add_argument("--json", action="store_true", help="print machine-readable adoption audit")
+    p_audit.add_argument("--markdown", type=Path, help="write a maintainer-friendly Markdown audit")
+
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
 
@@ -1995,6 +2322,16 @@ def main() -> int:
             args.fail_on,
             args.policy,
             args.json,
+        )
+    if args.cmd == "audit":
+        return run_audit(
+            args.repo,
+            args.statebind_json,
+            args.handoff,
+            args.workflow,
+            args.policy,
+            args.json,
+            args.markdown,
         )
     if args.cmd == "check":
         return check_handoff(args.handoff)

@@ -28,6 +28,16 @@ Examples:
 Use the Markdown contract from `docs/handoff_contract.md` before ending a long
 coding session.
 
+If you are evaluating an existing repository, start with a pre-adoption audit:
+
+```bash
+statebind audit --repo . --markdown statebind-adoption-audit.md
+```
+
+The audit reports existing handoff-like files, whether the repository is already
+wired to StateBind Guard, the smallest inferred local verification command, and
+the smallest adoption PR.
+
 ### Level 1: Local CLI
 
 Install the package and generate a draft:
@@ -81,7 +91,7 @@ If your team already uses the standard pre-commit framework, add:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.21
+    rev: v0.1.22
     hooks:
       - id: statebind-guard
 ```
@@ -93,7 +103,7 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.21
+- uses: FU-max-boop/statebind-guard@v0.1.22
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -167,4 +177,5 @@ Current case study:
 
 - [schema and CI report upgrade](case_studies/schema_report_upgrade.md)
 - [separate-repository adoption examples](adoption_examples.md)
+- [adoption audit](adoption_audit.md)
 - [deployed-derived corpus result card](result_cards/statebind_guard_deployed_corpus.md)

@@ -28,6 +28,18 @@ exact pytest selector.
 make benchmark
 ```
 
+## Adoption Audit
+
+Before wiring CI in a third-party repository, run:
+
+```bash
+statebind audit --repo . --markdown statebind-adoption-audit.md
+```
+
+The audit finds existing handoff-like files, checks whether StateBind is already
+wired, infers the smallest likely local verification command, and prints a
+copy-paste first adoption PR.
+
 ## Current Results
 
 | Benchmark | Method | Accuracy | Unsafe accept rate |

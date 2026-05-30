@@ -12,6 +12,8 @@ into real repositories, or improve the evidence behind the claim.
   migration, and benchmark workflows.
 - Keep the separate-repository adoption example green as a public release-action
   receipt.
+- Keep `statebind audit` useful as the pre-adoption scanner for third-party
+  repositories.
 - Collect adoption reports from coding-agent, CI, and research-engineering users.
 - Collect sanitized visible-but-unbound failure cases for the benchmark corpus.
 

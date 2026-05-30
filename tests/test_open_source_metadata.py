@@ -17,7 +17,7 @@ class OpenSourceMetadataTests(unittest.TestCase):
         text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
         self.assertIn("cff-version: 1.2.0", text)
         self.assertIn('title: "StateBind Guard"', text)
-        self.assertIn('version: "0.1.21"', text)
+        self.assertIn('version: "0.1.22"', text)
         self.assertIn("repository-code: \"https://github.com/FU-max-boop/statebind-guard\"", text)
         self.assertIn("license: MIT", text)
 
@@ -70,7 +70,7 @@ class OpenSourceMetadataTests(unittest.TestCase):
             self.assertTrue(installed.exists())
 
             help_out = subprocess.check_output(["python", str(installed), "--help"], cwd=repo_dir, text=True)
-            for command in ("init", "install-hook", "doctor", "policy", "proof", "validate"):
+            for command in ("init", "audit", "install-hook", "doctor", "policy", "proof", "validate"):
                 self.assertIn(command, help_out)
 
             version_line = next(

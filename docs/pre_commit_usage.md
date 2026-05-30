@@ -8,7 +8,7 @@ Add this to your repository's `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.21
+    rev: v0.1.22
     hooks:
       - id: statebind-guard
 ```
