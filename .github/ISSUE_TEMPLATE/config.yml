@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Launch package
+    url: https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_package.md
+    about: Copy-paste proof, posts, and maintainer pitch.
+  - name: Project page
+    url: https://fu-max-boop.github.io/statebind-guard/
+    about: Read the product surface and quick-start path.

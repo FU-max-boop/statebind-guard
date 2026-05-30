@@ -7,6 +7,7 @@
 **Project page:** https://fu-max-boop.github.io/statebind-guard/
 **Launch note:** [Visible context is not executable state](docs/launch_note.md)
 **Launch package:** [copy-paste proof, posts, and maintainer pitch](docs/launch_package.md)
+**Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
 coding-agent handoffs:
@@ -18,7 +19,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.11"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
 statebind proof
 ```
 
@@ -66,7 +67,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.11"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -75,7 +76,10 @@ make benchmark
 Then inspect:
 
 - [launch note](docs/launch_note.md)
+- [launch package](docs/launch_package.md)
 - [quick demo](docs/quick_demo.md)
+- [roadmap](docs/roadmap.md)
+- [adoption feedback](docs/adoption_feedback.md)
 - [failure cases](docs/failure_cases.md)
 - [limitations](docs/limitations.md)
 
@@ -84,7 +88,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.11"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --out .statebind-policy.json
@@ -109,7 +113,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.11
+    rev: v0.1.12
     hooks:
       - id: statebind-guard
 ```
@@ -137,7 +141,7 @@ See [policy usage](docs/policy_usage.md) for team-specific gates.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.11
+- uses: FU-max-boop/statebind-guard@v0.1.12
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -209,6 +213,7 @@ docs/
   failure_cases.md
   github_action_usage.md
   handoff_contract.md
+  adoption_feedback.md
   launch_package.md
   launch_note.md
   limitations.md
@@ -216,6 +221,7 @@ docs/
   pre_commit_usage.md
   quality_gates.md
   quick_demo.md
+  roadmap.md
   result_cards/
   research_brief.md
 
@@ -306,6 +312,14 @@ The artifact is checked against five practical gates:
 5. **Outreach gate**: the README, brief, examples, and slides make the work discussable.
 
 See `docs/quality_gates.md` for the full checklist.
+
+## Citation And Feedback
+
+If StateBind Guard helps your work, cite [CITATION.cff](CITATION.cff). If you
+try it in a real repository, open an adoption report or a sanitized failure-case
+issue. Real friction and negative results are useful; the goal is to collect
+evidence about where executable handoff contracts help and where they are too
+strict, too weak, or missing integrations.
 
 ## Current Status
 

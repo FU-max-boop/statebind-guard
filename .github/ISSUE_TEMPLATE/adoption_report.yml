@@ -1,0 +1,49 @@
+name: Adoption report
+description: Share how StateBind Guard worked in a real repository or workflow.
+title: "[adoption]: "
+labels: ["adoption", "feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying StateBind Guard. Short, concrete reports are useful even when adoption fails.
+  - type: input
+    id: repo_type
+    attributes:
+      label: Repository or workflow type
+      description: Example: Python library, agent benchmark, internal CI, OpenHands workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup path
+      description: Which path did you use?
+      placeholder: statebind proof -> statebind init -> statebind policy -> GitHub Action
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - Adopted
+        - Tried but removed
+        - Blocked by missing feature
+        - Still evaluating
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: Adoption friction
+      description: What was confusing, noisy, missing, or too strict?
+    validations:
+      required: false
+  - type: textarea
+    id: useful_signal
+    attributes:
+      label: Useful signal
+      description: Did it catch a real handoff issue, improve review, or help agent resume?
+    validations:
+      required: false

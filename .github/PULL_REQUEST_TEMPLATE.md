@@ -1,12 +1,14 @@
-## Summary
+## What changed
 
-## StateBind Boundary
+## Why it matters
 
-- [ ] The change preserves the core invariant: active target -> semantic role -> executable handle.
-- [ ] Any broader claim is backed by a benchmark, example, or explicit limitation.
+## StateBind impact
 
-## Checks
+- [ ] If this changes handoff behavior, I updated `statebind.json` or docs.
+- [ ] If this changes validation behavior, I added or updated tests.
+- [ ] If this changes public positioning, I updated README/docs/launch package.
 
-- [ ] `make test`
-- [ ] `make benchmark`
+## Validation
+
+- [ ] `python -m unittest discover -s tests`
 - [ ] `make public-check`

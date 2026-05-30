@@ -1,0 +1,48 @@
+name: Failure case
+description: Report a visible-but-unbound or wrong-object handoff case.
+title: "[failure-case]: "
+labels: ["failure-case", "benchmark"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please remove private code, secrets, customer data, and local paths before posting.
+  - type: dropdown
+    id: failure_type
+    attributes:
+      label: Failure type
+      options:
+        - wrong file
+        - wrong test
+        - wrong commit or SHA
+        - wrong PR or issue
+        - stale artifact
+        - wrong branch
+        - wrong working directory
+        - risky command
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: handoff
+    attributes:
+      label: Sanitized handoff excerpt
+      description: Include only enough context to show visible handles and missing or wrong role binding.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected_binding
+    attributes:
+      label: Expected StateBind repair
+      description: What role, handle, evidence, confidence, and risk should have been preserved?
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What would the resumed agent have done wrong?
+    validations:
+      required: false
