@@ -13,7 +13,6 @@ import json
 import re
 import subprocess
 import sys
-from importlib.metadata import PackageNotFoundError, version as package_version
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -40,8 +39,9 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.16"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.17"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
+SOURCE_VERSION = "0.1.17"
 
 
 def resolve_package_version() -> str:
@@ -50,11 +50,7 @@ def resolve_package_version() -> str:
         match = re.search(r'(?m)^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"))
         if match:
             return match.group(1)
-    try:
-        return package_version("statebind-guard")
-    except PackageNotFoundError:
-        pass
-    return "0.0.0"
+    return SOURCE_VERSION
 
 
 VERSION = resolve_package_version()

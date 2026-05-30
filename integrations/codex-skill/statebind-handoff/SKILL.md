@@ -56,7 +56,29 @@ python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py validate \
   --repo . \
   --fail-on error \
   --report statebind-validation.json \
-  --sarif statebind-validation.sarif
+  --sarif statebind-validation.sarif \
+  --summary statebind-summary.md \
+  --html-report statebind-report.html
+```
+
+For first-time setup in a repository, scaffold the full local/CI contract:
+
+```bash
+python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py init \
+  --goal "keep coding-agent handoffs executable" \
+  --next-command "make test"
+python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py policy \
+  --preset bugfix \
+  --out .statebind-policy.json
+python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py doctor \
+  --repo . \
+  --policy .statebind-policy.json
+```
+
+For a self-contained check of the core failure mode, run:
+
+```bash
+python ~/.codex/skills/statebind-handoff/scripts/statebind_handoff.py proof
 ```
 
 ### 3. Build The Binding Contract

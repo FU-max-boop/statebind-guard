@@ -1,5 +1,7 @@
 import unittest
+import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 from statebind_handoff import __version__
@@ -7,6 +9,7 @@ from statebind_handoff import __version__
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "statebind_handoff" / "statebind_handoff.py"
+SKILL_SCRIPT = ROOT / "integrations" / "codex-skill" / "statebind-handoff" / "scripts" / "statebind_handoff.py"
 
 
 class OpenSourceMetadataTests(unittest.TestCase):
@@ -14,7 +17,7 @@ class OpenSourceMetadataTests(unittest.TestCase):
         text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
         self.assertIn("cff-version: 1.2.0", text)
         self.assertIn('title: "StateBind Guard"', text)
-        self.assertIn('version: "0.1.16"', text)
+        self.assertIn('version: "0.1.17"', text)
         self.assertIn("repository-code: \"https://github.com/FU-max-boop/statebind-guard\"", text)
         self.assertIn("license: MIT", text)
 
@@ -36,6 +39,51 @@ class OpenSourceMetadataTests(unittest.TestCase):
         self.assertIn("PIP_FIND_LINKS=\"$$tmpdir/dist\"", makefile)
         self.assertIn("pip install statebind-guard", makefile)
         self.assertIn("statebind\" --version", makefile)
+
+    def test_codex_skill_script_is_current_and_installable(self):
+        self.assertEqual(SKILL_SCRIPT.read_text(encoding="utf-8"), SCRIPT.read_text(encoding="utf-8"))
+
+        with tempfile.TemporaryDirectory() as codex_home, tempfile.TemporaryDirectory() as repo_dir:
+            env = os.environ.copy()
+            env["CODEX_HOME"] = codex_home
+            subprocess.check_call(["bash", "scripts/install_codex_skill.sh"], cwd=ROOT, env=env)
+            installed = Path(codex_home) / "skills" / "statebind-handoff" / "scripts" / "statebind_handoff.py"
+            self.assertTrue(installed.exists())
+
+            help_out = subprocess.check_output(["python", str(installed), "--help"], cwd=repo_dir, text=True)
+            for command in ("init", "install-hook", "doctor", "policy", "proof", "validate"):
+                self.assertIn(command, help_out)
+
+            version_line = next(
+                line for line in (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
+                if line.startswith("version = ")
+            )
+            version = version_line.split('"')[1]
+            version_out = subprocess.check_output(["python", str(installed), "--version"], cwd=repo_dir, text=True)
+            self.assertIn(version, version_out)
+
+            subprocess.check_call(["python", str(installed), "proof"], cwd=repo_dir)
+            subprocess.check_call(
+                [
+                    "python",
+                    str(installed),
+                    "init",
+                    "--goal",
+                    "skill install smoke",
+                    "--next-command",
+                    "make test",
+                ],
+                cwd=repo_dir,
+            )
+            subprocess.check_call(["python", str(installed), "policy", "--out", ".statebind-policy.json"], cwd=repo_dir)
+            subprocess.check_call(
+                ["python", str(installed), "validate", "statebind.json", "--repo", ".", "--fail-on", "warning"],
+                cwd=repo_dir,
+            )
+            subprocess.check_call(
+                ["python", str(installed), "doctor", "--repo", ".", "--policy", ".statebind-policy.json"],
+                cwd=repo_dir,
+            )
 
     def test_issue_templates_cover_adoption_and_failures(self):
         template_dir = ROOT / ".github" / "ISSUE_TEMPLATE"

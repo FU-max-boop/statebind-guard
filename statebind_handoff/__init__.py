@@ -1,8 +1,10 @@
 """StateBind Guard handoff tooling."""
 
-from importlib.metadata import PackageNotFoundError, version as package_version
 from pathlib import Path
 import re
+
+
+SOURCE_VERSION = "0.1.17"
 
 
 def _resolve_version() -> str:
@@ -11,11 +13,7 @@ def _resolve_version() -> str:
         match = re.search(r'(?m)^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"))
         if match:
             return match.group(1)
-    try:
-        return package_version("statebind-guard")
-    except PackageNotFoundError:
-        pass
-    return "0.0.0"
+    return SOURCE_VERSION
 
 
 __version__ = _resolve_version()

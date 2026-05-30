@@ -81,7 +81,7 @@ If your team already uses the standard pre-commit framework, add:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.16
+    rev: v0.1.17
     hooks:
       - id: statebind-guard
 ```
@@ -93,7 +93,7 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.16
+- uses: FU-max-boop/statebind-guard@v0.1.17
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
