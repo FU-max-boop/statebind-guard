@@ -103,3 +103,73 @@ jobs:
           python -m json.tool statebind-validation.sarif >/dev/null
           grep -q "StateBind Guard" statebind-summary.md
           grep -q "StateBind Guard Report" statebind-report.html
+      - name: Create invalid handoff fixture
+        run: |
+          cat > statebind-invalid.json <<'EOF'
+          {
+            "schema_version": "0.1",
+            "task": {
+              "goal": "verify failed StateBind Action routing",
+              "status": "blocked"
+            },
+            "active_target": {
+              "type": "test",
+              "handle": "pytest tests/test_router.py::test_stream_response",
+              "evidence": "workflow negative smoke fixture",
+              "confidence": "high"
+            },
+            "bindings": [
+              {
+                "role": "failing_test",
+                "handle": "the previous command",
+                "evidence": "workflow negative smoke fixture",
+                "confidence": "high",
+                "risk": ""
+              }
+            ],
+            "risks": []
+          }
+          EOF
+          cat > .statebind-invalid-policy.json <<'EOF'
+          {
+            "schema_version": "0.1",
+            "required_roles": ["failing_test"],
+            "min_confidence": "high",
+            "require_top_level_risks": false
+          }
+          EOF
+      - name: Run local composite action on invalid handoff
+        id: statebind_invalid
+        uses: ./
+        continue-on-error: true
+        with:
+          statebind-json: statebind-invalid.json
+          policy: .statebind-invalid-policy.json
+          fail-on: warning
+          report: statebind-invalid-validation.json
+          sarif: statebind-invalid-validation.sarif
+          summary: statebind-invalid-summary.md
+          html-report: statebind-invalid-report.html
+      - name: Check failed action reports
+        env:
+          STATEBIND_INVALID_OUTCOME: ${{ steps.statebind_invalid.outcome }}
+          STATEBIND_INVALID_PASSED: ${{ steps.statebind_invalid.outputs.passed }}
+          STATEBIND_INVALID_ERRORS: ${{ steps.statebind_invalid.outputs.errors }}
+          STATEBIND_INVALID_WARNINGS: ${{ steps.statebind_invalid.outputs.warnings }}
+          STATEBIND_INVALID_EXIT_CODE: ${{ steps.statebind_invalid.outputs.exit_code }}
+        run: |
+          test "$STATEBIND_INVALID_OUTCOME" = "failure"
+          test "$STATEBIND_INVALID_PASSED" = "false"
+          test "$STATEBIND_INVALID_ERRORS" = "1"
+          test "$STATEBIND_INVALID_WARNINGS" = "0"
+          test "$STATEBIND_INVALID_EXIT_CODE" = "1"
+          test -s statebind-invalid-validation.json
+          test -s statebind-invalid-validation.sarif
+          test -s statebind-invalid-summary.md
+          test -s statebind-invalid-report.html
+          python -m json.tool statebind-invalid-validation.json >/dev/null
+          python -m json.tool statebind-invalid-validation.sarif >/dev/null
+          grep -q "vague_handle" statebind-invalid-validation.json
+          grep -q "vague_handle" statebind-invalid-validation.sarif
+          grep -q "vague_handle" statebind-invalid-summary.md
+          grep -q "StateBind Guard Report" statebind-invalid-report.html

@@ -49,6 +49,17 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("test -s statebind-summary.md", text)
         self.assertIn("test -s statebind-report.html", text)
         self.assertIn("policy: .statebind-policy.json", text)
+        self.assertIn("id: statebind_invalid", text)
+        self.assertIn("continue-on-error: true", text)
+        self.assertIn("steps.statebind_invalid.outcome", text)
+        self.assertIn("STATEBIND_INVALID_PASSED", text)
+        self.assertIn("STATEBIND_INVALID_ERRORS", text)
+        self.assertIn("STATEBIND_INVALID_EXIT_CODE", text)
+        self.assertIn("statebind-invalid-validation.json", text)
+        self.assertIn("statebind-invalid-validation.sarif", text)
+        self.assertIn("statebind-invalid-summary.md", text)
+        self.assertIn("statebind-invalid-report.html", text)
+        self.assertIn("vague_handle", text)
 
     def test_repository_dogfoods_statebind_workflow(self):
         text = (ROOT / ".github" / "workflows" / "statebind-guard.yml").read_text(encoding="utf-8")

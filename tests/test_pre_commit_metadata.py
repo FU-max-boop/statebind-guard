@@ -17,7 +17,7 @@ class PreCommitMetadataTests(unittest.TestCase):
     def test_docs_show_standard_pre_commit_config(self):
         text = (ROOT / "docs" / "pre_commit_usage.md").read_text(encoding="utf-8")
         self.assertIn("https://github.com/FU-max-boop/statebind-guard", text)
-        self.assertIn("rev: v0.1.14", text)
+        self.assertIn("rev: v0.1.15", text)
         self.assertIn("id: statebind-guard", text)
         self.assertIn("pre-commit run statebind-guard --all-files", text)
         self.assertIn("statebind doctor --repo .", text)

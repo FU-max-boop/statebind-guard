@@ -46,6 +46,8 @@ Passes when:
 - public-ready check passes
 - package metadata and console entry point are present
 - schema generation matches the tracked schema file
+- the GitHub Action smoke tests both a passing fixture and a failing fixture,
+  including outputs and JSON/SARIF/Markdown/HTML reports
 
 Run:
 
