@@ -43,6 +43,7 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("macos-latest", text)
         for version in ("3.10", "3.11", "3.12", "3.13"):
             self.assertIn(version, text)
+        self.assertIn("python -m pip install \"setuptools>=68\"", text)
         self.assertIn("make package-check", text)
         self.assertIn("action-smoke:", text)
         self.assertIn("uses: ./", text)

@@ -12,6 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Install build backend
+        run: python -m pip install "setuptools>=68"
       - name: Run unit tests
         run: python -m unittest discover -s tests
       - name: Run public-ready check
@@ -30,6 +32,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install build backend
+        run: python -m pip install "setuptools>=68"
       - name: Run unit tests
         run: python -m unittest discover -s tests
       - name: Run clean wheel package smoke
