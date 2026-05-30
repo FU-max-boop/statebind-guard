@@ -21,7 +21,7 @@ It ships as a dependency-free Python CLI, GitHub Action, SARIF/HTML/Markdown rep
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
 statebind proof
 ```
 
@@ -75,7 +75,7 @@ The bad case contains the right command in evidence, but the actual handle is st
 ```bash
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --out .statebind-policy.json
+statebind policy --preset bugfix --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
 ```
@@ -83,7 +83,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.12
+- uses: FU-max-boop/statebind-guard@v0.1.13
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

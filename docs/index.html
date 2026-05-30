@@ -266,7 +266,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
-        <div class="eyebrow">StateBind Guard v0.1.12</div>
+        <div class="eyebrow">StateBind Guard v0.1.13</div>
         <h1>Make coding-agent handoffs executable.</h1>
         <p class="lead">
           StateBind Guard catches the quiet failure where a handoff mentions the
@@ -275,7 +275,7 @@
         </p>
         <div class="actions" aria-label="Primary links">
           <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
-          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.12">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.13">Latest release</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_package.md">Launch package</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_note.md">Launch note</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/roadmap.md">Roadmap</a>
@@ -304,7 +304,7 @@
           </div>
           <div class="panel">
             <h3>Policy-as-code</h3>
-            <p>Require roles, confidence floors, and explicit risk entries before another agent consumes a handoff.</p>
+            <p>Use minimal, bugfix, CI-failure, release, migration, and benchmark presets for team-specific gates.</p>
           </div>
           <div class="panel">
             <h3>Launch-ready package</h3>
@@ -324,10 +324,10 @@
             The starter scaffold is intentionally small: one human-readable
             handoff, one JSON contract, one policy, one workflow.
           </p>
-          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --out .statebind-policy.json
+statebind policy --preset bugfix --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
 git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml</code></pre>
@@ -356,7 +356,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
           </div>
         </div>
         <div class="metric-row">
-          <div class="metric"><strong>28</strong><span>unit tests in CI</span></div>
+          <div class="metric"><strong>30</strong><span>unit tests in CI</span></div>
           <div class="metric"><strong>3</strong><span>benchmark suites</span></div>
           <div class="metric warning"><strong>SARIF</strong><span>GitHub-native output</span></div>
           <div class="metric warning"><strong>HTML</strong><span>human-readable report</span></div>
@@ -372,7 +372,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
             after copying it.
           </p>
         </div>
-        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.12
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.13
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

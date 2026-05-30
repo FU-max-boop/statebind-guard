@@ -39,13 +39,58 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.12"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.13"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": POLICY_SCHEMA_VERSION,
+    "preset": "minimal",
+    "description": "Require a verified next command before another actor consumes the handoff.",
     "required_roles": ["next_command"],
     "min_confidence": "medium",
     "require_top_level_risks": False,
+}
+POLICY_PRESETS: dict[str, dict[str, Any]] = {
+    "minimal": DEFAULT_POLICY,
+    "bugfix": {
+        "schema_version": POLICY_SCHEMA_VERSION,
+        "preset": "bugfix",
+        "description": "Require the focused failing test and exact next command for bug-fix handoffs.",
+        "required_roles": ["failing_test", "next_command"],
+        "min_confidence": "medium",
+        "require_top_level_risks": False,
+    },
+    "ci-failure": {
+        "schema_version": POLICY_SCHEMA_VERSION,
+        "preset": "ci-failure",
+        "description": "Bind CI workflow, failing test, and next command before resuming a failed run.",
+        "required_roles": ["ci_workflow", "failing_test", "next_command"],
+        "min_confidence": "medium",
+        "require_top_level_risks": False,
+    },
+    "release": {
+        "schema_version": POLICY_SCHEMA_VERSION,
+        "preset": "release",
+        "description": "Require release gate, CI workflow, and artifact bindings with explicit risks.",
+        "required_roles": ["release_gate_command", "ci_workflow", "artifact_path"],
+        "min_confidence": "high",
+        "require_top_level_risks": True,
+    },
+    "migration": {
+        "schema_version": POLICY_SCHEMA_VERSION,
+        "preset": "migration",
+        "description": "Require target, rollback, and verification bindings for risky migrations.",
+        "required_roles": ["migration_target", "rollback_command", "verification_command"],
+        "min_confidence": "high",
+        "require_top_level_risks": True,
+    },
+    "benchmark": {
+        "schema_version": POLICY_SCHEMA_VERSION,
+        "preset": "benchmark",
+        "description": "Require dataset, benchmark command, and result artifact bindings for eval work.",
+        "required_roles": ["dataset_version", "benchmark_command", "result_artifact"],
+        "min_confidence": "high",
+        "require_top_level_risks": True,
+    },
 }
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -111,6 +156,8 @@ POLICY_SCHEMA: dict[str, Any] = {
     "required": ["schema_version"],
     "properties": {
         "schema_version": {"type": "string", "enum": [POLICY_SCHEMA_VERSION]},
+        "preset": {"type": "string"},
+        "description": {"type": "string"},
         "required_roles": {
             "type": "array",
             "items": {"type": "string"},
@@ -1743,6 +1790,24 @@ def proof_report(json_out: bool = False) -> int:
     return 0
 
 
+def policy_text(preset: str) -> str:
+    return json.dumps(POLICY_PRESETS[preset], indent=2) + "\n"
+
+
+def render_policy_presets() -> str:
+    lines = ["StateBind policy presets:"]
+    for name in sorted(POLICY_PRESETS):
+        policy = POLICY_PRESETS[name]
+        roles = ", ".join(policy["required_roles"])
+        lines.append(
+            f"- {name}: min_confidence={policy['min_confidence']}, "
+            f"require_top_level_risks={str(policy['require_top_level_risks']).lower()}, "
+            f"roles=[{roles}]"
+        )
+        lines.append(f"  {policy['description']}")
+    return "\n".join(lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="StateBind handoff helper")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -1800,6 +1865,8 @@ def main() -> int:
     p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
 
     p_policy = sub.add_parser("policy", help="print or write a starter StateBind policy")
+    p_policy.add_argument("--preset", choices=sorted(POLICY_PRESETS), default="minimal", help="scenario policy preset to emit")
+    p_policy.add_argument("--list-presets", action="store_true", help="list available scenario policy presets")
     p_policy.add_argument("--out", type=Path, help="write starter policy JSON to a file")
     p_policy.add_argument("--force", action="store_true", help="overwrite an existing policy file")
 
@@ -1869,7 +1936,10 @@ def main() -> int:
             args.quiet,
         )
     if args.cmd == "policy":
-        text = json.dumps(DEFAULT_POLICY, indent=2) + "\n"
+        if args.list_presets:
+            print(render_policy_presets())
+            return 0
+        text = policy_text(args.preset)
         if args.out:
             try:
                 write_scaffold_file(args.out, text, args.force)

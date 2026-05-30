@@ -10,13 +10,38 @@ Create a starter policy:
 statebind policy --out .statebind-policy.json
 ```
 
-Example:
+List scenario presets:
+
+```bash
+statebind policy --list-presets
+```
+
+Generate a stricter preset:
+
+```bash
+statebind policy --preset release --out .statebind-policy.json --force
+```
+
+Presets:
+
+| Preset | Use case | Required roles |
+|---|---|---|
+| `minimal` | first adoption | `next_command` |
+| `bugfix` | focused bug fix | `failing_test`, `next_command` |
+| `ci-failure` | failed workflow continuation | `ci_workflow`, `failing_test`, `next_command` |
+| `release` | package or artifact release | `release_gate_command`, `ci_workflow`, `artifact_path` |
+| `migration` | risky migration | `migration_target`, `rollback_command`, `verification_command` |
+| `benchmark` | eval or benchmark run | `dataset_version`, `benchmark_command`, `result_artifact` |
+
+Example release policy:
 
 ```json
 {
   "schema_version": "0.1",
-  "required_roles": ["next_command", "ci_workflow"],
-  "min_confidence": "medium",
+  "preset": "release",
+  "description": "Require release gate, CI workflow, and artifact bindings with explicit risks.",
+  "required_roles": ["release_gate_command", "ci_workflow", "artifact_path"],
+  "min_confidence": "high",
   "require_top_level_risks": true
 }
 ```

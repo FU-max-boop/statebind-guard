@@ -9,13 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocsSiteTests(unittest.TestCase):
     def test_landing_page_links_product_surface(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("StateBind Guard v0.1.12", html)
+        self.assertIn("StateBind Guard v0.1.13", html)
         self.assertIn("Make coding-agent handoffs executable.", html)
         self.assertIn("assets/statebind_guard_demo.svg", html)
         self.assertIn("assets/statebind_social_preview.png", html)
         self.assertIn('property="og:image"', html)
         self.assertIn('name="twitter:card" content="summary_large_image"', html)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.12", html)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.13", html)
         self.assertIn("statebind proof", html)
         self.assertIn("statebind init", html)
         self.assertIn("statebind install-hook", html)
@@ -28,7 +28,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("HTML reports", html)
         self.assertIn("GitHub annotations", html)
         self.assertIn("action outputs", html)
-        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.12", html)
+        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.13", html)
         self.assertIn("docs/launch_note.md", html)
         self.assertIn("docs/launch_package.md", html)
         self.assertIn("docs/roadmap.md", html)
@@ -55,6 +55,8 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("statebind install-hook", readme)
         self.assertIn("statebind doctor", readme)
         self.assertIn("statebind policy", readme)
+        self.assertIn("statebind policy --preset bugfix", readme)
+        self.assertIn("bug fixes, CI failures, releases, migrations, and benchmark runs", readme)
         self.assertIn("statebind proof", readme)
         self.assertIn("bad_visible_unbound: FAIL", readme)
         self.assertIn("good_role_bound: PASS", readme)
@@ -77,7 +79,16 @@ class DocsSiteTests(unittest.TestCase):
         note = (ROOT / "docs" / "launch_note.md").read_text(encoding="utf-8")
         self.assertIn("visible handle != role-bound executable state", note)
         self.assertIn("active target -> semantic role -> executable handle", note)
+        self.assertIn("statebind policy --preset bugfix", note)
         self.assertIn("StateBind Guard does not claim", note)
+
+    def test_policy_usage_documents_presets(self):
+        policy = (ROOT / "docs" / "policy_usage.md").read_text(encoding="utf-8")
+        self.assertIn("statebind policy --list-presets", policy)
+        self.assertIn("statebind policy --preset release", policy)
+        self.assertIn("`bugfix`", policy)
+        self.assertIn("`ci-failure`", policy)
+        self.assertIn("`benchmark`", policy)
 
 
 if __name__ == "__main__":

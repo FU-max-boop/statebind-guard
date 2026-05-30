@@ -19,7 +19,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
 statebind proof
 ```
 
@@ -67,7 +67,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -88,10 +88,10 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.12"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.13"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --out .statebind-policy.json
+statebind policy --preset bugfix --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
 git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml
@@ -103,7 +103,8 @@ The optional local hook blocks commits when `statebind.json` loses its
 executable binding contract. `statebind doctor` audits whether the repo has the
 contract, human handoff, GitHub Action, pre-commit config, local hook, and
 validation gate wired correctly. `statebind policy` creates a team-editable
-policy file for required roles and confidence thresholds.
+policy file for required roles and confidence thresholds, with presets for
+bug fixes, CI failures, releases, migrations, and benchmark runs.
 The GitHub Action also exposes `passed`, `errors`, `warnings`, and `exit_code`
 outputs, so downstream workflow steps can route failed handoffs without parsing
 artifacts.
@@ -113,7 +114,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.12
+    rev: v0.1.13
     hooks:
       - id: statebind-guard
 ```
@@ -136,12 +137,13 @@ make public-check
 See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 [pre-commit usage](docs/pre_commit_usage.md) and
 [GitHub Action usage](docs/github_action_usage.md) for local and CI gate examples.
-See [policy usage](docs/policy_usage.md) for team-specific gates.
+See [policy usage](docs/policy_usage.md) for team-specific gates and scenario
+presets.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.12
+- uses: FU-max-boop/statebind-guard@v0.1.13
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

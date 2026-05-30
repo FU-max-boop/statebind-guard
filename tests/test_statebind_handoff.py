@@ -227,6 +227,9 @@ class StateBindHandoffTests(unittest.TestCase):
             )
             policy = repo / ".statebind-policy.json"
             run(["python", str(SCRIPT), "policy", "--out", str(policy)], repo)
+            policy_data = json.loads(policy.read_text())
+            self.assertEqual(policy_data["preset"], "minimal")
+            self.assertEqual(policy_data["required_roles"], ["next_command"])
 
             ok_report = repo / "policy-ok.json"
             ok_summary = repo / "policy-ok.md"
@@ -294,6 +297,67 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("policy_missing_top_level_risks", proc.stdout)
             self.assertIn("**Status:** FAIL", fail_summary.read_text())
 
+    def test_policy_presets_generate_scenario_gates(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            presets_out = run(["python", str(SCRIPT), "policy", "--list-presets"], repo)
+            self.assertIn("bugfix", presets_out)
+            self.assertIn("release", presets_out)
+            self.assertIn("benchmark", presets_out)
+
+            release_policy = repo / "release-policy.json"
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "policy",
+                    "--preset",
+                    "release",
+                    "--out",
+                    str(release_policy),
+                ],
+                repo,
+            )
+            data = json.loads(release_policy.read_text())
+            self.assertEqual(data["preset"], "release")
+            self.assertEqual(data["min_confidence"], "high")
+            self.assertTrue(data["require_top_level_risks"])
+            self.assertIn("release_gate_command", data["required_roles"])
+            self.assertIn("artifact_path", data["required_roles"])
+
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--goal",
+                    "release package",
+                    "--next-command",
+                    "make public-check",
+                ],
+                repo,
+            )
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    "statebind.json",
+                    "--repo",
+                    ".",
+                    "--policy",
+                    str(release_policy),
+                    "--fail-on",
+                    "error",
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("policy_missing_required_role", proc.stdout)
+            self.assertIn("release_gate_command", proc.stdout)
+
     def test_init_writes_ready_scaffold(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
@@ -319,7 +383,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.12", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.13", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 

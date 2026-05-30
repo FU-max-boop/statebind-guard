@@ -8,6 +8,8 @@ into real repositories, or improve the evidence behind the claim.
 
 - Keep the CLI dependency-free and easy to inspect.
 - Keep GitHub Action outputs, SARIF, Markdown, HTML, and JSON reports stable.
+- Keep scenario policy presets practical for bug-fix, CI-failure, release,
+  migration, and benchmark workflows.
 - Collect adoption reports from coding-agent, CI, and research-engineering users.
 - Collect sanitized visible-but-unbound failure cases for the benchmark corpus.
 
@@ -15,7 +17,6 @@ into real repositories, or improve the evidence behind the claim.
 
 - Add adapters or examples for Codex, Claude Code, OpenHands, Cursor, and custom agent runners.
 - Add report examples from third-party repositories.
-- Add stricter policy presets for release, migration, benchmark, and CI-failure workflows.
 - Add richer line/field localization in SARIF and GitHub annotations.
 
 ## Later
@@ -30,4 +31,3 @@ into real repositories, or improve the evidence behind the claim.
 - StateBind Guard will not claim to solve all agent memory, planning, or retrieval failures.
 - The validator should stay conservative rather than infer semantic bindings from vague prose.
 - Public benchmark additions should be sanitized and reviewable, not scraped private traces.
-
