@@ -25,3 +25,4 @@ jobs:
             statebind-validation.json
             statebind-validation.sarif
             statebind-summary.md
+            statebind-report.html

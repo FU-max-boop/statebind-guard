@@ -14,11 +14,13 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("report:", text)
         self.assertIn("sarif:", text)
         self.assertIn("summary:", text)
+        self.assertIn("html-report:", text)
         self.assertIn("policy:", text)
         self.assertIn("statebind_handoff/statebind_handoff.py", text)
         self.assertIn("--report \"$REPORT\"", text)
         self.assertIn("--sarif \"$SARIF\"", text)
         self.assertIn("--summary \"$SUMMARY\"", text)
+        self.assertIn("--html-report \"$HTML_REPORT\"", text)
         self.assertIn("POLICY_ARGS", text)
         self.assertIn("GITHUB_STEP_SUMMARY", text)
 
@@ -29,6 +31,7 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("test -s statebind-validation.json", text)
         self.assertIn("test -s statebind-validation.sarif", text)
         self.assertIn("test -s statebind-summary.md", text)
+        self.assertIn("test -s statebind-report.html", text)
         self.assertIn("policy: .statebind-policy.json", text)
 
     def test_repository_dogfoods_statebind_workflow(self):
@@ -39,6 +42,7 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("policy: .statebind-policy.json", text)
         self.assertIn("statebind-validation.sarif", text)
         self.assertIn("statebind-summary.md", text)
+        self.assertIn("statebind-report.html", text)
 
 
 if __name__ == "__main__":

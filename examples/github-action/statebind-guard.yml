@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.6
+      - uses: FU-max-boop/statebind-guard@v0.1.7
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -27,6 +27,7 @@ jobs:
             statebind-validation.json
             statebind-validation.sarif
             statebind-summary.md
+            statebind-report.html
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:

@@ -51,6 +51,7 @@ package-check:
 	"$$tmpdir/venv/bin/statebind" policy --out .statebind-policy.json >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" install-hook --repo . --json statebind.json --policy .statebind-policy.json >/dev/null; \
 	test -x .git/hooks/pre-commit; \
-	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning --policy .statebind-policy.json --summary statebind-summary.md >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning --policy .statebind-policy.json --summary statebind-summary.md --html-report statebind-report.html >/dev/null; \
 	test -s statebind-summary.md; \
+	test -s statebind-report.html; \
 	"$$tmpdir/venv/bin/statebind" doctor --repo . >/dev/null

@@ -30,7 +30,8 @@ statebind validate statebind.json \
   --fail-on warning \
   --report statebind-validation.json \
   --sarif statebind-validation.sarif \
-  --summary statebind-summary.md
+  --summary statebind-summary.md \
+  --html-report statebind-report.html
 ```
 
 The policy currently supports:

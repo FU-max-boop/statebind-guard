@@ -35,6 +35,10 @@ inputs:
     description: Path for the Markdown validation summary appended to the GitHub Actions step summary.
     required: false
     default: statebind-summary.md
+  html-report:
+    description: Path for the standalone HTML validation report.
+    required: false
+    default: statebind-report.html
   policy:
     description: Optional StateBind policy JSON file for team-specific handoff gates.
     required: false
@@ -58,6 +62,9 @@ outputs:
   summary:
     description: Markdown validation summary path.
     value: ${{ inputs.summary }}
+  html-report:
+    description: HTML validation report path.
+    value: ${{ inputs.html-report }}
 
 runs:
   using: composite
@@ -84,9 +91,10 @@ runs:
         REPORT: ${{ inputs.report }}
         SARIF: ${{ inputs.sarif }}
         SUMMARY: ${{ inputs.summary }}
+        HTML_REPORT: ${{ inputs.html-report }}
         POLICY: ${{ inputs.policy }}
       run: |
-        mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")" "$(dirname "$SUMMARY")"
+        mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")" "$(dirname "$SUMMARY")" "$(dirname "$HTML_REPORT")"
         POLICY_ARGS=()
         if [ -n "$POLICY" ]; then
           POLICY_ARGS=(--policy "$POLICY")
@@ -100,6 +108,7 @@ runs:
           --report "$REPORT" \
           --sarif "$SARIF" \
           --summary "$SUMMARY" \
+          --html-report "$HTML_REPORT" \
           "${POLICY_ARGS[@]}"
         status="$?"
         set -e

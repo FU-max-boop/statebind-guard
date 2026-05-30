@@ -137,6 +137,7 @@ class StateBindHandoffTests(unittest.TestCase):
 
             sarif = repo / "statebind-validation.sarif"
             summary = repo / "statebind-summary.md"
+            html_report = repo / "statebind-report.html"
             run(
                 [
                     "python",
@@ -151,6 +152,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     str(sarif),
                     "--summary",
                     str(summary),
+                    "--html-report",
+                    str(html_report),
                 ],
                 repo,
             )
@@ -163,6 +166,10 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("# StateBind Guard", summary_text)
             self.assertIn("blank_task_goal", summary_text)
             self.assertIn("**Status:** PASS", summary_text)
+            html_text = html_report.read_text()
+            self.assertIn("<title>StateBind Guard Report</title>", html_text)
+            self.assertIn("blank_task_goal", html_text)
+            self.assertNotIn(str(repo), html_text)
 
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
@@ -187,6 +194,7 @@ class StateBindHandoffTests(unittest.TestCase):
 
             ok_report = repo / "policy-ok.json"
             ok_summary = repo / "policy-ok.md"
+            ok_html = repo / "policy-ok.html"
             run(
                 [
                     "python",
@@ -201,6 +209,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     str(ok_report),
                     "--summary",
                     str(ok_summary),
+                    "--html-report",
+                    str(ok_html),
                     "--fail-on",
                     "warning",
                 ],
@@ -210,6 +220,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(ok_data["passed"])
             self.assertEqual(ok_data["policy"], str(policy))
             self.assertIn("**Policy:**", ok_summary.read_text())
+            self.assertIn(".statebind-policy.json", ok_html.read_text())
 
             strict_policy = repo / "strict-policy.json"
             strict_policy.write_text(
@@ -272,7 +283,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.6", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.7", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -520,6 +531,7 @@ class StateBindHandoffTests(unittest.TestCase):
             repo = Path(td)
             sarif = repo / "missing-statebind.sarif"
             summary = repo / "missing-statebind.md"
+            html_report = repo / "missing-statebind.html"
             proc = subprocess.run(
                 [
                     "python",
@@ -532,6 +544,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     str(sarif),
                     "--summary",
                     str(summary),
+                    "--html-report",
+                    str(html_report),
                 ],
                 cwd=repo,
                 text=True,
@@ -543,6 +557,7 @@ class StateBindHandoffTests(unittest.TestCase):
             sarif_data = json.loads(sarif.read_text())
             self.assertEqual(sarif_data["runs"][0]["results"][0]["ruleId"], "contract_not_found")
             self.assertIn("contract_not_found", summary.read_text())
+            self.assertIn("contract_not_found", html_report.read_text())
 
     def test_schema_command_matches_tracked_schema(self):
         out = run(["python", str(SCRIPT), "schema"], ROOT)

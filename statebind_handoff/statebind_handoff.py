@@ -8,6 +8,7 @@ Codex or a human should still verify evidence and confidence.
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import subprocess
@@ -38,7 +39,7 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.6"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.7"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": POLICY_SCHEMA_VERSION,
@@ -767,6 +768,20 @@ def markdown_cell(value: Any) -> str:
     return str(value).replace("\n", " ").replace("|", "\\|")
 
 
+def html_escape(value: Any) -> str:
+    return html.escape(str(value), quote=True)
+
+
+def portable_display_path(value: Any) -> str:
+    text = str(value)
+    if not text:
+        return ""
+    path = Path(text)
+    if path.is_absolute():
+        return path.name
+    return text
+
+
 def render_validation_markdown(report: dict[str, Any]) -> str:
     status = "PASS" if report["passed"] else "FAIL"
     summary = report["summary"]
@@ -803,6 +818,181 @@ def render_validation_markdown(report: dict[str, Any]) -> str:
         )
     lines.append("")
     return "\n".join(lines)
+
+
+def render_validation_html(report: dict[str, Any]) -> str:
+    status = "PASS" if report["passed"] else "FAIL"
+    status_class = "pass" if report["passed"] else "fail"
+    summary = report["summary"]
+    contract = portable_display_path(report["statebind_json"])
+    policy = portable_display_path(report["policy"]) if report["policy"] else "[none]"
+    findings = report["findings"]
+    rows = []
+    for finding in findings:
+        rows.append(
+            "<tr>"
+            f"<td><span class=\"pill {html_escape(finding.get('severity', ''))}\">{html_escape(finding.get('severity', ''))}</span></td>"
+            f"<td><code>{html_escape(finding.get('code', ''))}</code></td>"
+            f"<td>{html_escape(finding.get('role', ''))}</td>"
+            f"<td><code>{html_escape(finding.get('handle', ''))}</code></td>"
+            f"<td>{html_escape(finding.get('message', ''))}</td>"
+            "</tr>"
+        )
+    finding_block = (
+        "<p class=\"empty\">No structural or policy findings.</p>"
+        if not rows
+        else (
+            "<table><thead><tr><th>Severity</th><th>Code</th><th>Role</th>"
+            "<th>Handle</th><th>Message</th></tr></thead><tbody>"
+            + "".join(rows)
+            + "</tbody></table>"
+        )
+    )
+    return f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StateBind Guard Report</title>
+    <style>
+      :root {{
+        color-scheme: light;
+        --ink: #151922;
+        --muted: #647084;
+        --line: #d8dee9;
+        --surface: #ffffff;
+        --paper: #f6f8fb;
+        --pass: #0f766e;
+        --fail: #b42318;
+        --warn: #b35c00;
+      }}
+      * {{ box-sizing: border-box; }}
+      body {{
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }}
+      main {{
+        width: min(980px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 48px 0;
+      }}
+      .hero, .panel {{
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+      }}
+      .hero {{
+        padding: 28px;
+      }}
+      h1 {{
+        margin: 0 0 8px;
+        font-size: 36px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }}
+      .meta {{
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }}
+      .item {{
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }}
+      .label {{
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }}
+      .value {{
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+        font-weight: 700;
+      }}
+      .status {{
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 5px 10px;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 800;
+      }}
+      .status.pass {{ background: var(--pass); }}
+      .status.fail {{ background: var(--fail); }}
+      .panel {{
+        margin-top: 18px;
+        padding: 22px;
+      }}
+      h2 {{
+        margin: 0 0 14px;
+        font-size: 22px;
+      }}
+      table {{
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }}
+      th, td {{
+        border-top: 1px solid var(--line);
+        padding: 10px 8px;
+        text-align: left;
+        vertical-align: top;
+      }}
+      th {{
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+      }}
+      code {{
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }}
+      .pill {{
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 800;
+      }}
+      .pill.error {{ background: var(--fail); }}
+      .pill.warning {{ background: var(--warn); }}
+      .empty {{
+        margin: 0;
+        color: var(--muted);
+      }}
+      @media (max-width: 720px) {{
+        .meta {{ grid-template-columns: 1fr; }}
+        h1 {{ font-size: 30px; }}
+      }}
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <span class="status {status_class}">{status}</span>
+        <h1>StateBind Guard Report</h1>
+        <p>Executable handoff validation for role-bound files, commands, policy requirements, and risk gates.</p>
+        <div class="meta">
+          <div class="item"><div class="label">Contract</div><div class="value"><code>{html_escape(contract)}</code></div></div>
+          <div class="item"><div class="label">Policy</div><div class="value"><code>{html_escape(policy)}</code></div></div>
+          <div class="item"><div class="label">Fail On</div><div class="value"><code>{html_escape(report['fail_on'])}</code></div></div>
+          <div class="item"><div class="label">Findings</div><div class="value">{summary['errors']} error(s), {summary['warnings']} warning(s)</div></div>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Findings</h2>
+        {finding_block}
+      </section>
+    </main>
+  </body>
+</html>
+"""
 
 
 def write_output(path: Path, text: str) -> None:
@@ -1008,6 +1198,7 @@ def validate_json_file(
     report_out: Path | None = None,
     sarif_out: Path | None = None,
     summary_out: Path | None = None,
+    html_report_out: Path | None = None,
     policy_path: Path | None = None,
     quiet: bool = False,
 ) -> int:
@@ -1034,6 +1225,8 @@ def validate_json_file(
             write_output(sarif_out, json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2))
         if summary_out:
             write_output(summary_out, render_validation_markdown(report))
+        if html_report_out:
+            write_output(html_report_out, render_validation_html(report))
         return 1
     except json.JSONDecodeError as exc:
         message = f"Invalid StateBind JSON in {path}: {exc}"
@@ -1056,6 +1249,8 @@ def validate_json_file(
             write_output(sarif_out, json.dumps(sarif_report(findings, path, repo, fail_on, 1), indent=2))
         if summary_out:
             write_output(summary_out, render_validation_markdown(report))
+        if html_report_out:
+            write_output(html_report_out, render_validation_html(report))
         return 1
     resolved_repo = repo.resolve() if repo else None
     findings = validate_contract(contract, repo=resolved_repo)
@@ -1080,6 +1275,8 @@ def validate_json_file(
         )
     if summary_out:
         write_output(summary_out, render_validation_markdown(report))
+    if html_report_out:
+        write_output(html_report_out, render_validation_html(report))
     return exit_code
 
 
@@ -1439,6 +1636,7 @@ def main() -> int:
     p_validate.add_argument("--report", type=Path, help="write a CI-friendly validation report JSON")
     p_validate.add_argument("--sarif", type=Path, help="write GitHub code-scanning compatible SARIF")
     p_validate.add_argument("--summary", type=Path, help="write a Markdown validation summary")
+    p_validate.add_argument("--html-report", type=Path, help="write a standalone HTML validation report")
     p_validate.add_argument("--policy", type=Path, help="apply a StateBind policy JSON file")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
     p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
@@ -1504,6 +1702,7 @@ def main() -> int:
             args.report,
             args.sarif,
             args.summary,
+            args.html_report,
             args.policy,
             args.quiet,
         )

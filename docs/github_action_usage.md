@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.6
+      - uses: FU-max-boop/statebind-guard@v0.1.7
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -34,6 +34,7 @@ jobs:
             statebind-validation.json
             statebind-validation.sarif
             statebind-summary.md
+            statebind-report.html
       - uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
@@ -41,7 +42,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.6`.
+`FU-max-boop/statebind-guard@v0.1.7`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -55,6 +56,9 @@ The doctor confirms the workflow points at StateBind Guard and that
 The action also writes `statebind-summary.md` and appends it to the GitHub
 Actions step summary. Maintainers can see pass/fail status, threshold, and
 findings without opening raw logs.
+
+It also writes `statebind-report.html`, a standalone report that can be uploaded
+as a CI artifact for reviewers who want a readable validation page.
 
 Add `policy: .statebind-policy.json` when the repository has team-specific
 handoff requirements such as required roles or a minimum confidence level.
@@ -102,6 +106,19 @@ report for human review:
 **Contract:** `statebind.json`
 **Fail on:** `warning`
 **Findings:** 0 error(s), 0 warning(s)
+```
+
+## HTML Report
+
+`statebind validate --html-report statebind-report.html` writes a standalone
+HTML report for CI artifacts, release evidence, and human review:
+
+```bash
+statebind validate statebind.json \
+  --repo . \
+  --policy .statebind-policy.json \
+  --fail-on warning \
+  --html-report statebind-report.html
 ```
 
 ## Code Scanning Report
