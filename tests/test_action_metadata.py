@@ -16,12 +16,15 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("summary:", text)
         self.assertIn("html-report:", text)
         self.assertIn("policy:", text)
+        self.assertIn("annotations:", text)
         self.assertIn("statebind_handoff/statebind_handoff.py", text)
         self.assertIn("--report \"$REPORT\"", text)
         self.assertIn("--sarif \"$SARIF\"", text)
         self.assertIn("--summary \"$SUMMARY\"", text)
         self.assertIn("--html-report \"$HTML_REPORT\"", text)
         self.assertIn("POLICY_ARGS", text)
+        self.assertIn("ANNOTATION_ARGS", text)
+        self.assertIn("--github-annotations", text)
         self.assertIn("GITHUB_STEP_SUMMARY", text)
 
     def test_repository_ci_smokes_local_action(self):

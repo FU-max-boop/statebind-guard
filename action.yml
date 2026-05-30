@@ -43,6 +43,10 @@ inputs:
     description: Optional StateBind policy JSON file for team-specific handoff gates.
     required: false
     default: ""
+  annotations:
+    description: Whether to emit GitHub Actions annotations for StateBind findings.
+    required: false
+    default: "true"
   setup-python:
     description: Whether to install Python for the action run.
     required: false
@@ -93,11 +97,16 @@ runs:
         SUMMARY: ${{ inputs.summary }}
         HTML_REPORT: ${{ inputs.html-report }}
         POLICY: ${{ inputs.policy }}
+        ANNOTATIONS: ${{ inputs.annotations }}
       run: |
         mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")" "$(dirname "$SUMMARY")" "$(dirname "$HTML_REPORT")"
         POLICY_ARGS=()
         if [ -n "$POLICY" ]; then
           POLICY_ARGS=(--policy "$POLICY")
+        fi
+        ANNOTATION_ARGS=()
+        if [ "$ANNOTATIONS" = "true" ]; then
+          ANNOTATION_ARGS=(--github-annotations)
         fi
         set +e
         python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" validate \
@@ -109,7 +118,8 @@ runs:
           --sarif "$SARIF" \
           --summary "$SUMMARY" \
           --html-report "$HTML_REPORT" \
-          "${POLICY_ARGS[@]}"
+          "${POLICY_ARGS[@]}" \
+          "${ANNOTATION_ARGS[@]}"
         status="$?"
         set -e
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f "$SUMMARY" ]; then

@@ -138,7 +138,7 @@ class StateBindHandoffTests(unittest.TestCase):
             sarif = repo / "statebind-validation.sarif"
             summary = repo / "statebind-summary.md"
             html_report = repo / "statebind-report.html"
-            run(
+            proc = subprocess.run(
                 [
                     "python",
                     str(SCRIPT),
@@ -154,9 +154,17 @@ class StateBindHandoffTests(unittest.TestCase):
                     str(summary),
                     "--html-report",
                     str(html_report),
+                    "--json",
+                    "--github-annotations",
                 ],
-                repo,
+                cwd=repo,
+                text=True,
+                capture_output=True,
             )
+            self.assertEqual(proc.returncode, 0)
+            self.assertIn('"passed": true', proc.stdout)
+            self.assertIn("::warning file=", proc.stderr)
+            self.assertIn("StateBind blank_task_goal", proc.stderr)
             sarif_data = json.loads(sarif.read_text())
             self.assertEqual(sarif_data["version"], "2.1.0")
             results = sarif_data["runs"][0]["results"]
@@ -283,7 +291,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.7", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.8", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -546,6 +554,7 @@ class StateBindHandoffTests(unittest.TestCase):
                     str(summary),
                     "--html-report",
                     str(html_report),
+                    "--github-annotations",
                 ],
                 cwd=repo,
                 text=True,
@@ -558,6 +567,8 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertEqual(sarif_data["runs"][0]["results"][0]["ruleId"], "contract_not_found")
             self.assertIn("contract_not_found", summary.read_text())
             self.assertIn("contract_not_found", html_report.read_text())
+
+            self.assertIn("::error file=missing-statebind.json", proc.stderr)
 
     def test_schema_command_matches_tracked_schema(self):
         out = run(["python", str(SCRIPT), "schema"], ROOT)

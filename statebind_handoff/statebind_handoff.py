@@ -39,7 +39,7 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.7"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.8"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": POLICY_SCHEMA_VERSION,
@@ -782,6 +782,14 @@ def portable_display_path(value: Any) -> str:
     return text
 
 
+def github_command_escape(value: Any, property_value: bool = False) -> str:
+    text = str(value)
+    text = text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    if property_value:
+        text = text.replace(":", "%3A").replace(",", "%2C")
+    return text
+
+
 def render_validation_markdown(report: dict[str, Any]) -> str:
     status = "PASS" if report["passed"] else "FAIL"
     summary = report["summary"]
@@ -817,6 +825,25 @@ def render_validation_markdown(report: dict[str, Any]) -> str:
             + " |"
         )
     lines.append("")
+    return "\n".join(lines)
+
+
+def render_github_annotations(report: dict[str, Any]) -> str:
+    lines: list[str] = []
+    file_path = portable_display_path(report["statebind_json"]) or "statebind.json"
+    for finding in report["findings"]:
+        severity = "error" if finding.get("severity") == "error" else "warning"
+        title = f"StateBind {finding.get('code', 'finding')}"
+        details = str(finding.get("message", ""))
+        if finding.get("role"):
+            details += f" role={finding['role']!r}"
+        if finding.get("handle"):
+            details += f" handle={finding['handle']!r}"
+        lines.append(
+            f"::{severity} file={github_command_escape(file_path, property_value=True)},"
+            f"title={github_command_escape(title, property_value=True)}::"
+            f"{github_command_escape(details)}"
+        )
     return "\n".join(lines)
 
 
@@ -1200,6 +1227,7 @@ def validate_json_file(
     summary_out: Path | None = None,
     html_report_out: Path | None = None,
     policy_path: Path | None = None,
+    github_annotations: bool = False,
     quiet: bool = False,
 ) -> int:
     try:
@@ -1227,6 +1255,10 @@ def validate_json_file(
             write_output(summary_out, render_validation_markdown(report))
         if html_report_out:
             write_output(html_report_out, render_validation_html(report))
+        if github_annotations:
+            annotations = render_github_annotations(report)
+            if annotations:
+                print(annotations, file=sys.stderr)
         return 1
     except json.JSONDecodeError as exc:
         message = f"Invalid StateBind JSON in {path}: {exc}"
@@ -1251,6 +1283,10 @@ def validate_json_file(
             write_output(summary_out, render_validation_markdown(report))
         if html_report_out:
             write_output(html_report_out, render_validation_html(report))
+        if github_annotations:
+            annotations = render_github_annotations(report)
+            if annotations:
+                print(annotations, file=sys.stderr)
         return 1
     resolved_repo = repo.resolve() if repo else None
     findings = validate_contract(contract, repo=resolved_repo)
@@ -1277,6 +1313,10 @@ def validate_json_file(
         write_output(summary_out, render_validation_markdown(report))
     if html_report_out:
         write_output(html_report_out, render_validation_html(report))
+    if github_annotations:
+        annotations = render_github_annotations(report)
+        if annotations:
+            print(annotations, file=sys.stderr)
     return exit_code
 
 
@@ -1638,6 +1678,7 @@ def main() -> int:
     p_validate.add_argument("--summary", type=Path, help="write a Markdown validation summary")
     p_validate.add_argument("--html-report", type=Path, help="write a standalone HTML validation report")
     p_validate.add_argument("--policy", type=Path, help="apply a StateBind policy JSON file")
+    p_validate.add_argument("--github-annotations", action="store_true", help="emit GitHub Actions workflow annotations to stderr")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
     p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
 
@@ -1704,6 +1745,7 @@ def main() -> int:
             args.summary,
             args.html_report,
             args.policy,
+            args.github_annotations,
             args.quiet,
         )
     if args.cmd == "policy":

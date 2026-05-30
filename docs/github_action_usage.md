@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.7
+      - uses: FU-max-boop/statebind-guard@v0.1.8
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -42,7 +42,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.7`.
+`FU-max-boop/statebind-guard@v0.1.8`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -59,6 +59,10 @@ findings without opening raw logs.
 
 It also writes `statebind-report.html`, a standalone report that can be uploaded
 as a CI artifact for reviewers who want a readable validation page.
+
+By default the action emits GitHub Actions annotations for every finding, so
+warnings and errors appear directly in the workflow UI. Set
+`annotations: "false"` to disable this behavior.
 
 Add `policy: .statebind-policy.json` when the repository has team-specific
 handoff requirements such as required roles or a minimum confidence level.
@@ -119,6 +123,19 @@ statebind validate statebind.json \
   --policy .statebind-policy.json \
   --fail-on warning \
   --html-report statebind-report.html
+```
+
+## GitHub Annotations
+
+`statebind validate --github-annotations` prints workflow commands to stderr
+without contaminating `--json` stdout:
+
+```bash
+statebind validate statebind.json \
+  --repo . \
+  --fail-on warning \
+  --json \
+  --github-annotations
 ```
 
 ## Code Scanning Report
