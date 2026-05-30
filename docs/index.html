@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>StateBind Guard</title>
+    <meta
+      name="description"
+      content="Validate executable-state bindings in coding-agent handoffs with a CLI, GitHub Action, schema, SARIF reports, and benchmark corpus."
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #16181d;
+        --muted: #5d6472;
+        --line: #d9dee7;
+        --paper: #fbfcff;
+        --surface: #ffffff;
+        --accent: #0e766e;
+        --accent-strong: #0f5d58;
+        --amber: #b35c00;
+        --rose: #b42318;
+        --code: #102033;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--accent-strong);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .hero {
+        min-height: 560px;
+        display: grid;
+        align-items: end;
+        background:
+          linear-gradient(90deg, rgba(251, 252, 255, 0.96), rgba(251, 252, 255, 0.8) 48%, rgba(251, 252, 255, 0.35)),
+          url("assets/statebind_guard_demo.svg") right center / min(68vw, 980px) auto no-repeat;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .hero-inner {
+        width: min(1120px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 72px 0 64px;
+      }
+
+      .eyebrow {
+        color: var(--accent-strong);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 710px;
+        margin: 16px 0 18px;
+        font-size: clamp(44px, 7vw, 84px);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 670px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 20px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        padding: 10px 16px;
+        background: var(--accent);
+        color: #ffffff;
+        font-weight: 700;
+      }
+
+      .button.secondary {
+        border-color: var(--line);
+        background: var(--surface);
+        color: var(--ink);
+      }
+
+      main {
+        width: min(1120px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      section {
+        padding: 56px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h2 {
+        margin: 0 0 18px;
+        font-size: 30px;
+        line-height: 1.16;
+        letter-spacing: 0;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 22px;
+      }
+
+      .panel h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        letter-spacing: 0;
+      }
+
+      .panel p,
+      .compact {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 18px 0 0;
+        border-radius: 8px;
+        background: var(--code);
+        color: #f7fbff;
+        padding: 18px;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 32px;
+        align-items: start;
+      }
+
+      .demo-image {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #101827;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-top: 20px;
+      }
+
+      .metric {
+        border-left: 4px solid var(--accent);
+        background: var(--surface);
+        padding: 14px 16px;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 24px;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .warning {
+        border-left-color: var(--amber);
+      }
+
+      .danger {
+        border-left-color: var(--rose);
+      }
+
+      footer {
+        width: min(1120px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 28px 0 44px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      @media (max-width: 860px) {
+        .hero {
+          min-height: auto;
+          background:
+            linear-gradient(rgba(251, 252, 255, 0.95), rgba(251, 252, 255, 0.95)),
+            url("assets/statebind_guard_demo.svg") center top / 900px auto no-repeat;
+        }
+
+        .hero-inner {
+          padding-top: 260px;
+        }
+
+        .grid,
+        .split,
+        .metric-row {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 44px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="eyebrow">StateBind Guard v0.1.1</div>
+        <h1>Make coding-agent handoffs executable.</h1>
+        <p class="lead">
+          StateBind Guard catches the quiet failure where a handoff mentions the
+          right file, test, PR, SHA, or artifact, but loses the role binding
+          needed for the next agent to act safely.
+        </p>
+        <div class="actions" aria-label="Primary links">
+          <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.1">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/quick_demo.md">Quick demo</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="grid">
+          <div class="panel">
+            <h3>One command to adopt</h3>
+            <p>Generate a handoff contract, machine-readable state, and GitHub workflow in a new repository.</p>
+          </div>
+          <div class="panel">
+            <h3>CI-native reports</h3>
+            <p>Emit JSON and SARIF so failures become artifacts and GitHub code-scanning annotations.</p>
+          </div>
+          <div class="panel">
+            <h3>Benchmark-backed claim</h3>
+            <p>Seed, natural handoff, and failure-corpus suites test visible-but-unbound failure modes.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="split">
+        <div>
+          <h2>30-second setup</h2>
+          <p class="compact">
+            The starter scaffold is intentionally small: one human-readable
+            handoff, one JSON contract, one workflow.
+          </p>
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.1"
+statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
+git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml</code></pre>
+        </div>
+        <img
+          class="demo-image"
+          src="assets/statebind_guard_demo.svg"
+          alt="StateBind Guard rejects visible but unbound handles and accepts role-bound executable state."
+        />
+      </section>
+
+      <section>
+        <h2>What it validates</h2>
+        <div class="grid">
+          <div class="panel">
+            <h3>Role</h3>
+            <p>Is this handle the failing test, comparison base, active patch, current artifact, or something else?</p>
+          </div>
+          <div class="panel">
+            <h3>Handle</h3>
+            <p>Is the executable object exact: command, file path, PR URL, issue, commit SHA, branch, or artifact?</p>
+          </div>
+          <div class="panel">
+            <h3>Evidence</h3>
+            <p>Why should the next agent trust this binding, and what ambiguity remains?</p>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div class="metric"><strong>13</strong><span>unit tests in CI</span></div>
+          <div class="metric"><strong>3</strong><span>benchmark suites</span></div>
+          <div class="metric warning"><strong>SARIF</strong><span>GitHub-native output</span></div>
+          <div class="metric danger"><strong>0.000</strong><span>unsafe accepts on included natural snippets</span></div>
+        </div>
+      </section>
+
+      <section class="split">
+        <div>
+          <h2>Use it in CI</h2>
+          <p class="compact">
+            The composite action can be pasted into any repository that stores
+            agent handoffs.
+          </p>
+        </div>
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.1
+  with:
+    handoff: HANDOFF.md
+    statebind-json: statebind.json
+    fail-on: warning</code></pre>
+      </section>
+    </main>
+
+    <footer>
+      StateBind Guard is a public research-engineering artifact by Fu Xiaonan.
+      It is deliberately small, dependency-free, and built around executable
+      evidence rather than summary polish.
+    </footer>
+  </body>
+</html>

@@ -1,5 +1,7 @@
 # StateBind Guard
 
+**Project page:** https://fu-max-boop.github.io/statebind-guard/
+
 StateBind Guard is a small benchmark and checker for a simple failure mode in
 coding-agent handoffs:
 
