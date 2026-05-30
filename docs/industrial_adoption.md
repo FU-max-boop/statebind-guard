@@ -42,12 +42,23 @@ statebind validate statebind.json \
   --sarif statebind-validation.sarif
 ```
 
+For repositories that keep `statebind.json` committed, install a local
+pre-commit guard:
+
+```bash
+statebind install-hook --fail-on warning
+```
+
+The hook is deliberately local. It writes `.git/hooks/pre-commit`, refuses to
+overwrite an existing hook unless `--force` is passed, and validates the
+machine-readable handoff before each commit.
+
 ### Level 2: CI Gate
 
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.1
+- uses: FU-max-boop/statebind-guard@v0.1.2
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

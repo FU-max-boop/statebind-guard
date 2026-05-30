@@ -37,7 +37,7 @@ COMMAND_PREFIXES = (
     "git",
 )
 SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.1"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.2"
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
@@ -346,6 +346,49 @@ def init_scaffold(
         write_scaffold_file(path, text, force)
         written.append(path)
     return written
+
+
+def git_hook_path(repo: Path) -> Path:
+    hook = run(["git", "rev-parse", "--git-path", "hooks/pre-commit"], repo)
+    if not hook:
+        raise RuntimeError(f"{repo} does not look like a Git repository.")
+    path = Path(hook)
+    if not path.is_absolute():
+        path = repo / path
+    return path
+
+
+def render_pre_commit_hook(statebind_path: Path, fail_on: str) -> str:
+    executable = json.dumps(sys.executable)
+    script = json.dumps(str(Path(__file__).resolve()))
+    return f"""#!/usr/bin/env sh
+set -eu
+
+STATEBIND_JSON={json.dumps(statebind_path.as_posix())}
+STATEBIND_SCRIPT={script}
+PYTHON={executable}
+
+if [ ! -f "$STATEBIND_JSON" ]; then
+  echo "StateBind Guard: $STATEBIND_JSON is missing. Run statebind init or update the hook path." >&2
+  exit 1
+fi
+
+if "$PYTHON" -c "import statebind_handoff.statebind_handoff" >/dev/null 2>&1; then
+  exec "$PYTHON" -m statebind_handoff.statebind_handoff validate "$STATEBIND_JSON" --repo . --fail-on {fail_on} --quiet
+fi
+
+exec "$PYTHON" "$STATEBIND_SCRIPT" validate "$STATEBIND_JSON" --repo . --fail-on {fail_on} --quiet
+"""
+
+
+def install_git_hook(repo: Path, statebind_path: Path, fail_on: str, force: bool) -> Path:
+    hook = git_hook_path(repo.resolve())
+    if hook.exists() and not force:
+        raise FileExistsError(f"{hook} already exists; pass --force to overwrite it.")
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text(render_pre_commit_hook(statebind_path, fail_on), encoding="utf-8")
+    hook.chmod(0o755)
+    return hook
 
 
 def is_blank(value: Any) -> bool:
@@ -744,6 +787,7 @@ def validate_json_file(
     fail_on: str,
     report_out: Path | None = None,
     sarif_out: Path | None = None,
+    quiet: bool = False,
 ) -> int:
     try:
         contract = json.loads(path.read_text(encoding="utf-8"))
@@ -797,7 +841,7 @@ def validate_json_file(
     report = validation_report(findings, path, resolved_repo, fail_on, exit_code)
     if json_out:
         print(json.dumps(report, indent=2))
-    else:
+    elif not quiet or findings:
         print(render_validation_text(findings))
     if report_out:
         report_out.write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -859,6 +903,12 @@ def main() -> int:
     p_init.add_argument("--next-command", default="make test")
     p_init.add_argument("--force", action="store_true", help="overwrite existing scaffold files")
 
+    p_install_hook = sub.add_parser("install-hook", help="install a local Git pre-commit StateBind guard")
+    p_install_hook.add_argument("--repo", type=Path, default=Path("."))
+    p_install_hook.add_argument("--json", type=Path, default=Path("statebind.json"))
+    p_install_hook.add_argument("--fail-on", choices=["error", "warning"], default="warning")
+    p_install_hook.add_argument("--force", action="store_true", help="overwrite an existing pre-commit hook")
+
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
 
@@ -869,6 +919,7 @@ def main() -> int:
     p_validate.add_argument("--report", type=Path, help="write a CI-friendly validation report JSON")
     p_validate.add_argument("--sarif", type=Path, help="write GitHub code-scanning compatible SARIF")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
+    p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
 
     p_schema = sub.add_parser("schema", help="print the StateBind JSON schema")
     p_schema.add_argument("--out", type=Path, help="write schema JSON to a file")
@@ -894,10 +945,27 @@ def main() -> int:
             print(f"Wrote {path}")
         print("Next: commit these files and let the StateBind Guard workflow validate future handoffs.")
         return 0
+    if args.cmd == "install-hook":
+        try:
+            hook = install_git_hook(args.repo, args.json, args.fail_on, args.force)
+        except (FileExistsError, RuntimeError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        print(f"Wrote {hook}")
+        print(f"StateBind Guard pre-commit hook will validate {args.json} with --fail-on {args.fail_on}.")
+        return 0
     if args.cmd == "check":
         return check_handoff(args.handoff)
     if args.cmd == "validate":
-        return validate_json_file(args.statebind_json, args.repo, args.json, args.fail_on, args.report, args.sarif)
+        return validate_json_file(
+            args.statebind_json,
+            args.repo,
+            args.json,
+            args.fail_on,
+            args.report,
+            args.sarif,
+            args.quiet,
+        )
     if args.cmd == "schema":
         text = json.dumps(STATEBIND_SCHEMA, indent=2)
         if args.out:

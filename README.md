@@ -66,13 +66,16 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.1"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.2"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
+statebind install-hook
 git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml
 ```
 
 This creates a ready-to-run handoff contract and a GitHub Actions workflow that
 publishes JSON/SARIF validation reports on future pushes and pull requests.
+The optional local hook blocks commits when `statebind.json` loses its
+executable binding contract.
 
 Run the smoke demo:
 
@@ -94,7 +97,7 @@ See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.1
+- uses: FU-max-boop/statebind-guard@v0.1.2
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

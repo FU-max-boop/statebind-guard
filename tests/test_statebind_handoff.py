@@ -185,7 +185,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.1", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.2", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -210,6 +210,25 @@ class StateBindHandoffTests(unittest.TestCase):
                 repo,
             )
             self.assertIn("StateBind validation passed", validate_out)
+
+            quiet_proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    str(state),
+                    "--repo",
+                    ".",
+                    "--fail-on",
+                    "warning",
+                    "--quiet",
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(quiet_proc.returncode, 0)
+            self.assertEqual(quiet_proc.stdout, "")
 
     def test_init_refuses_to_partially_overwrite_existing_files(self):
         with tempfile.TemporaryDirectory() as td:
@@ -241,6 +260,71 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertEqual(handoff.read_text(), "existing handoff\n")
             self.assertFalse(state.exists())
             self.assertFalse(workflow.exists())
+
+    def test_install_hook_validates_statebind_before_commit(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            run(["git", "init", "-q"], repo)
+            run(["git", "config", "user.email", "demo@example.com"], repo)
+            run(["git", "config", "user.name", "Demo"], repo)
+
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--goal",
+                    "keep handoffs executable",
+                    "--next-command",
+                    "make test",
+                ],
+                repo,
+            )
+            out = run(["python", str(SCRIPT), "install-hook", "--repo", ".", "--json", "statebind.json"], repo)
+            hook = repo / ".git" / "hooks" / "pre-commit"
+            self.assertIn("pre-commit", out)
+            self.assertTrue(hook.exists())
+            self.assertTrue(hook.stat().st_mode & 0o111)
+            hook_text = hook.read_text()
+            self.assertIn("statebind_handoff.statebind_handoff", hook_text)
+            self.assertIn("--fail-on warning", hook_text)
+            self.assertIn("--quiet", hook_text)
+
+            (repo / "README.md").write_text("demo\n")
+            run(["git", "add", "."], repo)
+            run(["git", "commit", "-q", "-m", "valid handoff"], repo)
+
+            data = json.loads((repo / "statebind.json").read_text())
+            data["bindings"][0]["handle"] = "the previous command"
+            (repo / "statebind.json").write_text(json.dumps(data, indent=2))
+            (repo / "README.md").write_text("demo change\n")
+            run(["git", "add", "."], repo)
+            proc = subprocess.run(
+                ["git", "commit", "-m", "invalid handoff"],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("vague_handle", proc.stdout + proc.stderr)
+
+    def test_install_hook_refuses_existing_hook_without_force(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            run(["git", "init", "-q"], repo)
+            hook = repo / ".git" / "hooks" / "pre-commit"
+            hook.write_text("#!/usr/bin/env sh\nexit 0\n")
+
+            proc = subprocess.run(
+                ["python", str(SCRIPT), "install-hook", "--repo", "."],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(proc.returncode, 2)
+            self.assertIn("pass --force", proc.stderr)
+            self.assertEqual(hook.read_text(), "#!/usr/bin/env sh\nexit 0\n")
 
     def test_validate_rejects_vague_handle(self):
         with tempfile.TemporaryDirectory() as td:
