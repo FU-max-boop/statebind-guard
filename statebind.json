@@ -45,6 +45,13 @@
       "evidence": "GitHub Pages product surface",
       "confidence": "high",
       "risk": ""
+    },
+    {
+      "role": "policy_file",
+      "handle": ".statebind-policy.json",
+      "evidence": "repository-level StateBind policy for required release bindings",
+      "confidence": "high",
+      "risk": ""
     }
   ],
   "risks": [

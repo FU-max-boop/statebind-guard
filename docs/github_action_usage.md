@@ -20,10 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.5
+      - uses: FU-max-boop/statebind-guard@v0.1.6
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
+          policy: .statebind-policy.json
           fail-on: warning
       - uses: actions/upload-artifact@v4
         if: always()
@@ -40,7 +41,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.5`.
+`FU-max-boop/statebind-guard@v0.1.6`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -54,6 +55,9 @@ The doctor confirms the workflow points at StateBind Guard and that
 The action also writes `statebind-summary.md` and appends it to the GitHub
 Actions step summary. Maintainers can see pass/fail status, threshold, and
 findings without opening raw logs.
+
+Add `policy: .statebind-policy.json` when the repository has team-specific
+handoff requirements such as required roles or a minimum confidence level.
 
 For this repository, the stricter gate is:
 
@@ -78,6 +82,9 @@ report that can be uploaded as a CI artifact:
   "findings": []
 }
 ```
+
+When `--policy .statebind-policy.json` is provided, the report includes policy
+findings such as `policy_missing_required_role` alongside structural findings.
 
 Use `--fail-on error` for draft handoffs where warnings are acceptable. Use
 `--fail-on warning` when the handoff is meant to be consumed by another agent

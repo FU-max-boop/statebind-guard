@@ -1,0 +1,13 @@
+{
+  "schema_version": "0.1",
+  "required_roles": [
+    "release_gate_command",
+    "package_gate_command",
+    "ci_workflow",
+    "adoption_workflow",
+    "public_docs",
+    "policy_file"
+  ],
+  "min_confidence": "high",
+  "require_top_level_risks": true
+}

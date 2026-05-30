@@ -26,6 +26,8 @@ benchmark:
 schema-check:
 	python statebind_handoff/statebind_handoff.py schema --out /tmp/statebind.schema.json >/dev/null
 	diff -u schemas/statebind.schema.json /tmp/statebind.schema.json
+	python statebind_handoff/statebind_handoff.py schema --policy --out /tmp/statebind-policy.schema.json >/dev/null
+	diff -u schemas/statebind-policy.schema.json /tmp/statebind-policy.schema.json
 
 public-check:
 	bash scripts/check_public_ready.sh
@@ -46,8 +48,9 @@ package-check:
 	cd "$$tmpdir"; \
 	git init -q; \
 	"$$tmpdir/venv/bin/statebind" init --goal "package smoke" --next-command "make test" >/dev/null; \
-	"$$tmpdir/venv/bin/statebind" install-hook --repo . --json statebind.json >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" policy --out .statebind-policy.json >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" install-hook --repo . --json statebind.json --policy .statebind-policy.json >/dev/null; \
 	test -x .git/hooks/pre-commit; \
-	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning --summary statebind-summary.md >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning --policy .statebind-policy.json --summary statebind-summary.md >/dev/null; \
 	test -s statebind-summary.md; \
 	"$$tmpdir/venv/bin/statebind" doctor --repo . >/dev/null

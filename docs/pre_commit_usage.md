@@ -8,7 +8,7 @@ Add this to your repository's `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: statebind-guard
 ```
@@ -38,6 +38,9 @@ statebind doctor --repo .
 For teams that do not use pre-commit, use the built-in local installer instead:
 
 ```bash
-statebind install-hook --fail-on warning
+statebind install-hook --fail-on warning --policy .statebind-policy.json
 statebind doctor --repo .
 ```
+
+The built-in hook accepts `--policy` so local commits can enforce the same
+required roles and confidence floor as CI.

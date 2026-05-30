@@ -75,6 +75,8 @@ risk -> do not use head SHA abc1234
 StateBind Guard is intentionally small and dependency-free:
 
 - `statebind init` creates `HANDOFF.md`, `statebind.json`, and a GitHub workflow.
+- `statebind policy` creates a team-editable policy for required roles,
+  confidence floors, and explicit risk requirements.
 - `statebind validate` checks structure, vague handles, path safety, and missing executable bindings.
 - `statebind doctor` audits whether the repository has the contract, handoff, CI, and local hooks wired.
 - JSON, SARIF, and Markdown summary outputs make the result usable in CI,
@@ -85,20 +87,22 @@ StateBind Guard is intentionally small and dependency-free:
 ## Try It
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.5"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.6"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind install-hook
+statebind policy --out .statebind-policy.json
+statebind install-hook --policy .statebind-policy.json
 statebind doctor
-git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml
+git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml
 ```
 
 Then use the generated workflow or call the action directly:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.5
+- uses: FU-max-boop/statebind-guard@v0.1.6
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
+    policy: .statebind-policy.json
     fail-on: warning
 ```
 

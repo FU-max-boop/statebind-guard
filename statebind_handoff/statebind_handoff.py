@@ -37,7 +37,15 @@ COMMAND_PREFIXES = (
     "git",
 )
 SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.5"
+POLICY_SCHEMA_VERSION = "0.1"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.6"
+CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
+DEFAULT_POLICY: dict[str, Any] = {
+    "schema_version": POLICY_SCHEMA_VERSION,
+    "required_roles": ["next_command"],
+    "min_confidence": "medium",
+    "require_top_level_risks": False,
+}
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
@@ -91,6 +99,23 @@ STATEBIND_SCHEMA: dict[str, Any] = {
             },
             "additionalProperties": True,
         },
+    },
+    "additionalProperties": True,
+}
+POLICY_SCHEMA: dict[str, Any] = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind-policy.schema.json",
+    "title": "StateBind policy",
+    "type": "object",
+    "required": ["schema_version"],
+    "properties": {
+        "schema_version": {"type": "string", "enum": [POLICY_SCHEMA_VERSION]},
+        "required_roles": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "min_confidence": {"type": "string", "enum": sorted(CONFIDENCE_VALUES)},
+        "require_top_level_risks": {"type": "boolean"},
     },
     "additionalProperties": True,
 }
@@ -366,13 +391,15 @@ def git_hook_path(repo: Path) -> Path:
     return path
 
 
-def render_pre_commit_hook(statebind_path: Path, fail_on: str) -> str:
+def render_pre_commit_hook(statebind_path: Path, fail_on: str, policy_path: Path | None = None) -> str:
     executable = json.dumps(sys.executable)
     script = json.dumps(str(Path(__file__).resolve()))
+    policy = json.dumps(policy_path.as_posix() if policy_path else "")
     return f"""#!/usr/bin/env sh
 set -eu
 
 STATEBIND_JSON={json.dumps(statebind_path.as_posix())}
+STATEBIND_POLICY={policy}
 STATEBIND_SCRIPT={script}
 PYTHON={executable}
 
@@ -381,20 +408,31 @@ if [ ! -f "$STATEBIND_JSON" ]; then
   exit 1
 fi
 
-if "$PYTHON" -c "import statebind_handoff.statebind_handoff" >/dev/null 2>&1; then
-  exec "$PYTHON" -m statebind_handoff.statebind_handoff validate "$STATEBIND_JSON" --repo . --fail-on {fail_on} --quiet
+if [ -n "$STATEBIND_POLICY" ] && [ ! -f "$STATEBIND_POLICY" ]; then
+  echo "StateBind Guard: $STATEBIND_POLICY is missing. Update the hook policy path." >&2
+  exit 1
 fi
 
-exec "$PYTHON" "$STATEBIND_SCRIPT" validate "$STATEBIND_JSON" --repo . --fail-on {fail_on} --quiet
+if "$PYTHON" -c "import statebind_handoff.statebind_handoff" >/dev/null 2>&1; then
+  set -- -m statebind_handoff.statebind_handoff validate "$STATEBIND_JSON" --repo . --fail-on {fail_on} --quiet
+else
+  set -- "$STATEBIND_SCRIPT" validate "$STATEBIND_JSON" --repo . --fail-on {fail_on} --quiet
+fi
+
+if [ -n "$STATEBIND_POLICY" ]; then
+  set -- "$@" --policy "$STATEBIND_POLICY"
+fi
+
+exec "$PYTHON" "$@"
 """
 
 
-def install_git_hook(repo: Path, statebind_path: Path, fail_on: str, force: bool) -> Path:
+def install_git_hook(repo: Path, statebind_path: Path, fail_on: str, force: bool, policy_path: Path | None = None) -> Path:
     hook = git_hook_path(repo.resolve())
     if hook.exists() and not force:
         raise FileExistsError(f"{hook} already exists; pass --force to overwrite it.")
     hook.parent.mkdir(parents=True, exist_ok=True)
-    hook.write_text(render_pre_commit_hook(statebind_path, fail_on), encoding="utf-8")
+    hook.write_text(render_pre_commit_hook(statebind_path, fail_on, policy_path), encoding="utf-8")
     hook.chmod(0o755)
     return hook
 
@@ -590,6 +628,131 @@ def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> lis
     return findings
 
 
+def validate_policy_config(policy: Any) -> list[ValidationFinding]:
+    findings: list[ValidationFinding] = []
+    if not isinstance(policy, dict):
+        return [ValidationFinding("error", "policy_not_object", "StateBind policy must be a JSON object.")]
+
+    schema_version = str(policy.get("schema_version", "")).strip()
+    if not schema_version:
+        add_finding(findings, "error", "policy_missing_schema_version", "`schema_version` is required in policy.")
+    elif schema_version != POLICY_SCHEMA_VERSION:
+        add_finding(
+            findings,
+            "error",
+            "policy_unsupported_schema_version",
+            f"Policy schema_version {schema_version!r} is not supported; expected {POLICY_SCHEMA_VERSION!r}.",
+        )
+
+    required_roles = policy.get("required_roles", [])
+    if not isinstance(required_roles, list) or not all(isinstance(role, str) and role.strip() for role in required_roles):
+        add_finding(findings, "error", "policy_invalid_required_roles", "`required_roles` must be a list of non-empty strings.")
+
+    min_confidence = policy.get("min_confidence")
+    if min_confidence is not None and min_confidence not in CONFIDENCE_VALUES:
+        add_finding(
+            findings,
+            "error",
+            "policy_invalid_min_confidence",
+            f"`min_confidence` must be one of {sorted(CONFIDENCE_VALUES)}.",
+        )
+
+    require_risks = policy.get("require_top_level_risks", False)
+    if not isinstance(require_risks, bool):
+        add_finding(
+            findings,
+            "error",
+            "policy_invalid_require_top_level_risks",
+            "`require_top_level_risks` must be true or false.",
+        )
+
+    return findings
+
+
+def apply_policy(contract: dict[str, Any], policy: Any) -> list[ValidationFinding]:
+    findings = validate_policy_config(policy)
+    if any(f.severity == "error" for f in findings):
+        return findings
+
+    assert isinstance(policy, dict)
+    bindings = contract.get("bindings")
+    if not isinstance(bindings, list):
+        bindings = []
+
+    roles = {str(raw.get("role", "")).strip() for raw in bindings if isinstance(raw, dict)}
+    for role in policy.get("required_roles", []):
+        if role not in roles:
+            add_finding(
+                findings,
+                "error",
+                "policy_missing_required_role",
+                f"Policy requires a `{role}` binding.",
+                role,
+            )
+
+    min_confidence = policy.get("min_confidence")
+    if min_confidence in CONFIDENCE_ORDER:
+        min_rank = CONFIDENCE_ORDER[min_confidence]
+        active_target = contract.get("active_target")
+        if isinstance(active_target, dict):
+            confidence = str(active_target.get("confidence", "")).strip()
+            if confidence in CONFIDENCE_ORDER and CONFIDENCE_ORDER[confidence] < min_rank:
+                add_finding(
+                    findings,
+                    "error",
+                    "policy_active_target_confidence_below_min",
+                    f"Active target confidence `{confidence}` is below policy minimum `{min_confidence}`.",
+                    "active_target",
+                    str(active_target.get("handle", "")).strip(),
+                )
+
+        for raw in bindings:
+            if not isinstance(raw, dict):
+                continue
+            confidence = str(raw.get("confidence", "")).strip()
+            if confidence in CONFIDENCE_ORDER and CONFIDENCE_ORDER[confidence] < min_rank:
+                add_finding(
+                    findings,
+                    "error",
+                    "policy_binding_confidence_below_min",
+                    f"Binding confidence `{confidence}` is below policy minimum `{min_confidence}`.",
+                    str(raw.get("role", "")).strip(),
+                    str(raw.get("handle", "")).strip(),
+                )
+
+    if policy.get("require_top_level_risks") and not contract.get("risks"):
+        add_finding(
+            findings,
+            "error",
+            "policy_missing_top_level_risks",
+            "Policy requires at least one top-level risk entry.",
+        )
+
+    return findings
+
+
+def validate_policy_file(policy_path: Path, contract: dict[str, Any]) -> list[ValidationFinding]:
+    try:
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return [
+            ValidationFinding(
+                "error",
+                "policy_not_found",
+                f"StateBind policy not found: {policy_path}",
+            )
+        ]
+    except json.JSONDecodeError as exc:
+        return [
+            ValidationFinding(
+                "error",
+                "policy_invalid_json",
+                f"Invalid StateBind policy JSON in {policy_path}: {exc}",
+            )
+        ]
+    return apply_policy(contract, policy)
+
+
 def render_validation_text(findings: list[ValidationFinding]) -> str:
     if not findings:
         return "StateBind validation passed: no structural findings."
@@ -612,6 +775,7 @@ def render_validation_markdown(report: dict[str, Any]) -> str:
         "",
         f"**Status:** {status}",
         f"**Contract:** `{report['statebind_json']}`",
+        f"**Policy:** `{report['policy'] or '[none]'}`",
         f"**Fail on:** `{report['fail_on']}`",
         f"**Findings:** {summary['errors']} error(s), {summary['warnings']} warning(s)",
         "",
@@ -666,11 +830,13 @@ def validation_report(
     repo: Path | None,
     fail_on: str,
     exit_code: int,
+    policy_path: Path | None = None,
 ) -> dict[str, Any]:
     summary = findings_summary(findings)
     return {
         "schema_version": SCHEMA_VERSION,
         "statebind_json": str(path),
+        "policy": str(policy_path) if policy_path else "",
         "repo": str(repo) if repo else "",
         "fail_on": fail_on,
         "exit_code": exit_code,
@@ -842,6 +1008,7 @@ def validate_json_file(
     report_out: Path | None = None,
     sarif_out: Path | None = None,
     summary_out: Path | None = None,
+    policy_path: Path | None = None,
     quiet: bool = False,
 ) -> int:
     try:
@@ -855,6 +1022,7 @@ def validate_json_file(
             repo,
             fail_on,
             1,
+            policy_path,
         )
         if json_out:
             print(json.dumps(report, indent=2))
@@ -876,6 +1044,7 @@ def validate_json_file(
             repo,
             fail_on,
             1,
+            policy_path,
         )
         if json_out:
             print(json.dumps(report, indent=2))
@@ -890,8 +1059,11 @@ def validate_json_file(
         return 1
     resolved_repo = repo.resolve() if repo else None
     findings = validate_contract(contract, repo=resolved_repo)
+    if policy_path:
+        resolved_policy = resolve_repo_path(resolved_repo or Path("."), policy_path)
+        findings.extend(validate_policy_file(resolved_policy, contract))
     exit_code = validation_exit_code(findings, fail_on)
-    report = validation_report(findings, path, resolved_repo, fail_on, exit_code)
+    report = validation_report(findings, path, resolved_repo, fail_on, exit_code, policy_path)
     if json_out:
         print(json.dumps(report, indent=2))
     elif not quiet or findings:
@@ -938,10 +1110,12 @@ def doctor_report(
     handoff_path: Path,
     workflow_path: Path,
     fail_on: str,
+    policy_path: Path | None = None,
 ) -> dict[str, Any]:
     repo = repo.resolve()
     checks: list[DoctorCheck] = []
     validation_findings: list[ValidationFinding] = []
+    contract: dict[str, Any] | None = None
 
     if repo.exists():
         add_doctor_check(checks, "ok", "repo", f"Repository path exists: {repo}")
@@ -1091,6 +1265,50 @@ def doctor_report(
             "Run `git init` before installing the local hook.",
         )
 
+    resolved_policy_path = policy_path
+    if resolved_policy_path is None and (repo / ".statebind-policy.json").exists():
+        resolved_policy_path = Path(".statebind-policy.json")
+
+    if resolved_policy_path:
+        policy_abs = resolve_repo_path(repo, resolved_policy_path)
+        if not policy_abs.exists():
+            add_doctor_check(
+                checks,
+                "warning",
+                "policy_file",
+                f"StateBind policy is configured but missing: {resolved_policy_path.as_posix()}.",
+                "Run `statebind policy --out .statebind-policy.json` or update the policy path.",
+            )
+        else:
+            if contract is not None:
+                policy_findings = validate_policy_file(policy_abs, contract)
+            else:
+                try:
+                    policy_findings = validate_policy_config(json.loads(policy_abs.read_text(encoding="utf-8")))
+                except json.JSONDecodeError as exc:
+                    policy_findings = [
+                        ValidationFinding(
+                            "error",
+                            "policy_invalid_json",
+                            f"Invalid StateBind policy JSON in {resolved_policy_path.as_posix()}: {exc}",
+                        )
+                    ]
+            validation_findings.extend(policy_findings)
+            if policy_findings:
+                summary = findings_summary(policy_findings)
+                add_doctor_check(
+                    checks,
+                    "error",
+                    "policy_validation",
+                    (
+                        f"Policy found {summary['errors']} error(s) and "
+                        f"{summary['warnings']} warning(s): {resolved_policy_path.as_posix()}."
+                    ),
+                    f"Run `statebind validate {statebind_path.as_posix()} --repo . --policy {resolved_policy_path.as_posix()}`.",
+                )
+            else:
+                add_doctor_check(checks, "ok", "policy_file", f"Policy validates: {resolved_policy_path.as_posix()}.")
+
     summary = {
         "ok": sum(1 for check in checks if check.status == "ok"),
         "warnings": sum(1 for check in checks if check.status == "warning"),
@@ -1104,6 +1322,7 @@ def doctor_report(
             "statebind_json": statebind_path.as_posix(),
             "handoff": handoff_path.as_posix(),
             "workflow": workflow_path.as_posix(),
+            "policy": resolved_policy_path.as_posix() if resolved_policy_path else "",
         },
         "passed": summary["errors"] == 0,
         "summary": summary,
@@ -1136,9 +1355,10 @@ def run_doctor(
     handoff_path: Path,
     workflow_path: Path,
     fail_on: str,
+    policy_path: Path | None,
     json_out: bool,
 ) -> int:
-    report = doctor_report(repo, statebind_path, handoff_path, workflow_path, fail_on)
+    report = doctor_report(repo, statebind_path, handoff_path, workflow_path, fail_on, policy_path)
     if json_out:
         print(json.dumps(report, indent=2))
     else:
@@ -1196,6 +1416,7 @@ def main() -> int:
     p_install_hook = sub.add_parser("install-hook", help="install a local Git pre-commit StateBind guard")
     p_install_hook.add_argument("--repo", type=Path, default=Path("."))
     p_install_hook.add_argument("--json", type=Path, default=Path("statebind.json"))
+    p_install_hook.add_argument("--policy", type=Path, help="apply a StateBind policy in the local hook")
     p_install_hook.add_argument("--fail-on", choices=["error", "warning"], default="warning")
     p_install_hook.add_argument("--force", action="store_true", help="overwrite an existing pre-commit hook")
 
@@ -1204,6 +1425,7 @@ def main() -> int:
     p_doctor.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
     p_doctor.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
     p_doctor.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
+    p_doctor.add_argument("--policy", type=Path, help="check a StateBind policy file")
     p_doctor.add_argument("--fail-on", choices=["error", "warning"], default="warning")
     p_doctor.add_argument("--json", action="store_true", help="print machine-readable adoption diagnostics")
 
@@ -1217,11 +1439,17 @@ def main() -> int:
     p_validate.add_argument("--report", type=Path, help="write a CI-friendly validation report JSON")
     p_validate.add_argument("--sarif", type=Path, help="write GitHub code-scanning compatible SARIF")
     p_validate.add_argument("--summary", type=Path, help="write a Markdown validation summary")
+    p_validate.add_argument("--policy", type=Path, help="apply a StateBind policy JSON file")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
     p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
 
+    p_policy = sub.add_parser("policy", help="print or write a starter StateBind policy")
+    p_policy.add_argument("--out", type=Path, help="write starter policy JSON to a file")
+    p_policy.add_argument("--force", action="store_true", help="overwrite an existing policy file")
+
     p_schema = sub.add_parser("schema", help="print the StateBind JSON schema")
     p_schema.add_argument("--out", type=Path, help="write schema JSON to a file")
+    p_schema.add_argument("--policy", action="store_true", help="print the StateBind policy schema")
 
     sub.add_parser("demo", help="print visible-but-unbound demo")
 
@@ -1246,12 +1474,14 @@ def main() -> int:
         return 0
     if args.cmd == "install-hook":
         try:
-            hook = install_git_hook(args.repo, args.json, args.fail_on, args.force)
+            hook = install_git_hook(args.repo, args.json, args.fail_on, args.force, args.policy)
         except (FileExistsError, RuntimeError) as exc:
             print(str(exc), file=sys.stderr)
             return 2
         print(f"Wrote {hook}")
         print(f"StateBind Guard pre-commit hook will validate {args.json} with --fail-on {args.fail_on}.")
+        if args.policy:
+            print(f"StateBind Guard pre-commit hook will apply policy {args.policy}.")
         return 0
     if args.cmd == "doctor":
         return run_doctor(
@@ -1260,6 +1490,7 @@ def main() -> int:
             args.handoff,
             args.workflow,
             args.fail_on,
+            args.policy,
             args.json,
         )
     if args.cmd == "check":
@@ -1273,10 +1504,23 @@ def main() -> int:
             args.report,
             args.sarif,
             args.summary,
+            args.policy,
             args.quiet,
         )
+    if args.cmd == "policy":
+        text = json.dumps(DEFAULT_POLICY, indent=2) + "\n"
+        if args.out:
+            try:
+                write_scaffold_file(args.out, text, args.force)
+            except FileExistsError as exc:
+                print(str(exc), file=sys.stderr)
+                return 2
+            print(f"Wrote {args.out}")
+        else:
+            print(text, end="")
+        return 0
     if args.cmd == "schema":
-        text = json.dumps(STATEBIND_SCHEMA, indent=2)
+        text = json.dumps(POLICY_SCHEMA if args.policy else STATEBIND_SCHEMA, indent=2)
         if args.out:
             args.out.write_text(text + "\n", encoding="utf-8")
             print(f"Wrote {args.out}")

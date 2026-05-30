@@ -19,6 +19,7 @@
 | ci_workflow | `.github/workflows/smoke.yml` | repository CI workflow for unit, package, and local action smoke tests | high | |
 | adoption_workflow | `.github/workflows/statebind-guard.yml` | dogfood workflow that validates this contract with the local composite action | high | |
 | public_docs | `docs/index.html` | GitHub Pages product surface | high | |
+| policy_file | `.statebind-policy.json` | repository-level StateBind policy for required release bindings | high | |
 
 ## Next Action
 1. Verify the branch and worktree state.

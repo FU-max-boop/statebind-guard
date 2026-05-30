@@ -27,7 +27,8 @@ This repository packages four things:
 1. **Benchmark artifact**: seed and natural-handoff snippets, baselines, result cards, and tests.
 2. **Practical handoff tool**: a Codex-compatible `statebind-handoff` skill plus a lightweight local script for generating and checking executable handoffs.
 3. **CI-ready validator**: a dependency-free `statebind` CLI that emits structured findings for versioned `statebind.json` contracts.
-4. **GitHub Action**: a composite action that validates handoff contracts and writes JSON/SARIF reports for CI and code scanning.
+4. **Policy-as-code gate**: a small `.statebind-policy.json` file for required roles, confidence floors, and risk requirements.
+5. **GitHub Action**: a composite action that validates handoff contracts and writes JSON/SARIF/Markdown reports for CI and code scanning.
 
 ## Why This Matters
 
@@ -66,11 +67,12 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.5"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.6"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind install-hook
+statebind policy --out .statebind-policy.json
+statebind install-hook --policy .statebind-policy.json
 statebind doctor
-git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml
+git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml
 ```
 
 This creates a ready-to-run handoff contract and a GitHub Actions workflow that
@@ -78,14 +80,15 @@ publishes JSON/SARIF validation reports on future pushes and pull requests.
 The optional local hook blocks commits when `statebind.json` loses its
 executable binding contract. `statebind doctor` audits whether the repo has the
 contract, human handoff, GitHub Action, pre-commit config, local hook, and
-validation gate wired correctly.
+validation gate wired correctly. `statebind policy` creates a team-editable
+policy file for required roles and confidence thresholds.
 
 Use it with the standard pre-commit framework:
 
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: statebind-guard
 ```
@@ -107,14 +110,16 @@ make public-check
 See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 [pre-commit usage](docs/pre_commit_usage.md) and
 [GitHub Action usage](docs/github_action_usage.md) for local and CI gate examples.
+See [policy usage](docs/policy_usage.md) for team-specific gates.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.5
+- uses: FU-max-boop/statebind-guard@v0.1.6
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
+    policy: .statebind-policy.json
     fail-on: warning
 ```
 
@@ -138,6 +143,7 @@ statebind extract \
 
 statebind validate statebind.json \
   --repo . \
+  --policy .statebind-policy.json \
   --fail-on error \
   --report statebind-validation.json \
   --sarif statebind-validation.sarif \
@@ -181,6 +187,7 @@ docs/
   handoff_contract.md
   launch_note.md
   limitations.md
+  policy_usage.md
   pre_commit_usage.md
   quality_gates.md
   quick_demo.md
@@ -189,6 +196,7 @@ docs/
 
 schemas/
   statebind.schema.json              # versioned machine contract
+  statebind-policy.schema.json       # versioned policy contract
 
 data/
   statebind_guard_seed_benchmark.json

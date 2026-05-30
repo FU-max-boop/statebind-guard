@@ -266,7 +266,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
-        <div class="eyebrow">StateBind Guard v0.1.5</div>
+        <div class="eyebrow">StateBind Guard v0.1.6</div>
         <h1>Make coding-agent handoffs executable.</h1>
         <p class="lead">
           StateBind Guard catches the quiet failure where a handoff mentions the
@@ -275,9 +275,10 @@
         </p>
         <div class="actions" aria-label="Primary links">
           <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
-          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.5">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.6">Latest release</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_note.md">Launch note</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/pre_commit_usage.md">Pre-commit</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/policy_usage.md">Policy</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/quick_demo.md">Quick demo</a>
         </div>
       </div>
@@ -288,7 +289,7 @@
         <div class="grid">
           <div class="panel">
             <h3>One command to adopt</h3>
-            <p>Generate a handoff contract, machine-readable state, and GitHub workflow in a new repository.</p>
+            <p>Generate a handoff contract, machine-readable state, policy file, and GitHub workflow in a new repository.</p>
           </div>
           <div class="panel">
             <h3>CI-native reports</h3>
@@ -298,6 +299,10 @@
             <h3>Benchmark-backed claim</h3>
             <p>Seed, natural handoff, and failure-corpus suites test visible-but-unbound failure modes.</p>
           </div>
+          <div class="panel">
+            <h3>Policy-as-code</h3>
+            <p>Require roles, confidence floors, and explicit risk entries before another agent consumes a handoff.</p>
+          </div>
         </div>
       </section>
 
@@ -306,13 +311,14 @@
           <h2>30-second setup</h2>
           <p class="compact">
             The starter scaffold is intentionally small: one human-readable
-            handoff, one JSON contract, one workflow.
+            handoff, one JSON contract, one policy, one workflow.
           </p>
-          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.5"
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.6"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind install-hook
+statebind policy --out .statebind-policy.json
+statebind install-hook --policy .statebind-policy.json
 statebind doctor
-git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml</code></pre>
+git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml</code></pre>
         </div>
         <img
           class="demo-image"
@@ -338,7 +344,7 @@ git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml</code></
           </div>
         </div>
         <div class="metric-row">
-          <div class="metric"><strong>22</strong><span>unit tests in CI</span></div>
+          <div class="metric"><strong>23</strong><span>unit tests in CI</span></div>
           <div class="metric"><strong>3</strong><span>benchmark suites</span></div>
           <div class="metric warning"><strong>SARIF</strong><span>GitHub-native output</span></div>
           <div class="metric danger"><strong>0.000</strong><span>unsafe accepts on included natural snippets</span></div>
@@ -354,10 +360,11 @@ git add HANDOFF.md statebind.json .github/workflows/statebind-guard.yml</code></
             after copying it.
           </p>
         </div>
-        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.5
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.6
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
+    policy: .statebind-policy.json
     fail-on: warning</code></pre>
       </section>
     </main>

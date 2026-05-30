@@ -35,6 +35,10 @@ inputs:
     description: Path for the Markdown validation summary appended to the GitHub Actions step summary.
     required: false
     default: statebind-summary.md
+  policy:
+    description: Optional StateBind policy JSON file for team-specific handoff gates.
+    required: false
+    default: ""
   setup-python:
     description: Whether to install Python for the action run.
     required: false
@@ -80,8 +84,13 @@ runs:
         REPORT: ${{ inputs.report }}
         SARIF: ${{ inputs.sarif }}
         SUMMARY: ${{ inputs.summary }}
+        POLICY: ${{ inputs.policy }}
       run: |
         mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")" "$(dirname "$SUMMARY")"
+        POLICY_ARGS=()
+        if [ -n "$POLICY" ]; then
+          POLICY_ARGS=(--policy "$POLICY")
+        fi
         set +e
         python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" validate \
           "$STATEBIND_JSON" \
@@ -90,7 +99,8 @@ runs:
           --json \
           --report "$REPORT" \
           --sarif "$SARIF" \
-          --summary "$SUMMARY"
+          --summary "$SUMMARY" \
+          "${POLICY_ARGS[@]}"
         status="$?"
         set -e
         if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f "$SUMMARY" ]; then

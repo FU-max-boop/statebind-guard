@@ -13,10 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.5
+      - uses: FU-max-boop/statebind-guard@v0.1.6
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
+          policy: .statebind-policy.json
           fail-on: warning
       - uses: actions/upload-artifact@v4
         if: always()

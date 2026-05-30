@@ -14,10 +14,12 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("report:", text)
         self.assertIn("sarif:", text)
         self.assertIn("summary:", text)
+        self.assertIn("policy:", text)
         self.assertIn("statebind_handoff/statebind_handoff.py", text)
         self.assertIn("--report \"$REPORT\"", text)
         self.assertIn("--sarif \"$SARIF\"", text)
         self.assertIn("--summary \"$SUMMARY\"", text)
+        self.assertIn("POLICY_ARGS", text)
         self.assertIn("GITHUB_STEP_SUMMARY", text)
 
     def test_repository_ci_smokes_local_action(self):
@@ -27,12 +29,14 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("test -s statebind-validation.json", text)
         self.assertIn("test -s statebind-validation.sarif", text)
         self.assertIn("test -s statebind-summary.md", text)
+        self.assertIn("policy: .statebind-policy.json", text)
 
     def test_repository_dogfoods_statebind_workflow(self):
         text = (ROOT / ".github" / "workflows" / "statebind-guard.yml").read_text(encoding="utf-8")
         self.assertIn("uses: ./", text)
         self.assertIn("handoff: HANDOFF.md", text)
         self.assertIn("statebind-json: statebind.json", text)
+        self.assertIn("policy: .statebind-policy.json", text)
         self.assertIn("statebind-validation.sarif", text)
         self.assertIn("statebind-summary.md", text)
 

@@ -167,6 +167,86 @@ class StateBindHandoffTests(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
 
+    def test_validate_applies_policy_as_code(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--goal",
+                    "keep handoffs executable",
+                    "--next-command",
+                    "make test",
+                ],
+                repo,
+            )
+            policy = repo / ".statebind-policy.json"
+            run(["python", str(SCRIPT), "policy", "--out", str(policy)], repo)
+
+            ok_report = repo / "policy-ok.json"
+            ok_summary = repo / "policy-ok.md"
+            run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    "statebind.json",
+                    "--repo",
+                    ".",
+                    "--policy",
+                    str(policy),
+                    "--report",
+                    str(ok_report),
+                    "--summary",
+                    str(ok_summary),
+                    "--fail-on",
+                    "warning",
+                ],
+                repo,
+            )
+            ok_data = json.loads(ok_report.read_text())
+            self.assertTrue(ok_data["passed"])
+            self.assertEqual(ok_data["policy"], str(policy))
+            self.assertIn("**Policy:**", ok_summary.read_text())
+
+            strict_policy = repo / "strict-policy.json"
+            strict_policy.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "0.1",
+                        "required_roles": ["release_gate_command"],
+                        "min_confidence": "high",
+                        "require_top_level_risks": True,
+                    }
+                )
+            )
+            fail_summary = repo / "policy-fail.md"
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    "statebind.json",
+                    "--repo",
+                    ".",
+                    "--policy",
+                    str(strict_policy),
+                    "--summary",
+                    str(fail_summary),
+                    "--fail-on",
+                    "error",
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("policy_missing_required_role", proc.stdout)
+            self.assertIn("policy_missing_top_level_risks", proc.stdout)
+            self.assertIn("**Status:** FAIL", fail_summary.read_text())
+
     def test_init_writes_ready_scaffold(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
@@ -192,7 +272,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.5", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.6", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -299,15 +379,33 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 repo,
             )
-            out = run(["python", str(SCRIPT), "install-hook", "--repo", ".", "--json", "statebind.json"], repo)
+            policy = repo / ".statebind-policy.json"
+            run(["python", str(SCRIPT), "policy", "--out", str(policy)], repo)
+            out = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "install-hook",
+                    "--repo",
+                    ".",
+                    "--json",
+                    "statebind.json",
+                    "--policy",
+                    str(policy),
+                ],
+                repo,
+            )
             hook = repo / ".git" / "hooks" / "pre-commit"
             self.assertIn("pre-commit", out)
+            self.assertIn("will apply policy", out)
             self.assertTrue(hook.exists())
             self.assertTrue(hook.stat().st_mode & 0o111)
             hook_text = hook.read_text()
             self.assertIn("statebind_handoff.statebind_handoff", hook_text)
             self.assertIn("--fail-on warning", hook_text)
             self.assertIn("--quiet", hook_text)
+            self.assertIn("STATEBIND_POLICY", hook_text)
+            self.assertIn("--policy", hook_text)
 
             doctor_out = run(["python", str(SCRIPT), "doctor", "--repo", "."], repo)
             self.assertIn("[ok] local_git_hook", doctor_out)
@@ -452,6 +550,12 @@ class StateBindHandoffTests(unittest.TestCase):
         tracked = json.loads((ROOT / "schemas" / "statebind.schema.json").read_text())
         self.assertEqual(generated, tracked)
         self.assertEqual(tracked["properties"]["schema_version"]["enum"], ["0.1"])
+
+        policy_out = run(["python", str(SCRIPT), "schema", "--policy"], ROOT)
+        generated_policy = json.loads(policy_out)
+        tracked_policy = json.loads((ROOT / "schemas" / "statebind-policy.schema.json").read_text())
+        self.assertEqual(generated_policy, tracked_policy)
+        self.assertEqual(tracked_policy["properties"]["schema_version"]["enum"], ["0.1"])
 
 
 if __name__ == "__main__":

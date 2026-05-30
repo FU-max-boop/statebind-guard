@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind-policy.schema.json",
+  "title": "StateBind policy",
+  "type": "object",
+  "required": [
+    "schema_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "0.1"
+      ]
+    },
+    "required_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "min_confidence": {
+      "type": "string",
+      "enum": [
+        "high",
+        "low",
+        "medium",
+        "uncertain"
+      ]
+    },
+    "require_top_level_risks": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

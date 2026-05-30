@@ -35,8 +35,10 @@ Install the package and generate a draft:
 ```bash
 python -m pip install -e .
 statebind extract --repo . --transcript transcript.md --out HANDOFF.md --json statebind.json
+statebind policy --out .statebind-policy.json
 statebind validate statebind.json \
   --repo . \
+  --policy .statebind-policy.json \
   --fail-on error \
   --report statebind-validation.json \
   --sarif statebind-validation.sarif \
@@ -48,7 +50,7 @@ For repositories that keep `statebind.json` committed, install a local
 pre-commit guard:
 
 ```bash
-statebind install-hook --fail-on warning
+statebind install-hook --fail-on warning --policy .statebind-policy.json
 ```
 
 The hook is deliberately local. It writes `.git/hooks/pre-commit`, refuses to
@@ -60,12 +62,17 @@ contract, human handoff, GitHub Action workflow, standard pre-commit config,
 local Git hook, and validation findings. Missing CI or pre-commit integration is
 reported as an actionable warning; invalid contracts fail the doctor.
 
+Use `.statebind-policy.json` to make adoption explicit. For example, a release
+repository can require `release_gate_command`, `ci_workflow`, and `artifact_path`
+bindings, while a bug-fix repository can require `failing_test` and
+`next_command`.
+
 If your team already uses the standard pre-commit framework, add:
 
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.5
+    rev: v0.1.6
     hooks:
       - id: statebind-guard
 ```
@@ -77,10 +84,11 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.5
+- uses: FU-max-boop/statebind-guard@v0.1.6
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
+    policy: .statebind-policy.json
     fail-on: warning
 ```
 
@@ -89,6 +97,7 @@ Or call the CLI directly:
 ```bash
 statebind validate statebind.json \
   --repo . \
+  --policy .statebind-policy.json \
   --fail-on warning \
   --json \
   --report statebind-validation.json \
