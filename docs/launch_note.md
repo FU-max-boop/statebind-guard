@@ -79,15 +79,15 @@ StateBind Guard is intentionally small and dependency-free:
   confidence floors, and explicit risk requirements.
 - `statebind validate` checks structure, vague handles, path safety, and missing executable bindings.
 - `statebind doctor` audits whether the repository has the contract, handoff, CI, and local hooks wired.
-- JSON, SARIF, Markdown summary, and HTML report outputs make the result usable
-  in CI, GitHub code scanning, and human review.
+- JSON, SARIF, Markdown summary, HTML report, GitHub annotation, and action
+  outputs make the result usable in CI, GitHub code scanning, and human review.
 - A composite GitHub Action lets repositories adopt the guard in one workflow step.
 - Benchmark and failure-corpus cards document the included visible-but-unbound cases.
 
 ## Try It
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.8"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.9"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
@@ -98,7 +98,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
 Then use the generated workflow or call the action directly:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.8
+- uses: FU-max-boop/statebind-guard@v0.1.9
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

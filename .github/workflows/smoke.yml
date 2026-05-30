@@ -77,6 +77,7 @@ jobs:
           }
           EOF
       - name: Run local composite action
+        id: statebind
         uses: ./
         with:
           handoff: HANDOFF.md
@@ -84,7 +85,16 @@ jobs:
           policy: .statebind-policy.json
           fail-on: warning
       - name: Check action reports
+        env:
+          STATEBIND_PASSED: ${{ steps.statebind.outputs.passed }}
+          STATEBIND_ERRORS: ${{ steps.statebind.outputs.errors }}
+          STATEBIND_WARNINGS: ${{ steps.statebind.outputs.warnings }}
+          STATEBIND_EXIT_CODE: ${{ steps.statebind.outputs.exit_code }}
         run: |
+          test "$STATEBIND_PASSED" = "true"
+          test "$STATEBIND_ERRORS" = "0"
+          test "$STATEBIND_WARNINGS" = "0"
+          test "$STATEBIND_EXIT_CODE" = "0"
           test -s statebind-validation.json
           test -s statebind-validation.sarif
           test -s statebind-summary.md

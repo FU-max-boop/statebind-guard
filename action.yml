@@ -57,6 +57,24 @@ inputs:
     default: "3.11"
 
 outputs:
+  passed:
+    description: Whether StateBind validation passed under the selected fail-on threshold.
+    value: ${{ steps.validate.outputs.passed }}
+  errors:
+    description: Number of StateBind error findings.
+    value: ${{ steps.validate.outputs.errors }}
+  warnings:
+    description: Number of StateBind warning findings.
+    value: ${{ steps.validate.outputs.warnings }}
+  exit_code:
+    description: StateBind validation process exit code.
+    value: ${{ steps.validate.outputs.exit_code }}
+  fail_on:
+    description: Validation threshold used by the action.
+    value: ${{ steps.validate.outputs.fail_on }}
+  statebind_json:
+    description: Portable path to the StateBind contract that was validated.
+    value: ${{ steps.validate.outputs.statebind_json }}
   report:
     description: JSON validation report path.
     value: ${{ inputs.report }}
@@ -87,6 +105,7 @@ runs:
         python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" check "$HANDOFF"
 
     - name: Validate StateBind contract
+      id: validate
       shell: bash
       env:
         STATEBIND_JSON: ${{ inputs.statebind-json }}
@@ -108,6 +127,10 @@ runs:
         if [ "$ANNOTATIONS" = "true" ]; then
           ANNOTATION_ARGS=(--github-annotations)
         fi
+        OUTPUT_ARGS=()
+        if [ -n "${GITHUB_OUTPUT:-}" ]; then
+          OUTPUT_ARGS=(--github-output "$GITHUB_OUTPUT")
+        fi
         set +e
         python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" validate \
           "$STATEBIND_JSON" \
@@ -119,6 +142,7 @@ runs:
           --summary "$SUMMARY" \
           --html-report "$HTML_REPORT" \
           "${POLICY_ARGS[@]}" \
+          "${OUTPUT_ARGS[@]}" \
           "${ANNOTATION_ARGS[@]}"
         status="$?"
         set -e

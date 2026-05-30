@@ -22,7 +22,7 @@ active task -> failing-test role -> exact pytest selector
 active patch -> current-file role -> exact file path
 ```
 
-This repository packages four things:
+This repository packages five things:
 
 1. **Benchmark artifact**: seed and natural-handoff snippets, baselines, result cards, and tests.
 2. **Practical handoff tool**: a Codex-compatible `statebind-handoff` skill plus a lightweight local script for generating and checking executable handoffs.
@@ -67,7 +67,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.8"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.9"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
@@ -82,13 +82,16 @@ executable binding contract. `statebind doctor` audits whether the repo has the
 contract, human handoff, GitHub Action, pre-commit config, local hook, and
 validation gate wired correctly. `statebind policy` creates a team-editable
 policy file for required roles and confidence thresholds.
+The GitHub Action also exposes `passed`, `errors`, `warnings`, and `exit_code`
+outputs, so downstream workflow steps can route failed handoffs without parsing
+artifacts.
 
 Use it with the standard pre-commit framework:
 
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.8
+    rev: v0.1.9
     hooks:
       - id: statebind-guard
 ```
@@ -115,7 +118,7 @@ See [policy usage](docs/policy_usage.md) for team-specific gates.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.8
+- uses: FU-max-boop/statebind-guard@v0.1.9
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

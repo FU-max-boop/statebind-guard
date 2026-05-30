@@ -266,7 +266,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
-        <div class="eyebrow">StateBind Guard v0.1.8</div>
+        <div class="eyebrow">StateBind Guard v0.1.9</div>
         <h1>Make coding-agent handoffs executable.</h1>
         <p class="lead">
           StateBind Guard catches the quiet failure where a handoff mentions the
@@ -275,7 +275,7 @@
         </p>
         <div class="actions" aria-label="Primary links">
           <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
-          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.8">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.9">Latest release</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_note.md">Launch note</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/pre_commit_usage.md">Pre-commit</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/policy_usage.md">Policy</a>
@@ -293,7 +293,7 @@
           </div>
           <div class="panel">
             <h3>CI-native reports</h3>
-            <p>Emit JSON, SARIF, Markdown summaries, HTML reports, and GitHub annotations so failures appear in artifacts, code scanning, and Actions UI.</p>
+            <p>Emit JSON, SARIF, Markdown summaries, HTML reports, GitHub annotations, and action outputs so failures can be routed by CI.</p>
           </div>
           <div class="panel">
             <h3>Benchmark-backed claim</h3>
@@ -313,7 +313,7 @@
             The starter scaffold is intentionally small: one human-readable
             handoff, one JSON contract, one policy, one workflow.
           </p>
-          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.8"
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.9"
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
@@ -360,7 +360,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
             after copying it.
           </p>
         </div>
-        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.8
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.9
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

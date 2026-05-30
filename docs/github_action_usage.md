@@ -20,7 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.8
+      - id: statebind
+        uses: FU-max-boop/statebind-guard@v0.1.9
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -42,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.8`.
+`FU-max-boop/statebind-guard@v0.1.9`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -59,6 +60,24 @@ findings without opening raw logs.
 
 It also writes `statebind-report.html`, a standalone report that can be uploaded
 as a CI artifact for reviewers who want a readable validation page.
+
+The action exposes machine-readable outputs for downstream workflow logic:
+
+```yaml
+- id: statebind
+  uses: FU-max-boop/statebind-guard@v0.1.9
+  with:
+    statebind-json: statebind.json
+    fail-on: warning
+- name: Route failed handoff evidence
+  if: always() && steps.statebind.outputs.passed != 'true'
+  run: |
+    echo "StateBind errors=${{ steps.statebind.outputs.errors }}"
+    echo "StateBind warnings=${{ steps.statebind.outputs.warnings }}"
+```
+
+Available outputs are `passed`, `errors`, `warnings`, `exit_code`, `fail_on`,
+`statebind_json`, `report`, `sarif`, `summary`, and `html-report`.
 
 By default the action emits GitHub Actions annotations for every finding, so
 warnings and errors appear directly in the workflow UI. Set
@@ -136,6 +155,19 @@ statebind validate statebind.json \
   --fail-on warning \
   --json \
   --github-annotations
+```
+
+## GitHub Outputs
+
+`statebind validate --github-output "$GITHUB_OUTPUT"` appends stable workflow
+outputs without requiring a downstream step to parse JSON:
+
+```bash
+statebind validate statebind.json \
+  --repo . \
+  --fail-on warning \
+  --report statebind-validation.json \
+  --github-output "$GITHUB_OUTPUT"
 ```
 
 ## Code Scanning Report

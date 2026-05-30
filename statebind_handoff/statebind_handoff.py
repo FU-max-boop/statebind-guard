@@ -39,7 +39,7 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.8"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.9"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": POLICY_SCHEMA_VERSION,
@@ -847,6 +847,22 @@ def render_github_annotations(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def write_github_output(path: Path, report: dict[str, Any]) -> None:
+    summary = report["summary"]
+    outputs = {
+        "passed": "true" if report["passed"] else "false",
+        "errors": str(summary["errors"]),
+        "warnings": str(summary["warnings"]),
+        "exit_code": str(report["exit_code"]),
+        "fail_on": str(report["fail_on"]),
+        "statebind_json": portable_display_path(report["statebind_json"]) or "statebind.json",
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as file:
+        for key, value in outputs.items():
+            file.write(f"{key}={value}\n")
+
+
 def render_validation_html(report: dict[str, Any]) -> str:
     status = "PASS" if report["passed"] else "FAIL"
     status_class = "pass" if report["passed"] else "fail"
@@ -1227,6 +1243,7 @@ def validate_json_file(
     summary_out: Path | None = None,
     html_report_out: Path | None = None,
     policy_path: Path | None = None,
+    github_output_out: Path | None = None,
     github_annotations: bool = False,
     quiet: bool = False,
 ) -> int:
@@ -1255,6 +1272,8 @@ def validate_json_file(
             write_output(summary_out, render_validation_markdown(report))
         if html_report_out:
             write_output(html_report_out, render_validation_html(report))
+        if github_output_out:
+            write_github_output(github_output_out, report)
         if github_annotations:
             annotations = render_github_annotations(report)
             if annotations:
@@ -1283,6 +1302,8 @@ def validate_json_file(
             write_output(summary_out, render_validation_markdown(report))
         if html_report_out:
             write_output(html_report_out, render_validation_html(report))
+        if github_output_out:
+            write_github_output(github_output_out, report)
         if github_annotations:
             annotations = render_github_annotations(report)
             if annotations:
@@ -1313,6 +1334,8 @@ def validate_json_file(
         write_output(summary_out, render_validation_markdown(report))
     if html_report_out:
         write_output(html_report_out, render_validation_html(report))
+    if github_output_out:
+        write_github_output(github_output_out, report)
     if github_annotations:
         annotations = render_github_annotations(report)
         if annotations:
@@ -1678,6 +1701,7 @@ def main() -> int:
     p_validate.add_argument("--summary", type=Path, help="write a Markdown validation summary")
     p_validate.add_argument("--html-report", type=Path, help="write a standalone HTML validation report")
     p_validate.add_argument("--policy", type=Path, help="apply a StateBind policy JSON file")
+    p_validate.add_argument("--github-output", type=Path, help="append GitHub Actions step outputs to this file")
     p_validate.add_argument("--github-annotations", action="store_true", help="emit GitHub Actions workflow annotations to stderr")
     p_validate.add_argument("--fail-on", choices=["error", "warning"], default="error")
     p_validate.add_argument("--quiet", action="store_true", help="suppress success output in text mode")
@@ -1745,6 +1769,7 @@ def main() -> int:
             args.summary,
             args.html_report,
             args.policy,
+            args.github_output,
             args.github_annotations,
             args.quiet,
         )
