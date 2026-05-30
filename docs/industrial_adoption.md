@@ -53,12 +53,24 @@ The hook is deliberately local. It writes `.git/hooks/pre-commit`, refuses to
 overwrite an existing hook unless `--force` is passed, and validates the
 machine-readable handoff before each commit.
 
+If your team already uses the standard pre-commit framework, add:
+
+```yaml
+repos:
+  - repo: https://github.com/FU-max-boop/statebind-guard
+    rev: v0.1.3
+    hooks:
+      - id: statebind-guard
+```
+
+See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
+
 ### Level 2: CI Gate
 
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.2
+- uses: FU-max-boop/statebind-guard@v0.1.3
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

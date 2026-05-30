@@ -1,0 +1,7 @@
+- id: statebind-guard
+  name: StateBind Guard
+  description: Validate executable StateBind handoff contracts before commit.
+  entry: statebind validate statebind.json --repo . --fail-on warning --quiet
+  language: python
+  always_run: true
+  pass_filenames: false

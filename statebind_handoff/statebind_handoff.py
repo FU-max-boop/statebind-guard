@@ -37,7 +37,7 @@ COMMAND_PREFIXES = (
     "git",
 )
 SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.2"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.3"
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
