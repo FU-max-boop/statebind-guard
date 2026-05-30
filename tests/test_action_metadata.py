@@ -24,6 +24,13 @@ class GitHubActionMetadataTests(unittest.TestCase):
         self.assertIn("test -s statebind-validation.json", text)
         self.assertIn("test -s statebind-validation.sarif", text)
 
+    def test_repository_dogfoods_statebind_workflow(self):
+        text = (ROOT / ".github" / "workflows" / "statebind-guard.yml").read_text(encoding="utf-8")
+        self.assertIn("uses: ./", text)
+        self.assertIn("handoff: HANDOFF.md", text)
+        self.assertIn("statebind-json: statebind.json", text)
+        self.assertIn("statebind-validation.sarif", text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -185,7 +185,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.3", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.4", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -210,6 +210,18 @@ class StateBindHandoffTests(unittest.TestCase):
                 repo,
             )
             self.assertIn("StateBind validation passed", validate_out)
+
+            doctor_out = run(["python", str(SCRIPT), "doctor", "--repo", "."], repo)
+            self.assertIn("StateBind adoption doctor", doctor_out)
+            self.assertIn("[ok] statebind_json", doctor_out)
+            self.assertIn("[ok] statebind_validation", doctor_out)
+            self.assertIn("[warning] local_git_hook", doctor_out)
+
+            doctor_json = run(["python", str(SCRIPT), "doctor", "--repo", ".", "--json"], repo)
+            doctor_data = json.loads(doctor_json)
+            self.assertTrue(doctor_data["passed"])
+            self.assertEqual(doctor_data["summary"]["errors"], 0)
+            self.assertGreaterEqual(doctor_data["summary"]["warnings"], 1)
 
             quiet_proc = subprocess.run(
                 [
@@ -290,6 +302,9 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("--fail-on warning", hook_text)
             self.assertIn("--quiet", hook_text)
 
+            doctor_out = run(["python", str(SCRIPT), "doctor", "--repo", "."], repo)
+            self.assertIn("[ok] local_git_hook", doctor_out)
+
             (repo / "README.md").write_text("demo\n")
             run(["git", "add", "."], repo)
             run(["git", "commit", "-q", "-m", "valid handoff"], repo)
@@ -355,6 +370,23 @@ class StateBindHandoffTests(unittest.TestCase):
                 )
             )
             sarif = repo / "statebind-validation.sarif"
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "doctor",
+                    "--repo",
+                    ".",
+                    "--statebind-json",
+                    str(state),
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+            self.assertNotEqual(proc.returncode, 0)
+            self.assertIn("vague_handle", proc.stdout)
+
             proc = subprocess.run(
                 [
                     "python",

@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.3
+      - uses: FU-max-boop/statebind-guard@v0.1.4
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -39,7 +39,16 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.3`.
+`FU-max-boop/statebind-guard@v0.1.4`.
+
+After copying the workflow, run a local adoption audit:
+
+```bash
+statebind doctor --repo .
+```
+
+The doctor confirms the workflow points at StateBind Guard and that
+`statebind.json` still validates under the selected failure threshold.
 
 For this repository, the stricter gate is:
 

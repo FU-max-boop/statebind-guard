@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1",
+  "task": {
+    "goal": "Keep StateBind Guard release work executable, auditable, and CI-gated.",
+    "status": "repository dogfoods StateBind Guard before release"
+  },
+  "active_target": {
+    "type": "release",
+    "handle": "statebind_handoff/statebind_handoff.py",
+    "evidence": "primary CLI implementation for StateBind Guard",
+    "confidence": "high"
+  },
+  "bindings": [
+    {
+      "role": "release_gate_command",
+      "handle": "make public-check",
+      "evidence": "Makefile public-ready gate",
+      "confidence": "high",
+      "risk": ""
+    },
+    {
+      "role": "package_gate_command",
+      "handle": "make package-check",
+      "evidence": "Makefile package CLI smoke gate",
+      "confidence": "high",
+      "risk": ""
+    },
+    {
+      "role": "ci_workflow",
+      "handle": ".github/workflows/smoke.yml",
+      "evidence": "repository CI workflow for unit, package, and local action smoke tests",
+      "confidence": "high",
+      "risk": ""
+    },
+    {
+      "role": "adoption_workflow",
+      "handle": ".github/workflows/statebind-guard.yml",
+      "evidence": "dogfood workflow that validates this contract with the local composite action",
+      "confidence": "high",
+      "risk": ""
+    },
+    {
+      "role": "public_docs",
+      "handle": "docs/index.html",
+      "evidence": "GitHub Pages product surface",
+      "confidence": "high",
+      "risk": ""
+    }
+  ],
+  "risks": [
+    "Release tags must stay aligned with DEFAULT_ACTION_REF and documentation examples."
+  ],
+  "resume_prompt": "Before release work, read HANDOFF.md and statebind.json, verify the current branch, run make public-check, and only publish after CI passes.",
+  "raw_signals": {
+    "source": "repository dogfood contract"
+  }
+}

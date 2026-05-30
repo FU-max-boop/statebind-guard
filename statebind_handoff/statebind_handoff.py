@@ -37,7 +37,7 @@ COMMAND_PREFIXES = (
     "git",
 )
 SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.3"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.4"
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
@@ -112,6 +112,14 @@ class ValidationFinding:
     message: str
     role: str = ""
     handle: str = ""
+
+
+@dataclass
+class DoctorCheck:
+    status: str
+    code: str
+    message: str
+    action: str = ""
 
 
 def run(cmd: list[str], cwd: Path) -> str:
@@ -856,6 +864,241 @@ def validate_json_file(
     return exit_code
 
 
+def resolve_repo_path(repo: Path, path: Path) -> Path:
+    return path if path.is_absolute() else repo / path
+
+
+def add_doctor_check(
+    checks: list[DoctorCheck],
+    status: str,
+    code: str,
+    message: str,
+    action: str = "",
+) -> None:
+    checks.append(DoctorCheck(status, code, message, action))
+
+
+def read_optional_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        return ""
+
+
+def doctor_report(
+    repo: Path,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    fail_on: str,
+) -> dict[str, Any]:
+    repo = repo.resolve()
+    checks: list[DoctorCheck] = []
+    validation_findings: list[ValidationFinding] = []
+
+    if repo.exists():
+        add_doctor_check(checks, "ok", "repo", f"Repository path exists: {repo}")
+    else:
+        add_doctor_check(checks, "error", "repo", f"Repository path does not exist: {repo}")
+
+    git_hook: Path | None = None
+    try:
+        git_hook = git_hook_path(repo)
+        add_doctor_check(checks, "ok", "git_repo", "Git metadata is available.")
+    except RuntimeError:
+        add_doctor_check(
+            checks,
+            "warning",
+            "git_repo",
+            "Git metadata is not available; local hook checks are skipped.",
+            "Run this inside a Git repository before installing the local hook.",
+        )
+
+    statebind_abs = resolve_repo_path(repo, statebind_path)
+    handoff_abs = resolve_repo_path(repo, handoff_path)
+    workflow_abs = resolve_repo_path(repo, workflow_path)
+
+    if statebind_abs.exists():
+        add_doctor_check(checks, "ok", "statebind_json", f"Found {statebind_path.as_posix()}.")
+        try:
+            contract = json.loads(statebind_abs.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            add_doctor_check(
+                checks,
+                "error",
+                "statebind_json_parse",
+                f"{statebind_path.as_posix()} is not valid JSON: {exc}",
+                "Fix the JSON syntax, then rerun `statebind doctor`.",
+            )
+        else:
+            validation_findings = validate_contract(contract, repo=repo)
+            validation_exit = validation_exit_code(validation_findings, fail_on)
+            summary = findings_summary(validation_findings)
+            if validation_findings:
+                status = "error" if validation_exit else "warning"
+                add_doctor_check(
+                    checks,
+                    status,
+                    "statebind_validation",
+                    (
+                        f"Validation found {summary['errors']} error(s) and "
+                        f"{summary['warnings']} warning(s) with --fail-on {fail_on}."
+                    ),
+                    f"Run `statebind validate {statebind_path.as_posix()} --repo . --fail-on {fail_on}`.",
+                )
+            else:
+                add_doctor_check(checks, "ok", "statebind_validation", "Contract validates with no findings.")
+    else:
+        add_doctor_check(
+            checks,
+            "error",
+            "statebind_json",
+            f"Missing {statebind_path.as_posix()}.",
+            'Run `statebind init --goal "..." --next-command "make test"`.',
+        )
+
+    if handoff_abs.exists():
+        add_doctor_check(checks, "ok", "handoff_markdown", f"Found {handoff_path.as_posix()}.")
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "handoff_markdown",
+            f"Missing {handoff_path.as_posix()}.",
+            "Keep a human-readable handoff next to the machine contract.",
+        )
+
+    workflow_text = read_optional_text(workflow_abs)
+    if workflow_text:
+        if "statebind-guard" in workflow_text and "statebind-json" in workflow_text:
+            add_doctor_check(checks, "ok", "github_action", f"Workflow references StateBind Guard: {workflow_path.as_posix()}.")
+        else:
+            add_doctor_check(
+                checks,
+                "warning",
+                "github_action",
+                f"Workflow exists but does not look wired to StateBind Guard: {workflow_path.as_posix()}.",
+                "Use `statebind init --force` or copy the GitHub Action example from the docs.",
+            )
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "github_action",
+            f"Missing GitHub Action workflow at {workflow_path.as_posix()}.",
+            "Commit a workflow that uses `FU-max-boop/statebind-guard`.",
+        )
+
+    pre_commit_config = next(
+        (
+            path
+            for path in (repo / ".pre-commit-config.yaml", repo / ".pre-commit-config.yml")
+            if path.exists()
+        ),
+        None,
+    )
+    if pre_commit_config:
+        config_text = read_optional_text(pre_commit_config)
+        if "statebind-guard" in config_text:
+            add_doctor_check(
+                checks,
+                "ok",
+                "pre_commit_config",
+                f"Standard pre-commit config includes StateBind Guard: {pre_commit_config.name}.",
+            )
+        else:
+            add_doctor_check(
+                checks,
+                "warning",
+                "pre_commit_config",
+                f"{pre_commit_config.name} exists but does not include StateBind Guard.",
+                "Add the `statebind-guard` hook from docs/pre_commit_usage.md.",
+            )
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "pre_commit_config",
+            "No standard pre-commit config found.",
+            "Add `.pre-commit-config.yaml` if your team uses the pre-commit framework.",
+        )
+
+    if git_hook:
+        hook_text = read_optional_text(git_hook)
+        if hook_text and "StateBind Guard" in hook_text and "statebind" in hook_text:
+            add_doctor_check(checks, "ok", "local_git_hook", f"Local Git hook is installed: {git_hook}.")
+        else:
+            add_doctor_check(
+                checks,
+                "warning",
+                "local_git_hook",
+                "Local Git pre-commit hook is not installed for this checkout.",
+                f"Run `statebind install-hook --repo . --json {statebind_path.as_posix()}`.",
+            )
+    else:
+        add_doctor_check(
+            checks,
+            "warning",
+            "local_git_hook",
+            "Local Git pre-commit hook could not be checked without Git metadata.",
+            "Run `git init` before installing the local hook.",
+        )
+
+    summary = {
+        "ok": sum(1 for check in checks if check.status == "ok"),
+        "warnings": sum(1 for check in checks if check.status == "warning"),
+        "errors": sum(1 for check in checks if check.status == "error"),
+    }
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "repo": str(repo),
+        "fail_on": fail_on,
+        "paths": {
+            "statebind_json": statebind_path.as_posix(),
+            "handoff": handoff_path.as_posix(),
+            "workflow": workflow_path.as_posix(),
+        },
+        "passed": summary["errors"] == 0,
+        "summary": summary,
+        "checks": [asdict(check) for check in checks],
+        "validation_findings": [asdict(finding) for finding in validation_findings],
+    }
+
+
+def render_doctor_text(report: dict[str, Any]) -> str:
+    lines = ["StateBind adoption doctor:"]
+    for check in report["checks"]:
+        lines.append(f"- [{check['status']}] {check['code']}: {check['message']}")
+        if check.get("action"):
+            lines.append(f"  next: {check['action']}")
+    if report["validation_findings"]:
+        lines.append("")
+        lines.append(render_validation_text([ValidationFinding(**finding) for finding in report["validation_findings"]]))
+    summary = report["summary"]
+    lines.append("")
+    lines.append(
+        f"Summary: {summary['ok']} ok, {summary['warnings']} warning(s), "
+        f"{summary['errors']} error(s)."
+    )
+    return "\n".join(lines)
+
+
+def run_doctor(
+    repo: Path,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    fail_on: str,
+    json_out: bool,
+) -> int:
+    report = doctor_report(repo, statebind_path, handoff_path, workflow_path, fail_on)
+    if json_out:
+        print(json.dumps(report, indent=2))
+    else:
+        print(render_doctor_text(report))
+    return 1 if report["summary"]["errors"] else 0
+
+
 def write_demo() -> str:
     return """# Demo: Visible ID But Unbound
 
@@ -909,6 +1152,14 @@ def main() -> int:
     p_install_hook.add_argument("--fail-on", choices=["error", "warning"], default="warning")
     p_install_hook.add_argument("--force", action="store_true", help="overwrite an existing pre-commit hook")
 
+    p_doctor = sub.add_parser("doctor", help="audit StateBind Guard adoption for this repository")
+    p_doctor.add_argument("--repo", type=Path, default=Path("."))
+    p_doctor.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
+    p_doctor.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
+    p_doctor.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
+    p_doctor.add_argument("--fail-on", choices=["error", "warning"], default="warning")
+    p_doctor.add_argument("--json", action="store_true", help="print machine-readable adoption diagnostics")
+
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
 
@@ -954,6 +1205,15 @@ def main() -> int:
         print(f"Wrote {hook}")
         print(f"StateBind Guard pre-commit hook will validate {args.json} with --fail-on {args.fail_on}.")
         return 0
+    if args.cmd == "doctor":
+        return run_doctor(
+            args.repo,
+            args.statebind_json,
+            args.handoff,
+            args.workflow,
+            args.fail_on,
+            args.json,
+        )
     if args.cmd == "check":
         return check_handoff(args.handoff)
     if args.cmd == "validate":
