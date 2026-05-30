@@ -161,7 +161,7 @@ jobs:
           test "$STATEBIND_INVALID_OUTCOME" = "failure"
           test "$STATEBIND_INVALID_PASSED" = "false"
           test "$STATEBIND_INVALID_ERRORS" = "1"
-          test "$STATEBIND_INVALID_WARNINGS" = "0"
+          test "$STATEBIND_INVALID_WARNINGS" = "1"
           test "$STATEBIND_INVALID_EXIT_CODE" = "1"
           test -s statebind-invalid-validation.json
           test -s statebind-invalid-validation.sarif

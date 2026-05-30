@@ -41,11 +41,14 @@ install-skill:
 package-check:
 	set -e; \
 	tmpdir="$$(mktemp -d)"; \
-	python -m venv --system-site-packages "$$tmpdir/venv"; \
-	PIP_NO_INDEX=1 PIP_CACHE_DIR="$$tmpdir/pip-cache" "$$tmpdir/venv/bin/python" -m pip install --no-build-isolation -e . >/dev/null; \
+	PIP_CACHE_DIR="$$tmpdir/pip-cache" python -m pip wheel --no-deps --no-build-isolation -w "$$tmpdir/dist" . >/dev/null; \
+	python -m venv "$$tmpdir/venv"; \
+	PIP_NO_INDEX=1 PIP_FIND_LINKS="$$tmpdir/dist" PIP_CACHE_DIR="$$tmpdir/pip-cache" "$$tmpdir/venv/bin/python" -m pip install statebind-guard >/dev/null; \
+	"$$tmpdir/venv/bin/python" -c 'import importlib.metadata; print(importlib.metadata.version("statebind-guard"))' >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" demo >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" proof >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" proof --json >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" --version >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" --help >/dev/null; \
 	cd "$$tmpdir"; \
 	git init -q; \

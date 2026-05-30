@@ -13,6 +13,7 @@ import json
 import re
 import subprocess
 import sys
+from importlib.metadata import PackageNotFoundError, version as package_version
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -39,8 +40,24 @@ COMMAND_PREFIXES = (
 )
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.15"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.16"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
+
+
+def resolve_package_version() -> str:
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    if pyproject.exists():
+        match = re.search(r'(?m)^version\s*=\s*"([^"]+)"', pyproject.read_text(encoding="utf-8"))
+        if match:
+            return match.group(1)
+    try:
+        return package_version("statebind-guard")
+    except PackageNotFoundError:
+        pass
+    return "0.0.0"
+
+
+VERSION = resolve_package_version()
 DEFAULT_POLICY: dict[str, Any] = {
     "schema_version": POLICY_SCHEMA_VERSION,
     "preset": "minimal",
@@ -538,23 +555,51 @@ def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> lis
     task = contract.get("task")
     if not isinstance(task, dict):
         add_finding(findings, "error", "missing_task", "Missing `task` object.")
-    elif is_blank(task.get("goal")):
-        add_finding(findings, "warning", "blank_task_goal", "Task goal is blank; fill it before handoff consumption.")
+    else:
+        if "goal" not in task:
+            add_finding(findings, "error", "missing_task_goal", "Task `goal` is required by the schema.")
+        elif is_blank(task.get("goal")):
+            add_finding(findings, "warning", "blank_task_goal", "Task goal is blank; fill it before handoff consumption.")
+        if "status" not in task:
+            add_finding(findings, "error", "missing_task_status", "Task `status` is required by the schema.")
+        elif is_blank(task.get("status")):
+            add_finding(findings, "warning", "blank_task_status", "Task status is blank; fill it before handoff consumption.")
 
     active_target = contract.get("active_target")
     if not isinstance(active_target, dict):
         add_finding(findings, "error", "missing_active_target", "Missing `active_target` object.")
     else:
         for field in ("type", "handle", "evidence"):
-            if is_blank(active_target.get(field)):
+            if field not in active_target:
+                add_finding(
+                    findings,
+                    "error",
+                    f"missing_active_target_{field}",
+                    f"Active target `{field}` is required by the schema.",
+                )
+            elif is_blank(active_target.get(field)):
                 add_finding(
                     findings,
                     "warning",
                     f"blank_active_target_{field}",
                     f"Active target `{field}` is blank; bind the current object before resuming.",
                 )
+        if "confidence" not in active_target:
+            add_finding(
+                findings,
+                "error",
+                "missing_active_target_confidence",
+                "Active target `confidence` is required by the schema.",
+            )
         confidence = str(active_target.get("confidence", "")).strip()
-        if confidence and confidence not in CONFIDENCE_VALUES:
+        if not confidence:
+            add_finding(
+                findings,
+                "error",
+                "blank_active_target_confidence",
+                "Active target `confidence` must be one of high, medium, low, or uncertain.",
+            )
+        elif confidence not in CONFIDENCE_VALUES:
             add_finding(
                 findings,
                 "error",
@@ -584,14 +629,38 @@ def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> lis
         confidence = str(raw.get("confidence", "")).strip()
         risk = str(raw.get("risk", "")).strip()
 
+        if "role" not in raw:
+            add_finding(findings, "error", "missing_binding_role", f"Binding #{idx} schema requires `role`.")
         if is_blank(role):
             add_finding(findings, "error", "blank_binding_role", f"Binding #{idx} has a blank role.")
+        if "handle" not in raw:
+            add_finding(findings, "error", "missing_binding_handle", f"Binding #{idx} schema requires `handle`.", role)
         if is_blank(handle):
             add_finding(findings, "error", "blank_binding_handle", f"Binding #{idx} has a blank handle.", role)
+        if "evidence" not in raw:
+            add_finding(findings, "error", "missing_binding_evidence", f"Binding `{role}` schema requires `evidence`.", role, handle)
         if is_blank(evidence):
             add_finding(findings, "error", "blank_binding_evidence", f"Binding `{role}` has blank evidence.", role, handle)
 
-        if confidence not in CONFIDENCE_VALUES:
+        if "confidence" not in raw:
+            add_finding(
+                findings,
+                "error",
+                "missing_binding_confidence",
+                f"Binding `{role}` schema requires `confidence`.",
+                role,
+                handle,
+            )
+        if not confidence:
+            add_finding(
+                findings,
+                "error",
+                "blank_binding_confidence",
+                f"Binding `{role}` confidence must be one of {sorted(CONFIDENCE_VALUES)}.",
+                role,
+                handle,
+            )
+        elif confidence not in CONFIDENCE_VALUES:
             add_finding(
                 findings,
                 "error",
@@ -600,6 +669,8 @@ def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> lis
                 role,
                 handle,
             )
+        if "risk" not in raw:
+            add_finding(findings, "error", "missing_binding_risk", f"Binding `{role}` schema requires `risk`.", role, handle)
 
         if VAGUE_HANDLE_RE.search(handle):
             add_finding(
@@ -1810,6 +1881,7 @@ def render_policy_presets() -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="StateBind handoff helper")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_extract = sub.add_parser("extract", help="generate HANDOFF.md/statebind.json draft")

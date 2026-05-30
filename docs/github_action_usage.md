@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.15
+        uses: FU-max-boop/statebind-guard@v0.1.16
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.15`.
+`FU-max-boop/statebind-guard@v0.1.16`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -72,7 +72,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.15
+  uses: FU-max-boop/statebind-guard@v0.1.16
   with:
     statebind-json: statebind.json
     fail-on: warning
@@ -88,8 +88,9 @@ Available outputs are `passed`, `errors`, `warnings`, `exit_code`, `fail_on`,
 
 The repository CI dogfoods both paths: a valid fixture must pass with
 `passed=true`, and an invalid fixture must fail while still producing
-`passed=false`, `errors=1`, `exit_code=1`, JSON, SARIF, Markdown, and HTML
-reports. This keeps failure routing testable for downstream workflows.
+`passed=false`, `errors=1`, `warnings=1`, `exit_code=1`, JSON, SARIF,
+Markdown, and HTML reports. This keeps failure routing testable for downstream
+workflows.
 
 By default the action emits GitHub Actions annotations for every finding, so
 warnings and errors appear directly in the workflow UI. Set

@@ -37,6 +37,68 @@ class StateBindHandoffTests(unittest.TestCase):
             )
         )
 
+    def test_version_flag_matches_package_metadata(self):
+        out = run(["python", str(SCRIPT), "--version"], ROOT)
+        version_line = next(
+            line for line in (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines()
+            if line.startswith("version = ")
+        )
+        version = version_line.split('"')[1]
+        self.assertIn(version, out)
+
+    def test_validate_rejects_schema_required_field_omissions(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            state = repo / "statebind.json"
+            state.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "0.1",
+                        "task": {"goal": "resume work"},
+                        "active_target": {
+                            "type": "ci",
+                            "handle": "make test",
+                            "evidence": "summary",
+                        },
+                        "bindings": [
+                            {
+                                "role": "next_command",
+                                "handle": "make test",
+                                "evidence": "summary",
+                                "confidence": "high",
+                            }
+                        ],
+                        "risks": [],
+                    }
+                )
+            )
+
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    str(state),
+                    "--repo",
+                    ".",
+                    "--fail-on",
+                    "warning",
+                    "--json",
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertNotEqual(proc.returncode, 0)
+            report = json.loads(proc.stdout)
+            codes = {finding["code"] for finding in report["findings"]}
+            self.assertIn("missing_task_status", codes)
+            self.assertIn("missing_active_target_confidence", codes)
+            self.assertIn("blank_active_target_confidence", codes)
+            self.assertIn("missing_binding_risk", codes)
+            self.assertGreaterEqual(report["summary"]["errors"], 4)
+
     def test_extract_redacts_with_labels(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
@@ -383,7 +445,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.15", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.16", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 

@@ -21,7 +21,7 @@ It ships as a dependency-free Python CLI, GitHub Action, SARIF/HTML/Markdown rep
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.15"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.16"
 statebind proof
 ```
 
@@ -83,7 +83,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.15
+- uses: FU-max-boop/statebind-guard@v0.1.16
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

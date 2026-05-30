@@ -1,8 +1,12 @@
 import unittest
+import subprocess
 from pathlib import Path
+
+from statebind_handoff import __version__
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "statebind_handoff" / "statebind_handoff.py"
 
 
 class OpenSourceMetadataTests(unittest.TestCase):
@@ -10,9 +14,28 @@ class OpenSourceMetadataTests(unittest.TestCase):
         text = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
         self.assertIn("cff-version: 1.2.0", text)
         self.assertIn('title: "StateBind Guard"', text)
-        self.assertIn('version: "0.1.15"', text)
+        self.assertIn('version: "0.1.16"', text)
         self.assertIn("repository-code: \"https://github.com/FU-max-boop/statebind-guard\"", text)
         self.assertIn("license: MIT", text)
+
+    def test_version_surfaces_are_consistent(self):
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        version_line = next(line for line in pyproject.splitlines() if line.startswith("version = "))
+        version = version_line.split('"')[1]
+        self.assertEqual(__version__, version)
+        self.assertIn(f'version: "{version}"', (ROOT / "CITATION.cff").read_text(encoding="utf-8"))
+        self.assertIn(f"rev: v{version}", (ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8"))
+
+        out = subprocess.check_output(["python", str(SCRIPT), "--version"], cwd=ROOT, text=True)
+        self.assertIn(version, out)
+
+    def test_package_check_builds_clean_wheel_install(self):
+        makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+        self.assertIn("pip wheel --no-deps --no-build-isolation", makefile)
+        self.assertIn("python -m venv \"$$tmpdir/venv\"", makefile)
+        self.assertIn("PIP_FIND_LINKS=\"$$tmpdir/dist\"", makefile)
+        self.assertIn("pip install statebind-guard", makefile)
+        self.assertIn("statebind\" --version", makefile)
 
     def test_issue_templates_cover_adoption_and_failures(self):
         template_dir = ROOT / ".github" / "ISSUE_TEMPLATE"
