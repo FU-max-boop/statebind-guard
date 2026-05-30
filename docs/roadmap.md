@@ -14,6 +14,8 @@ into real repositories, or improve the evidence behind the claim.
   receipt.
 - Keep `statebind audit` useful as the pre-adoption scanner for third-party
   repositories.
+- Use `statebind scout` to rank candidate repositories before any external
+  outreach, so maintainer notes go only to plausible high-signal targets.
 - Collect adoption reports from coding-agent, CI, and research-engineering users.
 - Collect sanitized visible-but-unbound failure cases for the benchmark corpus.
 

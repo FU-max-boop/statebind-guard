@@ -46,6 +46,9 @@ For third-party feedback prep, skip the manual clone:
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 ```
 
+Use `statebind scout --repo-list candidate-repos.txt --issue-dir statebind-notes`
+when comparing several candidate repositories before outreach.
+
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an
 automatic recommendation.

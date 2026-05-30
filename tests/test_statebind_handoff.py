@@ -445,7 +445,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.25", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.26", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -657,6 +657,78 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("Smallest follow-up check", issue_text)
             self.assertIn("already appears wired", issue_text)
             self.assertIn("statebind validate statebind.json", issue_text)
+
+    def test_scout_ranks_repositories_and_writes_notes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            high = root / "handoff-heavy"
+            low = root / "plain-repo"
+            for repo in (high, low):
+                repo.mkdir()
+                run(["git", "init", "-q"], repo)
+                run(["git", "config", "user.email", "demo@example.com"], repo)
+                run(["git", "config", "user.name", "Demo"], repo)
+            (high / "AGENTS.md").write_text("# Agent notes\nResume long coding tasks from explicit handoffs.\n")
+            (high / "Makefile").write_text("test:\n\tpython -m unittest discover -s tests\n")
+            (low / "README.md").write_text("# Plain repo\n")
+            for repo in (high, low):
+                run(["git", "add", "."], repo)
+                run(["git", "commit", "-q", "-m", "init"], repo)
+
+            markdown = root / "scout.md"
+            issue_dir = root / "notes"
+            scout_json = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "scout",
+                    "--repo-url",
+                    high.as_posix(),
+                    "--repo-url",
+                    low.as_posix(),
+                    "--json",
+                    "--markdown",
+                    str(markdown),
+                    "--issue-dir",
+                    str(issue_dir),
+                ],
+                ROOT,
+            )
+            data = json.loads(scout_json)
+
+            self.assertEqual(data["summary"]["total"], 2)
+            self.assertEqual(data["summary"]["ok"], 2)
+            first = data["repositories"][0]
+            second = data["repositories"][1]
+            self.assertEqual(first["repo"], "handoff-heavy")
+            self.assertEqual(first["priority"], "high")
+            self.assertEqual(first["suggested_next_command"]["command"], "make test")
+            self.assertEqual(second["repo"], "plain-repo")
+            self.assertEqual(second["priority"], "skip")
+
+            report = markdown.read_text()
+            self.assertIn("# StateBind Adoption Scout", report)
+            self.assertIn("handoff-heavy", report)
+            self.assertIn("plain-repo", report)
+            self.assertIn("Prefer `high` or `medium` targets", report)
+            self.assertNotIn(str(root), report)
+
+            notes = sorted(path.name for path in issue_dir.glob("*.md"))
+            self.assertEqual(notes, ["handoff-heavy-statebind-note.md"])
+            note_text = (issue_dir / notes[0]).read_text()
+            self.assertIn("AGENTS.md", note_text)
+            self.assertNotIn(str(root), note_text)
+
+    def test_scout_requires_a_repository_source(self):
+        proc = subprocess.run(
+            ["python", str(SCRIPT), "scout", "--json"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("needs at least one", proc.stderr)
 
     def test_init_refuses_to_partially_overwrite_existing_files(self):
         with tempfile.TemporaryDirectory() as td:

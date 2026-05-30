@@ -66,9 +66,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.25"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.26"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.25"
+SOURCE_VERSION = "0.1.26"
 
 
 def resolve_package_version() -> str:
@@ -2185,6 +2185,209 @@ def run_audit(
             tmp_ctx.cleanup()
 
 
+def scout_source_label(repo_url: str) -> str:
+    if repo_url.startswith(("http://", "https://", "git@", "ssh://")):
+        return repo_url
+    return repo_label_from_url(repo_url)
+
+
+def scout_score(report: dict[str, Any]) -> tuple[int, str, list[str]]:
+    if report["summary"]["errors"]:
+        return 0, "skip", ["audit produced errors"]
+    adoption = report["adoption_level"]
+    candidate_count = len(report["handoff_candidates"])
+    suggested = report["suggested_next_command"]
+    score = 0
+    reasons: list[str] = []
+
+    if adoption == "partial":
+        score += 6
+        reasons.append("handoff surfaces exist but StateBind is not fully wired")
+    elif adoption == "not_started":
+        score += 2
+        reasons.append("no StateBind wiring detected")
+    elif adoption == "wired":
+        score += 1
+        reasons.append("already wired; useful only for follow-up checks")
+
+    if candidate_count:
+        score += min(candidate_count, 4)
+        reasons.append(f"{candidate_count} handoff-like file(s) found")
+    elif adoption == "not_started":
+        reasons.append("no handoff-like files found")
+
+    if suggested["evidence"].startswith("default"):
+        score -= 1
+        reasons.append("verification command needs maintainer confirmation")
+    else:
+        score += 2
+        reasons.append(f"small local gate inferred from {suggested['evidence']}")
+
+    if candidate_count == 0 and adoption == "not_started":
+        return max(score, 0), "skip", reasons
+    if adoption == "wired":
+        return max(score, 0), "follow_up", reasons
+    if score >= 8:
+        return score, "high", reasons
+    if score >= 5:
+        return score, "medium", reasons
+    return max(score, 0), "low", reasons
+
+
+def safe_issue_filename(label: str) -> str:
+    name = re.sub(r"[^A-Za-z0-9._-]+", "-", label).strip("-._")
+    return f"{name or 'repository'}-statebind-note.md"
+
+
+def load_scout_urls(repo_urls: list[str], repo_list: Path | None) -> list[str]:
+    urls = list(repo_urls)
+    if repo_list:
+        for line in repo_list.read_text(encoding="utf-8").splitlines():
+            item = line.strip()
+            if item and not item.startswith("#"):
+                urls.append(item)
+    return urls
+
+
+def scout_record_from_report(
+    repo_url: str,
+    report: dict[str, Any],
+    issue_dir: Path | None,
+) -> dict[str, Any]:
+    score, priority, reasons = scout_score(report)
+    record = {
+        "source": scout_source_label(repo_url),
+        "repo": report["repo"],
+        "status": "ok",
+        "priority": priority,
+        "score": score,
+        "reasons": reasons,
+        "adoption_level": report["adoption_level"],
+        "candidate_count": len(report["handoff_candidates"]),
+        "handoff_candidates": report["handoff_candidates"][:8],
+        "suggested_next_command": report["suggested_next_command"],
+        "summary": report["summary"],
+        "issue_template": "",
+    }
+    if issue_dir and priority != "skip":
+        issue_path = issue_dir / safe_issue_filename(report["repo"])
+        write_output(issue_path, render_audit_issue_template(report))
+        record["issue_template"] = issue_path.name
+    return record
+
+
+def render_scout_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# StateBind Adoption Scout",
+        "",
+        f"Scanned repositories: {payload['summary']['total']}",
+        f"Successful audits: {payload['summary']['ok']}",
+        f"Failed audits: {payload['summary']['errors']}",
+        "",
+        "| Priority | Score | Repository | Adoption | Candidates | Suggested gate | Note |",
+        "|---|---:|---|---|---:|---|---|",
+    ]
+    for record in payload["repositories"]:
+        gate = record.get("suggested_next_command", {}).get("command", "")
+        note = record.get("issue_template") or ""
+        lines.append(
+            "| {priority} | {score} | `{repo}` | {adoption} | {candidates} | `{gate}` | {note} |".format(
+                priority=record["priority"],
+                score=record["score"],
+                repo=record["repo"],
+                adoption=record.get("adoption_level", ""),
+                candidates=record.get("candidate_count", 0),
+                gate=gate,
+                note=note,
+            )
+        )
+    lines.extend(["", "## Review Gate", ""])
+    lines.append("- Prefer `high` or `medium` targets with handoff-like files and a concrete local gate.")
+    lines.append("- Skip repositories with no handoff-like surface unless a maintainer explicitly asks.")
+    lines.append("- Use generated notes as drafts; adapt or close if the failure mode is not relevant.")
+    lines.append("")
+    for record in payload["repositories"]:
+        lines.extend([f"## {record['repo']}", ""])
+        if record["status"] != "ok":
+            lines.append(f"- status: `{record['status']}`")
+            lines.append(f"- error: {record.get('error', '')}")
+            lines.append("")
+            continue
+        lines.append(f"- priority: `{record['priority']}`")
+        lines.append(f"- source: `{record['source']}`")
+        for reason in record["reasons"]:
+            lines.append(f"- reason: {reason}")
+        if record["handoff_candidates"]:
+            lines.append("- handoff candidates:")
+            for candidate in record["handoff_candidates"]:
+                lines.append(f"  - `{candidate['path']}` ({candidate['reason']})")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def run_scout(
+    repo_urls: list[str],
+    repo_list: Path | None,
+    ref: str | None,
+    clone_timeout: int,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    policy_path: Path | None,
+    json_out: bool,
+    markdown_out: Path | None,
+    issue_dir: Path | None,
+) -> int:
+    urls = load_scout_urls(repo_urls, repo_list)
+    if not urls:
+        print("StateBind scout needs at least one --repo-url or --repo-list entry.", file=sys.stderr)
+        return 2
+
+    records: list[dict[str, Any]] = []
+    for repo_url in urls:
+        tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
+        try:
+            label = repo_label_from_url(repo_url)
+            tmp_ctx = tempfile.TemporaryDirectory(prefix="statebind-scout-")
+            repo = clone_repo_for_audit(repo_url, ref, Path(tmp_ctx.name), clone_timeout)
+            report = audit_report(repo, statebind_path, handoff_path, workflow_path, policy_path, label)
+            records.append(scout_record_from_report(repo_url, report, issue_dir))
+        except RuntimeError as exc:
+            records.append(
+                {
+                    "source": scout_source_label(repo_url),
+                    "repo": repo_label_from_url(repo_url),
+                    "status": "error",
+                    "priority": "skip",
+                    "score": 0,
+                    "reasons": ["clone or audit failed"],
+                    "error": str(exc),
+                }
+            )
+        finally:
+            if tmp_ctx:
+                tmp_ctx.cleanup()
+
+    records.sort(key=lambda item: (item["status"] == "ok", item["score"]), reverse=True)
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "summary": {
+            "total": len(records),
+            "ok": sum(1 for record in records if record["status"] == "ok"),
+            "errors": sum(1 for record in records if record["status"] != "ok"),
+        },
+        "repositories": records,
+    }
+    markdown = render_scout_markdown(payload)
+    if markdown_out:
+        write_output(markdown_out, markdown)
+    if json_out:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(markdown)
+    return 0 if payload["summary"]["ok"] else 2
+
+
 def write_demo() -> str:
     return """# Demo: Visible ID But Unbound
 
@@ -2373,6 +2576,19 @@ def main() -> int:
     p_audit.add_argument("--markdown", type=Path, help="write a maintainer-friendly Markdown audit")
     p_audit.add_argument("--issue-template", type=Path, help="write a maintainer-safe GitHub issue/PR note")
 
+    p_scout = sub.add_parser("scout", help="rank repositories for careful StateBind adoption outreach")
+    p_scout.add_argument("--repo-url", action="append", default=[], help="Git repository URL or local Git path to scout")
+    p_scout.add_argument("--repo-list", type=Path, help="newline-delimited repository URLs to scout")
+    p_scout.add_argument("--ref", help="branch or tag to clone for each repository")
+    p_scout.add_argument("--clone-timeout", type=int, default=30, help="seconds before a scout clone fails")
+    p_scout.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
+    p_scout.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
+    p_scout.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
+    p_scout.add_argument("--policy", type=Path, help="check a StateBind policy file")
+    p_scout.add_argument("--json", action="store_true", help="print machine-readable scout ranking")
+    p_scout.add_argument("--markdown", type=Path, help="write a Markdown scout report")
+    p_scout.add_argument("--issue-dir", type=Path, help="write one maintainer-safe note per successful audit")
+
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
 
@@ -2457,6 +2673,20 @@ def main() -> int:
             args.json,
             args.markdown,
             args.issue_template,
+        )
+    if args.cmd == "scout":
+        return run_scout(
+            args.repo_url,
+            args.repo_list,
+            args.ref,
+            args.clone_timeout,
+            args.statebind_json,
+            args.handoff,
+            args.workflow,
+            args.policy,
+            args.json,
+            args.markdown,
+            args.issue_dir,
         )
     if args.cmd == "check":
         return check_handoff(args.handoff)

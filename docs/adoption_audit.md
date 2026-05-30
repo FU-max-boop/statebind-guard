@@ -20,6 +20,22 @@ statebind audit --repo-url https://github.com/owner/repo \
 note uses the repository name and relative paths, not the local temporary
 checkout path. Use `--clone-timeout 60` if the target host is slow.
 
+## Batch Scout
+
+Use `statebind scout` before external outreach. It ranks candidate repositories
+so you can avoid low-signal or irrelevant maintainer pings:
+
+```bash
+statebind scout \
+  --repo-list candidate-repos.txt \
+  --issue-dir statebind-notes \
+  --markdown statebind-scout.md
+```
+
+The scout report labels each repository as `high`, `medium`, `low`,
+`follow_up`, or `skip`. Prefer `high` and `medium` targets where the audit
+finds handoff-like files and a concrete local gate.
+
 It scans for:
 
 - existing `statebind.json`, `HANDOFF.md`, policy files, and StateBind workflows
