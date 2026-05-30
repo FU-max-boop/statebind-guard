@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@main
+      - uses: FU-max-boop/statebind-guard@v0.1.0
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -38,7 +38,7 @@ jobs:
           sarif_file: statebind-validation.sarif
 ```
 
-Pin to a release tag after adopting it in production, for example
+Pin to a release tag in production, for example
 `FU-max-boop/statebind-guard@v0.1.0`.
 
 For this repository, the stricter gate is:

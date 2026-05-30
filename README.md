@@ -75,7 +75,7 @@ See [quick demo](docs/quick_demo.md) for the benchmark result summary and
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@main
+- uses: FU-max-boop/statebind-guard@v0.1.0
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

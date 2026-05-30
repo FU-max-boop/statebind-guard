@@ -47,7 +47,7 @@ statebind validate statebind.json \
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@main
+- uses: FU-max-boop/statebind-guard@v0.1.0
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
