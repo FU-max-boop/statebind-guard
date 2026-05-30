@@ -1,6 +1,11 @@
 # StateBind Guard
 
+[![CI](https://github.com/FU-max-boop/statebind-guard/actions/workflows/smoke.yml/badge.svg)](https://github.com/FU-max-boop/statebind-guard/actions/workflows/smoke.yml)
+[![Release](https://img.shields.io/github/v/release/FU-max-boop/statebind-guard)](https://github.com/FU-max-boop/statebind-guard/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Project page:** https://fu-max-boop.github.io/statebind-guard/
+**Launch note:** [Visible context is not executable state](docs/launch_note.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
 coding-agent handoffs:
@@ -51,6 +56,7 @@ make benchmark
 
 Then inspect:
 
+- [launch note](docs/launch_note.md)
 - [quick demo](docs/quick_demo.md)
 - [failure cases](docs/failure_cases.md)
 - [limitations](docs/limitations.md)
@@ -153,6 +159,7 @@ docs/
   failure_cases.md
   github_action_usage.md
   handoff_contract.md
+  launch_note.md
   limitations.md
   quality_gates.md
   quick_demo.md

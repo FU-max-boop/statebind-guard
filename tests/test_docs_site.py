@@ -18,6 +18,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("FU-max-boop/statebind-guard@v0.1.1", html)
         self.assertIn("statebind init", html)
         self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.1", html)
+        self.assertIn("docs/launch_note.md", html)
 
     def test_social_preview_png_has_expected_dimensions(self):
         png = (ROOT / "docs" / "assets" / "statebind_social_preview.png").read_bytes()
@@ -28,6 +29,14 @@ class DocsSiteTests(unittest.TestCase):
     def test_readme_points_to_project_page(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         self.assertIn("https://fu-max-boop.github.io/statebind-guard/", readme)
+        self.assertIn("docs/launch_note.md", readme)
+        self.assertIn("actions/workflows/smoke.yml/badge.svg", readme)
+
+    def test_launch_note_states_narrow_claim(self):
+        note = (ROOT / "docs" / "launch_note.md").read_text(encoding="utf-8")
+        self.assertIn("visible handle != role-bound executable state", note)
+        self.assertIn("active target -> semantic role -> executable handle", note)
+        self.assertIn("StateBind Guard does not claim", note)
 
 
 if __name__ == "__main__":
