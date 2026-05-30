@@ -6,6 +6,7 @@
 
 **Project page:** https://fu-max-boop.github.io/statebind-guard/
 **Launch note:** [Visible context is not executable state](docs/launch_note.md)
+**Launch package:** [copy-paste proof, posts, and maintainer pitch](docs/launch_package.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
 coding-agent handoffs:
@@ -13,6 +14,20 @@ coding-agent handoffs:
 ![StateBind Guard demo](docs/assets/statebind_guard_demo.svg)
 
 > A handoff can contain the right identifier and still fail if it does not preserve the binding from active target to semantic role to executable handle.
+
+Try the claim before installing any hooks:
+
+```bash
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.11"
+statebind proof
+```
+
+Expected shape:
+
+```text
+bad_visible_unbound: FAIL
+good_role_bound: PASS
+```
 
 For long-running coding agents, the basic memory unit should not only be a chunk or a summary. It should preserve executable bindings such as:
 
@@ -51,7 +66,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.10"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.11"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -69,7 +84,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.10"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.11"
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --out .statebind-policy.json
@@ -94,7 +109,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.10
+    rev: v0.1.11
     hooks:
       - id: statebind-guard
 ```
@@ -122,7 +137,7 @@ See [policy usage](docs/policy_usage.md) for team-specific gates.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.10
+- uses: FU-max-boop/statebind-guard@v0.1.11
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -194,6 +209,7 @@ docs/
   failure_cases.md
   github_action_usage.md
   handoff_contract.md
+  launch_package.md
   launch_note.md
   limitations.md
   policy_usage.md

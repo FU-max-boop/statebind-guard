@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.10
+        uses: FU-max-boop/statebind-guard@v0.1.11
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.10`.
+`FU-max-boop/statebind-guard@v0.1.11`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -65,7 +65,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.10
+  uses: FU-max-boop/statebind-guard@v0.1.11
   with:
     statebind-json: statebind.json
     fail-on: warning
@@ -93,8 +93,8 @@ For this repository, the stricter gate is:
   run: bash scripts/check_public_ready.sh
 ```
 
-That gate runs unit tests, the benchmark suite, the demo, and privacy-oriented
-public-release checks.
+That gate runs unit tests, the benchmark suite, the demo, the proof command,
+and privacy-oriented public-release checks.
 
 ## Validation Report
 

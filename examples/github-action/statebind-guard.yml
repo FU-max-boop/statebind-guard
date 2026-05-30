@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: FU-max-boop/statebind-guard@v0.1.10
+      - uses: FU-max-boop/statebind-guard@v0.1.11
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
