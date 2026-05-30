@@ -37,6 +37,7 @@ COMMAND_PREFIXES = (
     "git",
 )
 SCHEMA_VERSION = "0.1"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.1"
 STATEBIND_SCHEMA: dict[str, Any] = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://github.com/FU-max-boop/statebind-guard/schemas/statebind.schema.json",
@@ -244,6 +245,107 @@ def to_contract(data: dict) -> dict:
         "resume_prompt": prompt,
         "raw_signals": raw_signals,
     }
+
+
+def starter_contract(goal: str, next_command: str) -> dict[str, Any]:
+    """Build a ready-to-validate starter contract for first-time adoption."""
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "task": {
+            "goal": goal,
+            "status": "ready for StateBind Guard adoption",
+        },
+        "active_target": {
+            "type": "ci",
+            "handle": next_command,
+            "evidence": "statebind init starter scaffold",
+            "confidence": "high",
+        },
+        "bindings": [
+            {
+                "role": "next_command",
+                "handle": next_command,
+                "evidence": "statebind init starter scaffold",
+                "confidence": "high",
+                "risk": "",
+            }
+        ],
+        "risks": [],
+        "resume_prompt": (
+            "Read HANDOFF.md and statebind.json before resuming this repository. "
+            "Run the bound next_command only after verifying the current branch and files."
+        ),
+        "raw_signals": {
+            "source": "statebind init",
+            "action_ref": DEFAULT_ACTION_REF,
+        },
+    }
+
+
+def render_init_workflow(
+    handoff_path: Path,
+    statebind_path: Path,
+    report_path: str = "statebind-validation.json",
+    sarif_path: str = "statebind-validation.sarif",
+) -> str:
+    return f"""name: statebind-guard
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  validate-handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: {DEFAULT_ACTION_REF}
+        with:
+          handoff: {handoff_path.as_posix()}
+          statebind-json: {statebind_path.as_posix()}
+          fail-on: warning
+          report: {report_path}
+          sarif: {sarif_path}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: statebind-validation
+          path: |
+            {report_path}
+            {sarif_path}
+"""
+
+
+def write_scaffold_file(path: Path, text: str, force: bool) -> None:
+    if path.exists() and not force:
+        raise FileExistsError(f"{path} already exists; pass --force to overwrite it.")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def init_scaffold(
+    handoff_path: Path,
+    statebind_path: Path,
+    workflow_path: Path,
+    goal: str,
+    next_command: str,
+    force: bool,
+) -> list[Path]:
+    contract = starter_contract(goal, next_command)
+    outputs = [
+        (handoff_path, render_md(contract)),
+        (statebind_path, json.dumps(contract, indent=2, ensure_ascii=False) + "\n"),
+        (workflow_path, render_init_workflow(handoff_path, statebind_path)),
+    ]
+    if not force:
+        existing = [str(path) for path, _ in outputs if path.exists()]
+        if existing:
+            raise FileExistsError(f"{', '.join(existing)} already exists; pass --force to overwrite.")
+    written: list[Path] = []
+    for path, text in outputs:
+        write_scaffold_file(path, text, force)
+        written.append(path)
+    return written
 
 
 def is_blank(value: Any) -> bool:
@@ -746,6 +848,17 @@ def main() -> int:
     p_extract.add_argument("--repo-label", help="portable label to write instead of an absolute repo path")
     p_extract.add_argument("--transcript-label", help="portable label to write instead of an absolute transcript path")
 
+    p_init = sub.add_parser("init", help="create a ready-to-run handoff contract and GitHub workflow")
+    p_init.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
+    p_init.add_argument("--json", type=Path, default=Path("statebind.json"))
+    p_init.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
+    p_init.add_argument(
+        "--goal",
+        default="Preserve executable coding-agent handoff bindings for this repository.",
+    )
+    p_init.add_argument("--next-command", default="make test")
+    p_init.add_argument("--force", action="store_true", help="overwrite existing scaffold files")
+
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
 
@@ -770,6 +883,16 @@ def main() -> int:
         args.json.write_text(json.dumps(contract, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"Wrote {args.out} and {args.json}")
         print("Draft only: verify evidence and remove stale/uncertain candidates before resuming.")
+        return 0
+    if args.cmd == "init":
+        try:
+            written = init_scaffold(args.handoff, args.json, args.workflow, args.goal, args.next_command, args.force)
+        except FileExistsError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        for path in written:
+            print(f"Wrote {path}")
+        print("Next: commit these files and let the StateBind Guard workflow validate future handoffs.")
         return 0
     if args.cmd == "check":
         return check_handoff(args.handoff)

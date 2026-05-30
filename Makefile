@@ -42,4 +42,7 @@ package-check:
 	python -m venv --system-site-packages "$$tmpdir/venv"; \
 	PIP_NO_INDEX=1 PIP_CACHE_DIR="$$tmpdir/pip-cache" "$$tmpdir/venv/bin/python" -m pip install --no-build-isolation -e . >/dev/null; \
 	"$$tmpdir/venv/bin/statebind" demo >/dev/null; \
-	"$$tmpdir/venv/bin/statebind" --help >/dev/null
+	"$$tmpdir/venv/bin/statebind" --help >/dev/null; \
+	cd "$$tmpdir"; \
+	"$$tmpdir/venv/bin/statebind" init --goal "package smoke" --next-command "make test" >/dev/null; \
+	"$$tmpdir/venv/bin/statebind" validate statebind.json --repo . --fail-on warning >/dev/null

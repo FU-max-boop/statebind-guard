@@ -160,6 +160,88 @@ class StateBindHandoffTests(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
 
+    def test_init_writes_ready_scaffold(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            handoff = repo / "HANDOFF.md"
+            state = repo / "statebind.json"
+            workflow = repo / ".github" / "workflows" / "statebind-guard.yml"
+
+            out = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--goal",
+                    "keep agent handoffs executable",
+                    "--next-command",
+                    "python -m unittest discover -s tests",
+                ],
+                repo,
+            )
+
+            self.assertIn("Wrote", out)
+            self.assertTrue(handoff.exists())
+            self.assertTrue(state.exists())
+            self.assertTrue(workflow.exists())
+            workflow_text = workflow.read_text()
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.1", workflow_text)
+            self.assertIn("handoff: HANDOFF.md", workflow_text)
+            self.assertIn("statebind-json: statebind.json", workflow_text)
+
+            data = json.loads(state.read_text())
+            self.assertEqual(data["task"]["goal"], "keep agent handoffs executable")
+            self.assertEqual(data["bindings"][0]["handle"], "python -m unittest discover -s tests")
+
+            check_out = run(["python", str(SCRIPT), "check", str(handoff)], repo)
+            self.assertIn("Basic handoff check passed", check_out)
+
+            validate_out = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    str(state),
+                    "--repo",
+                    ".",
+                    "--fail-on",
+                    "warning",
+                ],
+                repo,
+            )
+            self.assertIn("StateBind validation passed", validate_out)
+
+    def test_init_refuses_to_partially_overwrite_existing_files(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            handoff = repo / "HANDOFF.md"
+            state = repo / "statebind.json"
+            workflow = repo / ".github" / "workflows" / "statebind-guard.yml"
+            handoff.write_text("existing handoff\n")
+
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--handoff",
+                    str(handoff),
+                    "--json",
+                    str(state),
+                    "--workflow",
+                    str(workflow),
+                ],
+                cwd=repo,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(proc.returncode, 2)
+            self.assertIn("pass --force", proc.stderr)
+            self.assertEqual(handoff.read_text(), "existing handoff\n")
+            self.assertFalse(state.exists())
+            self.assertFalse(workflow.exists())
+
     def test_validate_rejects_vague_handle(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
