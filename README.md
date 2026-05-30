@@ -22,7 +22,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.24"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.25"
 statebind proof
 ```
 
@@ -84,7 +84,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.24"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.25"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -107,7 +107,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.24"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.25"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
@@ -136,7 +136,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.24
+    rev: v0.1.25
     hooks:
       - id: statebind-guard
 ```
@@ -169,12 +169,13 @@ Run `statebind audit --repo .` first when evaluating a repository that has not
 adopted StateBind yet; it reports the current adoption level, handoff-like files,
 the smallest inferred test command, and the smallest copy-paste adoption PR.
 Use `--repo-url https://github.com/owner/repo` to clone a public repository into
-a temporary checkout and generate the same audit without manually cloning it.
+a temporary checkout and generate the same audit without manually cloning it;
+add `--clone-timeout 60` for slow hosts.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.24
+- uses: FU-max-boop/statebind-guard@v0.1.25
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

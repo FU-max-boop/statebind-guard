@@ -66,9 +66,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.24"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.25"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.24"
+SOURCE_VERSION = "0.1.25"
 
 
 def resolve_package_version() -> str:
@@ -1868,13 +1868,16 @@ def repo_label_from_url(repo_url: str) -> str:
     return name or "repository"
 
 
-def clone_repo_for_audit(repo_url: str, ref: str | None, target: Path) -> Path:
+def clone_repo_for_audit(repo_url: str, ref: str | None, target: Path, timeout: int) -> Path:
     clone_dir = target / "repo"
     cmd = ["git", "clone", "--quiet", "--depth", "1"]
     if ref:
         cmd.extend(["--branch", ref])
     cmd.extend([repo_url, str(clone_dir)])
-    proc = subprocess.run(cmd, text=True, capture_output=True)
+    try:
+        proc = subprocess.run(cmd, text=True, capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(f"git clone timed out after {timeout} seconds") from exc
     if proc.returncode != 0:
         detail = proc.stderr.strip() or proc.stdout.strip() or "git clone failed"
         raise RuntimeError(detail)
@@ -2146,6 +2149,7 @@ def run_audit(
     repo: Path,
     repo_url: str | None,
     ref: str | None,
+    clone_timeout: int,
     statebind_path: Path,
     handoff_path: Path,
     workflow_path: Path,
@@ -2160,7 +2164,7 @@ def run_audit(
         if repo_url:
             repo_label = repo_label_from_url(repo_url)
             tmp_ctx = tempfile.TemporaryDirectory(prefix="statebind-audit-")
-            repo = clone_repo_for_audit(repo_url, ref, Path(tmp_ctx.name))
+            repo = clone_repo_for_audit(repo_url, ref, Path(tmp_ctx.name), clone_timeout)
         report = audit_report(repo, statebind_path, handoff_path, workflow_path, policy_path, repo_label)
         markdown = render_audit_markdown(report)
         issue_template = render_audit_issue_template(report)
@@ -2360,6 +2364,7 @@ def main() -> int:
     p_audit.add_argument("--repo", type=Path, default=Path("."))
     p_audit.add_argument("--repo-url", help="clone and audit a public Git repository without a manual checkout")
     p_audit.add_argument("--ref", help="branch or tag to clone when using --repo-url")
+    p_audit.add_argument("--clone-timeout", type=int, default=30, help="seconds before a --repo-url clone fails")
     p_audit.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
     p_audit.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
     p_audit.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
@@ -2444,6 +2449,7 @@ def main() -> int:
             args.repo,
             args.repo_url,
             args.ref,
+            args.clone_timeout,
             args.statebind_json,
             args.handoff,
             args.workflow,

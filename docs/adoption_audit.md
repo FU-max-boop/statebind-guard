@@ -18,7 +18,7 @@ statebind audit --repo-url https://github.com/owner/repo \
 
 `--repo-url` uses a temporary shallow Git checkout. The generated maintainer
 note uses the repository name and relative paths, not the local temporary
-checkout path.
+checkout path. Use `--clone-timeout 60` if the target host is slow.
 
 It scans for:
 

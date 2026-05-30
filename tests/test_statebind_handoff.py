@@ -445,7 +445,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.24", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.25", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -591,6 +591,29 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("AGENTS.md", issue_text)
             self.assertNotIn(str(root), issue_text)
             self.assertNotIn("statebind-audit-", issue_text)
+
+    def test_audit_repo_url_reports_clone_failure(self):
+        with tempfile.TemporaryDirectory() as td:
+            missing = Path(td) / "missing-repo"
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "audit",
+                    "--repo-url",
+                    missing.as_posix(),
+                    "--clone-timeout",
+                    "1",
+                    "--json",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+            )
+
+            self.assertEqual(proc.returncode, 2)
+            self.assertEqual(proc.stdout, "")
+            self.assertIn("StateBind audit failed:", proc.stderr)
 
     def test_audit_reports_wired_repo_after_init(self):
         with tempfile.TemporaryDirectory() as td:

@@ -23,7 +23,7 @@ release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.24"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.25"
 statebind proof
 ```
 
@@ -88,7 +88,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.24
+- uses: FU-max-boop/statebind-guard@v0.1.25
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
