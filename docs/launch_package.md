@@ -23,7 +23,7 @@ release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.23"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.24"
 statebind proof
 ```
 
@@ -77,6 +77,7 @@ The bad case contains the right command in evidence, but the actual handle is st
 ```bash
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
+statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -87,7 +88,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.23
+- uses: FU-max-boop/statebind-guard@v0.1.24
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -109,6 +110,8 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
 - `make public-check` runs tests, schema checks, benchmark cards, smoke demo, proof, and package smoke.
 - `statebind audit --repo .` gives a pre-adoption report for third-party
   repositories before asking maintainers to wire CI.
+- `statebind audit --repo-url https://github.com/owner/repo` prepares the same
+  report and maintainer note from a temporary shallow checkout.
 - The deployed-derived result card tests sanitized release, CI, packaging,
   SARIF/report, Pages, skill-sync, and external-adoption handoffs.
 - `make dist-check` builds the wheel and source distribution, checks sdist

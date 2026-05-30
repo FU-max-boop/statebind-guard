@@ -40,6 +40,12 @@ The audit finds existing handoff-like files, checks whether StateBind is already
 wired, infers the smallest likely local verification command, and prints a
 copy-paste first adoption PR.
 
+For third-party feedback prep, skip the manual clone:
+
+```bash
+statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
+```
+
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an
 automatic recommendation.

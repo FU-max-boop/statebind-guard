@@ -14,6 +14,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -65,9 +66,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.23"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.24"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.23"
+SOURCE_VERSION = "0.1.24"
 
 
 def resolve_package_version() -> str:
@@ -1859,12 +1860,34 @@ def statebind_workflow_paths(repo: Path) -> list[str]:
     return paths
 
 
+def repo_label_from_url(repo_url: str) -> str:
+    clean = repo_url.rstrip("/")
+    if clean.endswith(".git"):
+        clean = clean[:-4]
+    name = clean.rsplit("/", 1)[-1]
+    return name or "repository"
+
+
+def clone_repo_for_audit(repo_url: str, ref: str | None, target: Path) -> Path:
+    clone_dir = target / "repo"
+    cmd = ["git", "clone", "--quiet", "--depth", "1"]
+    if ref:
+        cmd.extend(["--branch", ref])
+    cmd.extend([repo_url, str(clone_dir)])
+    proc = subprocess.run(cmd, text=True, capture_output=True)
+    if proc.returncode != 0:
+        detail = proc.stderr.strip() or proc.stdout.strip() or "git clone failed"
+        raise RuntimeError(detail)
+    return clone_dir
+
+
 def audit_report(
     repo: Path,
     statebind_path: Path,
     handoff_path: Path,
     workflow_path: Path,
     policy_path: Path | None,
+    repo_label: str | None = None,
 ) -> dict[str, Any]:
     repo = repo.resolve()
     checks: list[DoctorCheck] = []
@@ -1996,7 +2019,7 @@ def audit_report(
     ]
     return {
         "schema_version": SCHEMA_VERSION,
-        "repo": repo.name,
+        "repo": repo_label or repo.name,
         "adoption_level": adoption_level,
         "summary": summary,
         "checks": [asdict(check) for check in checks],
@@ -2050,7 +2073,27 @@ def render_audit_markdown(report: dict[str, Any]) -> str:
 
 def render_audit_issue_template(report: dict[str, Any]) -> str:
     suggested = report["suggested_next_command"]
-    commands = "\n".join(report["recommended_commands"])
+    if report["adoption_level"] == "wired":
+        command_heading = "### Smallest follow-up check"
+        commands = "\n".join(
+            [
+                "statebind doctor --repo . --policy .statebind-policy.json",
+                "statebind validate statebind.json --repo . --policy .statebind-policy.json --fail-on warning",
+            ]
+        )
+        command_note = (
+            "This repository already appears wired. I would treat the next step "
+            "as a follow-up check, not a first adoption PR."
+        )
+    else:
+        command_heading = "### Smallest possible adoption PR"
+        commands = "\n".join(report["recommended_commands"])
+        command_note = (
+            "I would not recommend adopting this automatically. The useful maintainer review "
+            "question is narrower: is there a real resume/handoff boundary here where a "
+            "future agent could see the right file, test, PR, SHA, or artifact but lose the "
+            "role binding that makes it executable?"
+        )
     candidates = report["handoff_candidates"]
     candidate_text = "\n".join(
         f"- `{candidate['path']}` ({candidate['reason']})" for candidate in candidates[:8]
@@ -2068,6 +2111,7 @@ large workflow change.
 This is not a request to adopt a dependency blindly. The goal is to give
 maintainers a small, concrete review surface.
 
+**Repository:** `{report['repo']}`
 **Adoption level:** `{report['adoption_level']}`
 **Suggested smallest local gate:** `{suggested['command']}` ({suggested['evidence']})
 
@@ -2079,16 +2123,13 @@ maintainers a small, concrete review surface.
 
 {candidate_text}
 
-### Smallest possible adoption PR
+{command_heading}
 
 ```bash
 {commands}
 ```
 
-I would not recommend adopting this automatically. The useful maintainer review
-question is narrower: is there a real resume/handoff boundary here where a
-future agent could see the right file, test, PR, SHA, or artifact but lose the
-role binding that makes it executable?
+{command_note}
 
 ### Maintainer questions
 
@@ -2103,6 +2144,8 @@ customer data, local paths, or proprietary code.
 
 def run_audit(
     repo: Path,
+    repo_url: str | None,
+    ref: str | None,
     statebind_path: Path,
     handoff_path: Path,
     workflow_path: Path,
@@ -2111,18 +2154,31 @@ def run_audit(
     markdown_out: Path | None,
     issue_template_out: Path | None,
 ) -> int:
-    report = audit_report(repo, statebind_path, handoff_path, workflow_path, policy_path)
-    markdown = render_audit_markdown(report)
-    issue_template = render_audit_issue_template(report)
-    if markdown_out:
-        write_output(markdown_out, markdown)
-    if issue_template_out:
-        write_output(issue_template_out, issue_template)
-    if json_out:
-        print(json.dumps(report, indent=2))
-    else:
-        print(markdown)
-    return 1 if report["summary"]["errors"] else 0
+    repo_label = None
+    tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
+    try:
+        if repo_url:
+            repo_label = repo_label_from_url(repo_url)
+            tmp_ctx = tempfile.TemporaryDirectory(prefix="statebind-audit-")
+            repo = clone_repo_for_audit(repo_url, ref, Path(tmp_ctx.name))
+        report = audit_report(repo, statebind_path, handoff_path, workflow_path, policy_path, repo_label)
+        markdown = render_audit_markdown(report)
+        issue_template = render_audit_issue_template(report)
+        if markdown_out:
+            write_output(markdown_out, markdown)
+        if issue_template_out:
+            write_output(issue_template_out, issue_template)
+        if json_out:
+            print(json.dumps(report, indent=2))
+        else:
+            print(markdown)
+        return 1 if report["summary"]["errors"] else 0
+    except RuntimeError as exc:
+        print(f"StateBind audit failed: {exc}", file=sys.stderr)
+        return 2
+    finally:
+        if tmp_ctx:
+            tmp_ctx.cleanup()
 
 
 def write_demo() -> str:
@@ -2302,6 +2358,8 @@ def main() -> int:
 
     p_audit = sub.add_parser("audit", help="pre-adoption scan for the smallest StateBind Guard PR")
     p_audit.add_argument("--repo", type=Path, default=Path("."))
+    p_audit.add_argument("--repo-url", help="clone and audit a public Git repository without a manual checkout")
+    p_audit.add_argument("--ref", help="branch or tag to clone when using --repo-url")
     p_audit.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
     p_audit.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
     p_audit.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
@@ -2384,6 +2442,8 @@ def main() -> int:
     if args.cmd == "audit":
         return run_audit(
             args.repo,
+            args.repo_url,
+            args.ref,
             args.statebind_json,
             args.handoff,
             args.workflow,

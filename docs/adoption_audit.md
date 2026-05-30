@@ -9,6 +9,17 @@ Run it from a repository root:
 statebind audit --repo . --markdown statebind-adoption-audit.md
 ```
 
+Or evaluate a public Git repository without manually cloning it:
+
+```bash
+statebind audit --repo-url https://github.com/owner/repo \
+  --issue-template statebind-maintainer-note.md
+```
+
+`--repo-url` uses a temporary shallow Git checkout. The generated maintainer
+note uses the repository name and relative paths, not the local temporary
+checkout path.
+
 It scans for:
 
 - existing `statebind.json`, `HANDOFF.md`, policy files, and StateBind workflows
@@ -34,7 +45,8 @@ assuming adoption: whether the repository has a real resume or handoff boundary
 where visible handles can lose their executable role binding.
 It includes maintainer questions so the first reply can be "docs-only",
 "CI warning", "required gate", or "not relevant" instead of a vague adoption
-debate.
+debate. If the repository already appears wired, the note switches from a first
+adoption PR to a smallest follow-up check.
 
 ## JSON Mode
 
