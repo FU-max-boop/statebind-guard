@@ -46,6 +46,16 @@ statebind validate statebind.json \
 
 Require handoff contracts for risky agent-generated PRs:
 
+```yaml
+- uses: FU-max-boop/statebind-guard@main
+  with:
+    handoff: HANDOFF.md
+    statebind-json: statebind.json
+    fail-on: warning
+```
+
+Or call the CLI directly:
+
 ```bash
 statebind validate statebind.json \
   --repo . \
@@ -77,6 +87,7 @@ previous test" or "the SHA above".
 ## What Makes This Industrial
 
 - Dependency-free CLI for low-friction adoption.
+- Reusable GitHub composite action for copy-paste CI adoption.
 - Versioned JSON schema for agent/runtime interoperability.
 - Machine-readable findings for CI and agent runtimes.
 - SARIF output for GitHub-native code scanning and PR annotation workflows.

@@ -17,3 +17,66 @@ jobs:
       - name: Run public-ready check
         run: bash scripts/check_public_ready.sh
 
+  action-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create valid handoff fixture
+        run: |
+          cat > HANDOFF.md <<'EOF'
+          # Agent Handoff
+
+          ## Active Target
+          - Type: ci
+          - Handle: make test
+          - Evidence: workflow smoke fixture
+          - Confidence: high
+
+          ## Executable Bindings
+          | Role | Handle | Evidence | Confidence | Risk |
+          |---|---|---|---|---|
+          | next_command | `make test` | workflow smoke fixture | high | |
+
+          ## Next Action
+          1. Run the bound validation command.
+
+          ## Risks
+          - none
+          EOF
+          cat > statebind.json <<'EOF'
+          {
+            "schema_version": "0.1",
+            "task": {
+              "goal": "verify the StateBind GitHub Action",
+              "status": "ready"
+            },
+            "active_target": {
+              "type": "ci",
+              "handle": "make test",
+              "evidence": "workflow smoke fixture",
+              "confidence": "high"
+            },
+            "bindings": [
+              {
+                "role": "next_command",
+                "handle": "make test",
+                "evidence": "workflow smoke fixture",
+                "confidence": "high",
+                "risk": ""
+              }
+            ],
+            "risks": []
+          }
+          EOF
+      - name: Run local composite action
+        uses: ./
+        with:
+          handoff: HANDOFF.md
+          statebind-json: statebind.json
+          fail-on: warning
+      - name: Check action reports
+        run: |
+          test -s statebind-validation.json
+          test -s statebind-validation.sarif
+          python -m json.tool statebind-validation.json >/dev/null
+          python -m json.tool statebind-validation.sarif >/dev/null

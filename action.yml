@@ -1,0 +1,83 @@
+name: StateBind Guard
+description: Validate executable-state bindings in coding-agent handoff contracts.
+author: Fu Xiaonan
+
+branding:
+  icon: link
+  color: blue
+
+inputs:
+  statebind-json:
+    description: Path to the machine-readable StateBind contract.
+    required: false
+    default: statebind.json
+  handoff:
+    description: Optional handoff Markdown file to check before validating JSON.
+    required: false
+    default: ""
+  repo:
+    description: Repository root for path-handle checks.
+    required: false
+    default: "."
+  fail-on:
+    description: Validation threshold. Use "error" for drafts or "warning" for consumption-ready handoffs.
+    required: false
+    default: warning
+  report:
+    description: Path for the stable JSON validation report.
+    required: false
+    default: statebind-validation.json
+  sarif:
+    description: Path for the SARIF 2.1.0 code-scanning report.
+    required: false
+    default: statebind-validation.sarif
+  setup-python:
+    description: Whether to install Python for the action run.
+    required: false
+    default: "true"
+  python-version:
+    description: Python version used when setup-python is enabled.
+    required: false
+    default: "3.11"
+
+outputs:
+  report:
+    description: JSON validation report path.
+    value: ${{ inputs.report }}
+  sarif:
+    description: SARIF report path.
+    value: ${{ inputs.sarif }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      if: ${{ inputs.setup-python == 'true' }}
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Check handoff markdown
+      if: ${{ inputs.handoff != '' }}
+      shell: bash
+      env:
+        HANDOFF: ${{ inputs.handoff }}
+      run: |
+        python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" check "$HANDOFF"
+
+    - name: Validate StateBind contract
+      shell: bash
+      env:
+        STATEBIND_JSON: ${{ inputs.statebind-json }}
+        REPO: ${{ inputs.repo }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        REPORT: ${{ inputs.report }}
+        SARIF: ${{ inputs.sarif }}
+      run: |
+        mkdir -p "$(dirname "$REPORT")" "$(dirname "$SARIF")"
+        python "$GITHUB_ACTION_PATH/statebind_handoff/statebind_handoff.py" validate \
+          "$STATEBIND_JSON" \
+          --repo "$REPO" \
+          --fail-on "$FAIL_ON" \
+          --json \
+          --report "$REPORT" \
+          --sarif "$SARIF"

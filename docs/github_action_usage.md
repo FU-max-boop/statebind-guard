@@ -1,7 +1,8 @@
 # GitHub Action Usage
 
-Use this as a smoke gate when a repository stores coding-agent handoffs such as
-`HANDOFF.md`, `AGENT_HANDOFF.md`, or `docs/handoff.md`.
+Use the published composite action as a smoke gate when a repository stores
+coding-agent handoffs such as `HANDOFF.md`, `AGENT_HANDOFF.md`, or
+`docs/handoff.md`.
 
 ```yaml
 name: statebind-guard
@@ -19,21 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: FU-max-boop/statebind-guard@main
         with:
-          python-version: "3.11"
-      - name: Install StateBind Guard
-        run: python -m pip install -e .
-      - name: Check handoff markdown
-        run: statebind check HANDOFF.md
-      - name: Validate machine-readable bindings
-        run: |
-          statebind validate statebind.json \
-            --repo . \
-            --fail-on warning \
-            --json \
-            --report statebind-validation.json \
-            --sarif statebind-validation.sarif
+          handoff: HANDOFF.md
+          statebind-json: statebind.json
+          fail-on: warning
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -46,6 +37,9 @@ jobs:
         with:
           sarif_file: statebind-validation.sarif
 ```
+
+Pin to a release tag after adopting it in production, for example
+`FU-max-boop/statebind-guard@v0.1.0`.
 
 For this repository, the stricter gate is:
 
