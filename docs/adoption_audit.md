@@ -75,6 +75,8 @@ statebind audit --repo . \
 Before posting anywhere public, run the human target-review gate. See
 [`adoption_target_review_2026_05_31.md`](adoption_target_review_2026_05_31.md)
 for the first reviewed campaign: 2 feedback-only targets and 3 holds.
+The current public issue-context evidence behind those targets is in
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
 The matching feedback-only drafts are in
 [`adoption_feedback_requests_2026_05_31.md`](adoption_feedback_requests_2026_05_31.md).
 

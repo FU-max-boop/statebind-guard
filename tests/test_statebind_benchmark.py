@@ -126,6 +126,9 @@ class StateBindBenchmarkTests(unittest.TestCase):
         doc = (ROOT / "docs" / "adoption_feedback_requests_2026_05_31.md").read_text()
         self.assertIn("Draft For `pydantic/pydantic-ai`", doc)
         self.assertIn("Draft For `openai/openai-agents-python`", doc)
+        self.assertIn("adoption_context_evidence_2026_05_31.md", doc)
+        self.assertIn("including #5731 and #5721", doc)
+        self.assertIn("including #3319 and #3004", doc)
         self.assertIn("Would a StateBind-style executable handoff contract", doc)
         self.assertIn("Would executable binding checks be useful", doc)
         self.assertIn("Human final review", doc)
@@ -140,6 +143,8 @@ class StateBindBenchmarkTests(unittest.TestCase):
                     "scripts/render_adoption_feedback_requests.py",
                     "--review",
                     "data/statebind_guard_adoption_target_review_2026_05_31.json",
+                    "--context",
+                    "data/statebind_guard_adoption_context_evidence_2026_05_31.json",
                     "--out",
                     str(out),
                 ],
@@ -148,6 +153,38 @@ class StateBindBenchmarkTests(unittest.TestCase):
             rendered = out.read_text()
             self.assertIn("go_feedback_only", rendered)
             self.assertIn("Hold Targets", rendered)
+            self.assertIn("adoption_context_evidence_2026_05_31.md", rendered)
+
+    def test_adoption_context_evidence_is_rendered_from_data(self):
+        data = json.loads((ROOT / "data" / "statebind_guard_adoption_context_evidence_2026_05_31.json").read_text())
+        doc = (ROOT / "docs" / "adoption_context_evidence_2026_05_31.md").read_text()
+
+        self.assertEqual(data["schema_version"], "0.1")
+        self.assertEqual(len(data["targets"]), 2)
+        self.assertTrue(all(target["outreach_decision"] == "go_feedback_only" for target in data["targets"]))
+        self.assertTrue(all(len(target["evidence_items"]) >= 4 for target in data["targets"]))
+        self.assertIn("pydantic/pydantic-ai", doc)
+        self.assertIn("openai/openai-agents-python", doc)
+        self.assertIn("#5731", doc)
+        self.assertIn("#3004", doc)
+        self.assertIn("not evidence that maintainers want StateBind Guard", doc)
+
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "context.md"
+            subprocess.check_call(
+                [
+                    "python",
+                    "scripts/render_adoption_context_evidence.py",
+                    "--data",
+                    "data/statebind_guard_adoption_context_evidence_2026_05_31.json",
+                    "--out",
+                    str(out),
+                ],
+                cwd=ROOT,
+            )
+            rendered = out.read_text()
+            self.assertIn("Target Summary", rendered)
+            self.assertIn("draft_anchor", rendered)
 
 
 if __name__ == "__main__":

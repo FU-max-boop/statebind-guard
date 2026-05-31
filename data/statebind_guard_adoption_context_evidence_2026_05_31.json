@@ -1,0 +1,118 @@
+{
+  "schema_version": "0.1",
+  "captured_at": "2026-05-31",
+  "source": "GitHub issue search and issue view via gh CLI",
+  "claim_boundary": "These public issues are context for feedback-only outreach. They are not evidence that maintainers want StateBind Guard, and they do not authorize a code PR or CI adoption proposal.",
+  "posting_gate": [
+    "Use current issues only to make the feedback question specific.",
+    "Do not comment on another issue unless the comment adds direct maintainer value.",
+    "Do not present StateBind Guard as a fix for a target repository issue without a concrete patch or maintainer request.",
+    "Preserve the human final-review gate before posting any public comment."
+  ],
+  "targets": [
+    {
+      "repo": "pydantic/pydantic-ai",
+      "outreach_decision": "go_feedback_only",
+      "current_read": "Recent open issues show durable execution, message-history serialization, provider-valid histories, and state-loss boundaries are active project concerns. This strengthens the relevance of a narrow feedback request, but it still does not justify an adoption pitch.",
+      "draft_context": "Before writing this, I also checked current public issue context, including #5731 and #5721. That made the executable handoff/state-binding question feel plausibly related, but I am not treating those issues as a request to adopt StateBind Guard.",
+      "evidence_items": [
+        {
+          "number": 5731,
+          "title": "[roundtrip-sweep] _clean_message_history: conversation_id and metadata lost on round-trip",
+          "state": "OPEN",
+          "updated_at": "2026-05-30T04:19:01Z",
+          "url": "https://github.com/pydantic/pydantic-ai/issues/5731",
+          "labels": ["bug", "durable exec", "message history", "state-loss"],
+          "draft_label": "message-history state loss",
+          "statebind_relevance": "The reported boundary is exactly a durable resume/history case where identifiers remain visible but state needed for correlation is lost.",
+          "outreach_use": "draft_anchor"
+        },
+        {
+          "number": 5721,
+          "title": "[roundtrip-sweep] ModelResponsePart: `ToolReturnPart` with `part_kind='tool-return'` missing from discriminated union - breaks message history round-trip",
+          "state": "OPEN",
+          "updated_at": "2026-05-29T14:36:25Z",
+          "url": "https://github.com/pydantic/pydantic-ai/issues/5721",
+          "labels": ["bug", "message history", "serialization"],
+          "draft_label": "tool-result history round-trip breakage",
+          "statebind_relevance": "Tool result identity survives in the narrative but fails the typed round-trip boundary, which is close to executable binding integrity.",
+          "outreach_use": "draft_anchor"
+        },
+        {
+          "number": 5637,
+          "title": "Expose public `message_history` validator for provider-valid histories",
+          "state": "OPEN",
+          "updated_at": "2026-05-25T16:33:55Z",
+          "url": "https://github.com/pydantic/pydantic-ai/issues/5637",
+          "labels": [],
+          "draft_label": "provider-valid history validator",
+          "statebind_relevance": "The issue asks for a reusable structural validator over message histories; StateBind Guard is adjacent but should be framed as external audit feedback, not a replacement.",
+          "outreach_use": "supporting_context"
+        },
+        {
+          "number": 3359,
+          "title": "History and Message (De)Serialization hooks to prevent hitting Temporal payload size limit",
+          "state": "OPEN",
+          "updated_at": "2026-05-15T15:06:11Z",
+          "url": "https://github.com/pydantic/pydantic-ai/issues/3359",
+          "labels": ["feature", "temporal", "message history"],
+          "draft_label": "Temporal message-history durability",
+          "statebind_relevance": "The discussion is about durable execution payload/history boundaries, showing the repo has real state-continuation pressure beyond generic agent instructions.",
+          "outreach_use": "supporting_context"
+        }
+      ]
+    },
+    {
+      "repo": "openai/openai-agents-python",
+      "outreach_decision": "go_feedback_only",
+      "current_read": "Recent and historical issues show active maintainer attention to RunState, handoff history, HITL resume, and active-run lifecycle boundaries. This supports a cautious feedback request, but the relationship bar is high and the ask should stay narrow.",
+      "draft_context": "Before writing this, I also checked current public issue context, including #3319 and #3004. They made the handoff-history/RunState binding question feel plausibly related, but I am not suggesting a behavior change or default SDK integration.",
+      "evidence_items": [
+        {
+          "number": 3319,
+          "title": "Nested handoff history flattening drops multiline and structured content",
+          "state": "CLOSED",
+          "updated_at": "2026-05-10T07:24:29Z",
+          "url": "https://github.com/openai/openai-agents-python/issues/3319",
+          "labels": ["feature:core"],
+          "draft_label": "nested handoff-history content loss",
+          "statebind_relevance": "The issue is an explicit handoff-history integrity boundary where content shape is not preserved across chained handoffs.",
+          "outreach_use": "draft_anchor"
+        },
+        {
+          "number": 3004,
+          "title": "HITL resume drops tool output when parallel calls mix approval-gated and non-approval tools",
+          "state": "CLOSED",
+          "updated_at": "2026-04-23T01:36:17Z",
+          "url": "https://github.com/openai/openai-agents-python/issues/3004",
+          "labels": ["feature:core"],
+          "draft_label": "HITL resume tool-output binding loss",
+          "statebind_relevance": "The failure involves resume-time binding between a tool call and the output that must still be sent, which is close to StateBind Guard's role-to-handle boundary.",
+          "outreach_use": "draft_anchor"
+        },
+        {
+          "number": 3337,
+          "title": "RunState approval restore accepts invalid decision shapes",
+          "state": "CLOSED",
+          "updated_at": "2026-05-10T22:34:31Z",
+          "url": "https://github.com/openai/openai-agents-python/issues/3337",
+          "labels": ["feature:core"],
+          "draft_label": "RunState restore validation",
+          "statebind_relevance": "The issue concerns deserialization integrity of approval decisions, a state-resume boundary with safety implications.",
+          "outreach_use": "supporting_context"
+        },
+        {
+          "number": 798,
+          "title": "Feature Request: Enhanced Run Lifecycle Management - Interrupt and Update Active Runs",
+          "state": "OPEN",
+          "updated_at": "2026-04-18T11:47:14Z",
+          "url": "https://github.com/openai/openai-agents-python/issues/798",
+          "labels": ["enhancement", "feature:core"],
+          "draft_label": "active run lifecycle management",
+          "statebind_relevance": "The discussion asks for explicit active-run handles and step/state continuation, which is adjacent to executable handoff contracts.",
+          "outreach_use": "supporting_context"
+        }
+      ]
+    }
+  ]
+}

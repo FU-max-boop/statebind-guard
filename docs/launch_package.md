@@ -23,7 +23,7 @@ release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.30"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.31"
 statebind proof
 ```
 
@@ -90,7 +90,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.30
+- uses: FU-max-boop/statebind-guard@v0.1.31
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -105,6 +105,7 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
 - [adoption feedback guide](adoption_feedback.md)
 - [roadmap](roadmap.md)
 - [adoption target review](adoption_target_review_2026_05_31.md)
+- [adoption context evidence](adoption_context_evidence_2026_05_31.md)
 - [adoption feedback request drafts](adoption_feedback_requests_2026_05_31.md)
 - [issue templates](https://github.com/FU-max-boop/statebind-guard/issues/new/choose)
 - [citation metadata](../CITATION.cff)

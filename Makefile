@@ -1,4 +1,4 @@
-.PHONY: smoke test benchmark adoption-feedback-requests schema-check validate-demo public-check install-skill package-check dist-check
+.PHONY: smoke test benchmark adoption-context-evidence adoption-feedback-requests schema-check validate-demo public-check install-skill package-check dist-check
 
 smoke:
 	bash scripts/run_smoke_test.sh
@@ -30,6 +30,9 @@ benchmark:
 
 adoption-feedback-requests:
 	python scripts/render_adoption_feedback_requests.py
+
+adoption-context-evidence:
+	python scripts/render_adoption_context_evidence.py
 
 schema-check:
 	python statebind_handoff/statebind_handoff.py schema --out /tmp/statebind.schema.json >/dev/null

@@ -7,6 +7,9 @@ They are intentionally not ready-to-post automation. A human should read
 the current repository context, trim wording, and only then decide whether
 to publish from their own account.
 
+The target-specific issue-context card is
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
+
 ## Posting Gate
 
 - Do not treat a high scout score as permission to open a maintainer issue.
@@ -41,6 +44,8 @@ active role the next agent must act on.
 I ran a read-only StateBind scout and then did a human review before deciding
 whether to ask for feedback here. The relevant surfaces I saw were `AGENTS.md`, `pydantic_ai_slim/pydantic_ai/durable_exec/AGENTS.md`.
 
+Before writing this, I also checked current public issue context, including #5731 and #5721. That made the executable handoff/state-binding question feel plausibly related, but I am not treating those issues as a request to adopt StateBind Guard.
+
 I am not asking you to adopt a dependency or wire CI. My narrow question is:
 Would a StateBind-style executable handoff contract be useful as a review or audit artifact for durable execution and agent-resume boundaries?
 
@@ -50,6 +55,9 @@ a short issue template, a docs-only checklist, a CI warning, or something else?
 ```
 
 **Why this target is cleared for feedback:** The repository explicitly frames public APIs, docs, and agent-facing contribution quality as product quality. Its durable execution guidelines call out preserving run context, dependencies, message history, retries, model/profile selection, and toolset lifecycle across durable boundaries, which is close to StateBind Guard's executable-binding failure mode.
+
+**Current context evidence:** See
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
 
 **Do not do:**
 - Do not open a code PR before a proposal or maintainer reply.
@@ -71,6 +79,8 @@ active role the next agent must act on.
 I ran a read-only StateBind scout and then did a human review before deciding
 whether to ask for feedback here. The relevant surfaces I saw were `AGENTS.md`, `docs/handoffs.md`.
 
+Before writing this, I also checked current public issue context, including #3319 and #3004. They made the handoff-history/RunState binding question feel plausibly related, but I am not suggesting a behavior change or default SDK integration.
+
 I am not asking you to adopt a dependency or wire CI. My narrow question is:
 Would executable binding checks be useful for handoff-history, RunState, or docs-example review, or is this outside the problems maintainers want surfaced?
 
@@ -80,6 +90,9 @@ a short issue template, a docs-only checklist, a CI warning, or something else?
 ```
 
 **Why this target is cleared for feedback:** The repository contains explicit contributor-agent instructions plus a substantial handoffs documentation surface. The docs discuss handoff inputs, input filters, nested handoff history, and conversation-history mapping, all of which create semantic-role-to-executable-state boundaries that StateBind Guard is designed to audit.
+
+**Current context evidence:** See
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
 
 **Do not do:**
 - Do not propose changing SDK behavior without an issue and maintainer alignment.

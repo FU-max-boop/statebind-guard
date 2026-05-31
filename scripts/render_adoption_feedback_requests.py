@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REVIEW = ROOT / "data" / "statebind_guard_adoption_target_review_2026_05_31.json"
+DEFAULT_CONTEXT = ROOT / "data" / "statebind_guard_adoption_context_evidence_2026_05_31.json"
 DEFAULT_OUT = ROOT / "docs" / "adoption_feedback_requests_2026_05_31.md"
 
 
@@ -31,11 +32,27 @@ def load_review(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def render_feedback_draft(target: dict[str, Any]) -> str:
+def load_context(path: Path) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {target["repo"]: target for target in data.get("targets", [])}
+
+
+def render_context_note(target: dict[str, Any], context_by_repo: dict[str, dict[str, Any]]) -> str:
+    context = context_by_repo.get(target["repo"])
+    if not context:
+        return ""
+    return context["draft_context"]
+
+
+def render_feedback_draft(target: dict[str, Any], context_by_repo: dict[str, dict[str, Any]]) -> str:
     repo = target["repo"]
     short = repo_short_name(repo)
     evidence = ", ".join(f"`{path}`" for path in target["evidence_paths"])
+    context_note = render_context_note(target, context_by_repo)
     title = f"Feedback request: executable handoff boundaries in `{short}`"
+    context_block = f"\n\n{context_note}" if context_note else ""
     body = f"""### Draft For `{repo}`
 
 **Suggested title:** {title}
@@ -49,7 +66,7 @@ pull request, or commit, but still fail to preserve which handle is bound to the
 active role the next agent must act on.
 
 I ran a read-only StateBind scout and then did a human review before deciding
-whether to ask for feedback here. The relevant surfaces I saw were {evidence}.
+whether to ask for feedback here. The relevant surfaces I saw were {evidence}.{context_block}
 
 I am not asking you to adopt a dependency or wire CI. My narrow question is:
 {target.get("draft_question", target["first_ask"])}
@@ -61,13 +78,17 @@ a short issue template, a docs-only checklist, a CI warning, or something else?
 
 **Why this target is cleared for feedback:** {target["why_it_fits"]}
 
+**Current context evidence:** See
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
+
 **Do not do:**
 {sentence_list(target["do_not_do"])}
 """
     return body
 
 
-def render_review_markdown(review: dict[str, Any]) -> str:
+def render_review_markdown(review: dict[str, Any], context_by_repo: dict[str, dict[str, Any]] | None = None) -> str:
+    context_by_repo = context_by_repo or {}
     go_targets = [target for target in review["targets"] if target["decision"] == "go_feedback_only"]
     hold_targets = [target for target in review["targets"] if target["decision"] != "go_feedback_only"]
     lines = [
@@ -79,6 +100,9 @@ def render_review_markdown(review: dict[str, Any]) -> str:
         "They are intentionally not ready-to-post automation. A human should read",
         "the current repository context, trim wording, and only then decide whether",
         "to publish from their own account.",
+        "",
+        "The target-specific issue-context card is",
+        "[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).",
         "",
         "## Posting Gate",
         "",
@@ -108,7 +132,7 @@ def render_review_markdown(review: dict[str, Any]) -> str:
 
     lines.extend(["", "## Feedback-Only Drafts", ""])
     for target in go_targets:
-        lines.append(render_feedback_draft(target).rstrip())
+        lines.append(render_feedback_draft(target, context_by_repo).rstrip())
         lines.append("")
 
     lines.extend(
@@ -145,12 +169,14 @@ def render_review_markdown(review: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Render StateBind adoption feedback drafts")
     parser.add_argument("--review", type=Path, default=DEFAULT_REVIEW)
+    parser.add_argument("--context", type=Path, default=DEFAULT_CONTEXT)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     args = parser.parse_args()
 
     review = load_review(args.review)
+    context_by_repo = load_context(args.context)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(render_review_markdown(review), encoding="utf-8")
+    args.out.write_text(render_review_markdown(review, context_by_repo), encoding="utf-8")
     print(f"Wrote {args.out}")
     return 0
 

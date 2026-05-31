@@ -46,6 +46,8 @@ from active target to semantic role to executable handle when work continues
 across an agent boundary.
 
 Recommended first move: a short feedback request or proposal, not a PR.
+The current public issue-context evidence for this target is recorded in
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
 
 ### `openai/openai-agents-python`
 
@@ -59,6 +61,8 @@ the role the next agent must act on.
 Recommended first move: ask whether a small external audit artifact is useful
 for handoff-history / RunState / docs-example review. Do not imply the SDK
 should adopt StateBind by default.
+The current public issue-context evidence for this target is recorded in
+[`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
 
 ## Why The Others Are Hold
 
