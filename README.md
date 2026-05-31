@@ -27,7 +27,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.35"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
 statebind proof
 ```
 
@@ -89,7 +89,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.35"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -117,14 +117,14 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.35"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind scout --repo-url https://github.com/owner/repo --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
 statebind scout --github-repo owner/repo --issue-context --issue-context-card statebind-issue-context.md --feedback-packet statebind-feedback-packet.md --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
 statebind proof
-statebind capture-github-run --next-command "make test" --out statebind-ci.json --handoff HANDOFF.ci.md
+statebind capture-github-run --run-url https://github.com/owner/repo/actions/runs/123 --next-command "make test" --out statebind-ci.json --handoff HANDOFF.ci.md
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
@@ -149,7 +149,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.35
+    rev: v0.1.36
     hooks:
       - id: statebind-guard
 ```
@@ -197,14 +197,15 @@ before writing a maintainer-facing feedback request. Use `--issue-context-term`
 to override the default search terms when a target has a more specific durable
 execution surface. Add `--feedback-packet` when you want a generated,
 human-review-gated maintainer feedback packet from the same scout evidence.
-Use `statebind capture-github-run` inside a failing GitHub Actions job to bind
-the run URL, workflow/job, commit SHA, ref, and exact next command into a
-runtime handoff artifact for the next debugging actor.
+Use `statebind capture-github-run` inside a failing GitHub Actions job, or with
+`--run-url`, to bind the run URL, workflow/job, commit SHA, ref, conclusion,
+and exact next command into a runtime handoff artifact for the next debugging
+actor.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.35
+- uses: FU-max-boop/statebind-guard@v0.1.36
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

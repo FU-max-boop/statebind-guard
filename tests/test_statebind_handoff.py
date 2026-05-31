@@ -340,6 +340,70 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("Open the bound GitHub Actions run", handoff.read_text())
             self.assertFalse(MODULE.validate_contract(data, root))
 
+    def test_capture_github_run_from_api_snapshot(self):
+        original_api_json = MODULE.github_api_json
+        seen_urls = []
+
+        def fake_api_json(url, timeout):
+            seen_urls.append((url, timeout))
+            if url.endswith("/actions/runs/123"):
+                return {
+                    "id": 123,
+                    "name": "CI",
+                    "run_attempt": 3,
+                    "run_number": 44,
+                    "event": "pull_request",
+                    "head_branch": "feature/statebind",
+                    "head_sha": "def4567890abc",
+                    "status": "completed",
+                    "conclusion": "failure",
+                    "repository": {"full_name": "owner/agent-repo"},
+                    "actor": {"login": "builder"},
+                }
+            if url.endswith("/actions/runs/123/jobs?per_page=100"):
+                return {
+                    "jobs": [
+                        {
+                            "name": "lint",
+                            "status": "completed",
+                            "conclusion": "success",
+                            "html_url": "https://github.com/owner/agent-repo/actions/runs/123/job/1",
+                        },
+                        {
+                            "name": "tests",
+                            "status": "completed",
+                            "conclusion": "failure",
+                            "html_url": "https://github.com/owner/agent-repo/actions/runs/123/job/2",
+                        },
+                    ]
+                }
+            raise AssertionError(url)
+
+        MODULE.github_api_json = fake_api_json
+        try:
+            owner_repo, run_id = MODULE.parse_github_run_url(
+                "https://github.com/owner/agent-repo/actions/runs/123"
+            )
+            snapshot = MODULE.github_actions_snapshot_from_api(owner_repo, run_id, 9)
+            contract = MODULE.github_actions_contract("resume failed CI", "make test", snapshot, "statebind-ci.json")
+        finally:
+            MODULE.github_api_json = original_api_json
+
+        self.assertEqual(owner_repo, "owner/agent-repo")
+        self.assertEqual(run_id, "123")
+        self.assertTrue(all(timeout == 9 for _, timeout in seen_urls))
+        self.assertEqual(snapshot["GITHUB_WORKFLOW"], "CI")
+        self.assertEqual(snapshot["GITHUB_JOB"], "tests")
+        self.assertEqual(snapshot["STATEBIND_GITHUB_RUN_CONCLUSION"], "failure")
+        self.assertEqual(snapshot["STATEBIND_GITHUB_JOB_CONCLUSION"], "failure")
+        roles = {binding["role"]: binding["handle"] for binding in contract["bindings"]}
+        self.assertEqual(roles["ci_run"], "https://github.com/owner/agent-repo/actions/runs/123")
+        self.assertEqual(roles["ci_job_url"], "https://github.com/owner/agent-repo/actions/runs/123/job/2")
+        self.assertEqual(roles["ci_run_conclusion"], "failure")
+        self.assertEqual(roles["ci_job_conclusion"], "failure")
+        self.assertEqual(roles["next_command"], "make test")
+        self.assertFalse(MODULE.validate_contract(contract, ROOT))
+
     def test_capture_github_run_requires_env_unless_allowed(self):
         with tempfile.TemporaryDirectory() as td:
             env = {
@@ -536,7 +600,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.35", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.36", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -849,7 +913,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.35\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.36\n",
                 },
             )
 

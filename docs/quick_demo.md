@@ -74,6 +74,16 @@ The captured contract binds the run URL, workflow/job, commit SHA, ref, and
 next command so a later debugging actor can resume from executable state rather
 than a screenshot or vague run number.
 
+Outside the workflow, capture the same state from a run URL:
+
+```bash
+statebind capture-github-run \
+  --run-url https://github.com/owner/repo/actions/runs/123 \
+  --next-command "make test" \
+  --out statebind-ci.json \
+  --handoff HANDOFF.ci.md
+```
+
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an
 automatic recommendation.

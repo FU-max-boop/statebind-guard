@@ -124,6 +124,8 @@ The generated contract binds:
 
 - `ci_run`: the GitHub Actions run URL
 - `ci_workflow` and `ci_job`: the workflow and job names
+- `ci_run_status`, `ci_run_conclusion`, and job status/conclusion when fetched
+  from the GitHub API
 - `commit_sha`, `git_ref`, and `branch_ref`: the exact code state
 - `next_command`: the first command a resuming actor should run
 - `artifact_path`: an optional report or validation artifact path
@@ -131,3 +133,16 @@ The generated contract binds:
 This is useful when the next actor is not looking at the live workflow tab. The
 contract preserves the run identity and retry attempt alongside the executable
 next command.
+
+You can also capture a run from outside CI:
+
+```bash
+statebind capture-github-run \
+  --run-url https://github.com/owner/repo/actions/runs/123 \
+  --next-command "make test" \
+  --out statebind-ci.json \
+  --handoff HANDOFF.ci.md
+```
+
+For private repositories or larger capture loops, set `GH_TOKEN` or
+`GITHUB_TOKEN`.

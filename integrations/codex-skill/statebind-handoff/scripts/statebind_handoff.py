@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.35"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.36"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.35"
+SOURCE_VERSION = "0.1.36"
 DEFAULT_ISSUE_CONTEXT_TERMS = (
     "durable execution",
     "message history",
@@ -499,6 +499,23 @@ def github_actions_contract(
     add("head_ref", snapshot.get("GITHUB_HEAD_REF", ""), "GITHUB_HEAD_REF", "medium", "pull_request_only")
     add("base_ref", snapshot.get("GITHUB_BASE_REF", ""), "GITHUB_BASE_REF", "medium", "pull_request_only")
     add("event_name", snapshot.get("GITHUB_EVENT_NAME", ""), "GITHUB_EVENT_NAME", "high" if snapshot.get("GITHUB_EVENT_NAME") else "medium")
+    add("ci_run_status", snapshot.get("STATEBIND_GITHUB_RUN_STATUS", ""), "GitHub Actions run API", "high")
+    add(
+        "ci_run_conclusion",
+        snapshot.get("STATEBIND_GITHUB_RUN_CONCLUSION", ""),
+        "GitHub Actions run API",
+        "high",
+        "blank while run is still in progress" if not snapshot.get("STATEBIND_GITHUB_RUN_CONCLUSION") else "",
+    )
+    add("ci_job_url", snapshot.get("STATEBIND_GITHUB_JOB_URL", ""), "GitHub Actions jobs API", "high", "external_url")
+    add("ci_job_status", snapshot.get("STATEBIND_GITHUB_JOB_STATUS", ""), "GitHub Actions jobs API", "high")
+    add(
+        "ci_job_conclusion",
+        snapshot.get("STATEBIND_GITHUB_JOB_CONCLUSION", ""),
+        "GitHub Actions jobs API",
+        "high",
+        "blank while job is still in progress" if not snapshot.get("STATEBIND_GITHUB_JOB_CONCLUSION") else "",
+    )
     add("next_command", next_command, "capture-github-run --next-command", "high" if next_command else "medium")
     add("artifact_path", report_path, "capture-github-run --report", "medium", "unverified until the workflow writes the artifact")
 
@@ -535,6 +552,75 @@ def github_actions_contract(
             "run_url": run_url,
             "action_ref": DEFAULT_ACTION_REF,
         },
+    }
+
+
+def parse_github_run_url(value: str) -> tuple[str, str]:
+    parsed = urlparse(value)
+    if parsed.netloc not in {"github.com", "www.github.com"}:
+        raise RuntimeError(f"GitHub Actions run URL must be on github.com: {value}")
+    parts = [part for part in parsed.path.strip("/").split("/") if part]
+    if len(parts) < 5 or parts[2:4] != ["actions", "runs"]:
+        raise RuntimeError(f"GitHub Actions run URL must look like https://github.com/owner/repo/actions/runs/123: {value}")
+    return f"{parts[0]}/{parts[1]}", parts[4]
+
+
+def first_relevant_github_job(jobs: list[dict[str, Any]]) -> dict[str, Any]:
+    for job in jobs:
+        conclusion = str(job.get("conclusion") or "").lower()
+        if conclusion in {"failure", "cancelled", "timed_out", "action_required"}:
+            return job
+    for job in jobs:
+        if str(job.get("status") or "").lower() != "completed":
+            return job
+    return jobs[0] if jobs else {}
+
+
+def github_actions_snapshot_from_api(owner_repo: str, run_id: str, timeout: int) -> dict[str, str]:
+    owner, repo = parse_github_repo(owner_repo)
+    normalized_repo = f"{owner}/{repo}"
+    run_payload = github_api_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/runs/{quote(str(run_id), safe='')}",
+        timeout,
+    )
+    jobs_payload = github_api_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/runs/{quote(str(run_id), safe='')}/jobs?per_page=100",
+        timeout,
+    )
+    jobs = jobs_payload.get("jobs", [])
+    if not isinstance(jobs, list):
+        jobs = []
+    job = first_relevant_github_job([item for item in jobs if isinstance(item, dict)])
+    repository = (
+        run_payload.get("repository", {}).get("full_name")
+        if isinstance(run_payload.get("repository"), dict)
+        else ""
+    ) or normalized_repo
+    head_branch = str(run_payload.get("head_branch") or "")
+    head_ref = f"refs/heads/{head_branch}" if head_branch and not head_branch.startswith("refs/") else head_branch
+    actor = run_payload.get("actor", {}).get("login") if isinstance(run_payload.get("actor"), dict) else ""
+    workflow_name = str(run_payload.get("name") or run_payload.get("workflow_name") or "")
+    return {
+        "GITHUB_SERVER_URL": "https://github.com",
+        "GITHUB_REPOSITORY": repository,
+        "GITHUB_RUN_ID": str(run_payload.get("id") or run_id),
+        "GITHUB_RUN_ATTEMPT": str(run_payload.get("run_attempt") or ""),
+        "GITHUB_RUN_NUMBER": str(run_payload.get("run_number") or ""),
+        "GITHUB_WORKFLOW": workflow_name,
+        "GITHUB_JOB": str(job.get("name") or ""),
+        "GITHUB_ACTION": "",
+        "GITHUB_EVENT_NAME": str(run_payload.get("event") or ""),
+        "GITHUB_REF": head_ref,
+        "GITHUB_REF_NAME": head_branch,
+        "GITHUB_HEAD_REF": head_branch if str(run_payload.get("event") or "") == "pull_request" else "",
+        "GITHUB_BASE_REF": "",
+        "GITHUB_SHA": str(run_payload.get("head_sha") or ""),
+        "GITHUB_ACTOR": str(actor or ""),
+        "STATEBIND_GITHUB_RUN_STATUS": str(run_payload.get("status") or ""),
+        "STATEBIND_GITHUB_RUN_CONCLUSION": str(run_payload.get("conclusion") or ""),
+        "STATEBIND_GITHUB_JOB_URL": str(job.get("html_url") or ""),
+        "STATEBIND_GITHUB_JOB_STATUS": str(job.get("status") or ""),
+        "STATEBIND_GITHUB_JOB_CONCLUSION": str(job.get("conclusion") or ""),
     }
 
 
@@ -3376,12 +3462,16 @@ def main() -> int:
     p_init.add_argument("--next-command", default="make test")
     p_init.add_argument("--force", action="store_true", help="overwrite existing scaffold files")
 
-    p_capture_gha = sub.add_parser("capture-github-run", help="write a StateBind contract from GitHub Actions runtime env")
+    p_capture_gha = sub.add_parser("capture-github-run", help="write a StateBind contract from GitHub Actions runtime or run URL")
     p_capture_gha.add_argument("--goal", default="Resume a GitHub Actions run with executable state bound")
     p_capture_gha.add_argument("--next-command", required=True, help="exact command a resuming actor should run first")
     p_capture_gha.add_argument("--out", type=Path, default=Path("statebind.json"), help="StateBind JSON path to write")
     p_capture_gha.add_argument("--handoff", type=Path, help="optional handoff Markdown path to write")
     p_capture_gha.add_argument("--report", default="", help="optional report/artifact path to bind")
+    p_capture_gha.add_argument("--run-url", help="GitHub Actions run URL to capture through the GitHub API")
+    p_capture_gha.add_argument("--github-repo", help="GitHub owner/repo used with --run-id")
+    p_capture_gha.add_argument("--run-id", help="GitHub Actions run id used with --github-repo")
+    p_capture_gha.add_argument("--github-timeout", type=int, default=20, help="seconds before GitHub API capture requests fail")
     p_capture_gha.add_argument("--force", action="store_true", help="overwrite existing output files")
     p_capture_gha.add_argument("--allow-missing-env", action="store_true", help="write a medium-confidence draft outside GitHub Actions")
 
@@ -3492,10 +3582,23 @@ def main() -> int:
         print("Next: commit these files and let the StateBind Guard workflow validate future handoffs.")
         return 0
     if args.cmd == "capture-github-run":
-        snapshot = github_actions_snapshot()
+        try:
+            if args.run_url:
+                owner_repo, run_id = parse_github_run_url(args.run_url)
+                snapshot = github_actions_snapshot_from_api(owner_repo, run_id, args.github_timeout)
+            elif args.github_repo or args.run_id:
+                if not (args.github_repo and args.run_id):
+                    print("--github-repo and --run-id must be provided together.", file=sys.stderr)
+                    return 2
+                snapshot = github_actions_snapshot_from_api(args.github_repo, args.run_id, args.github_timeout)
+            else:
+                snapshot = github_actions_snapshot()
+        except RuntimeError as exc:
+            print(f"capture-github-run failed: {exc}", file=sys.stderr)
+            return 2
         if not args.allow_missing_env and not (snapshot.get("GITHUB_REPOSITORY") and snapshot.get("GITHUB_RUN_ID")):
             print(
-                "capture-github-run needs GitHub Actions env vars; pass --allow-missing-env for a local draft.",
+                "capture-github-run needs GitHub Actions env vars, --run-url, or --github-repo with --run-id; pass --allow-missing-env for a local draft.",
                 file=sys.stderr,
             )
             return 2
