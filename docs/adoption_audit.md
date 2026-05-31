@@ -75,6 +75,8 @@ statebind audit --repo . \
 Before posting anywhere public, run the human target-review gate. See
 [`adoption_target_review_2026_05_31.md`](adoption_target_review_2026_05_31.md)
 for the first reviewed campaign: 2 feedback-only targets and 3 holds.
+The matching feedback-only drafts are in
+[`adoption_feedback_requests_2026_05_31.md`](adoption_feedback_requests_2026_05_31.md).
 
 The issue template deliberately asks a narrow review question instead of
 assuming adoption: whether the repository has a real resume or handoff boundary

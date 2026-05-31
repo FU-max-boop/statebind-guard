@@ -27,6 +27,7 @@
       ],
       "why_it_fits": "The repository explicitly frames public APIs, docs, and agent-facing contribution quality as product quality. Its durable execution guidelines call out preserving run context, dependencies, message history, retries, model/profile selection, and toolset lifecycle across durable boundaries, which is close to StateBind Guard's executable-binding failure mode.",
       "first_ask": "Ask whether a StateBind-style executable handoff contract would be useful as a review/audit artifact for durable execution and agent-resume boundaries.",
+      "draft_question": "Would a StateBind-style executable handoff contract be useful as a review or audit artifact for durable execution and agent-resume boundaries?",
       "do_not_do": [
         "Do not open a code PR before a proposal or maintainer reply.",
         "Do not claim Pydantic AI needs StateBind Guard.",
@@ -45,6 +46,7 @@
       ],
       "why_it_fits": "The repository contains explicit contributor-agent instructions plus a substantial handoffs documentation surface. The docs discuss handoff inputs, input filters, nested handoff history, and conversation-history mapping, all of which create semantic-role-to-executable-state boundaries that StateBind Guard is designed to audit.",
       "first_ask": "Ask for feedback on whether executable binding checks would be useful for handoff-history, RunState, and docs-example review; frame it as a narrow research/tooling question.",
+      "draft_question": "Would executable binding checks be useful for handoff-history, RunState, or docs-example review, or is this outside the problems maintainers want surfaced?",
       "do_not_do": [
         "Do not propose changing SDK behavior without an issue and maintainer alignment.",
         "Do not edit generated translated docs.",

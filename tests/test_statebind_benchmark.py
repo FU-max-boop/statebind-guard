@@ -1,6 +1,8 @@
 import importlib.util
 import json
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -119,6 +121,33 @@ class StateBindBenchmarkTests(unittest.TestCase):
         self.assertIn("pydantic/pydantic-ai", doc)
         self.assertIn("openai/openai-agents-python", doc)
         self.assertIn("Human final review is required", doc)
+
+    def test_adoption_feedback_requests_are_rendered_from_review(self):
+        doc = (ROOT / "docs" / "adoption_feedback_requests_2026_05_31.md").read_text()
+        self.assertIn("Draft For `pydantic/pydantic-ai`", doc)
+        self.assertIn("Draft For `openai/openai-agents-python`", doc)
+        self.assertIn("Would a StateBind-style executable handoff contract", doc)
+        self.assertIn("Would executable binding checks be useful", doc)
+        self.assertIn("Human final review", doc)
+        self.assertNotIn("Draft For `browser-use/browser-use`", doc)
+        self.assertNotIn("Ask whether", doc)
+
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "feedback.md"
+            subprocess.check_call(
+                [
+                    "python",
+                    "scripts/render_adoption_feedback_requests.py",
+                    "--review",
+                    "data/statebind_guard_adoption_target_review_2026_05_31.json",
+                    "--out",
+                    str(out),
+                ],
+                cwd=ROOT,
+            )
+            rendered = out.read_text()
+            self.assertIn("go_feedback_only", rendered)
+            self.assertIn("Hold Targets", rendered)
 
 
 if __name__ == "__main__":

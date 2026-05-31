@@ -1,4 +1,4 @@
-.PHONY: smoke test benchmark schema-check validate-demo public-check install-skill package-check dist-check
+.PHONY: smoke test benchmark adoption-feedback-requests schema-check validate-demo public-check install-skill package-check dist-check
 
 smoke:
 	bash scripts/run_smoke_test.sh
@@ -27,6 +27,9 @@ benchmark:
 		--card docs/result_cards/statebind_guard_deployed_corpus.md \
 		--json docs/result_cards/statebind_guard_deployed_corpus_metrics.json \
 		--title "Deployed Corpus"
+
+adoption-feedback-requests:
+	python scripts/render_adoption_feedback_requests.py
 
 schema-check:
 	python statebind_handoff/statebind_handoff.py schema --out /tmp/statebind.schema.json >/dev/null
