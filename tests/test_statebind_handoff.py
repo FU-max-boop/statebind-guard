@@ -2,6 +2,7 @@ import importlib.util
 import contextlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -281,6 +282,87 @@ class StateBindHandoffTests(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 run(["python", str(SCRIPT), "validate", str(state), "--repo", ".", "--fail-on", "warning"], repo)
 
+    def test_capture_github_run_writes_runtime_contract(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            env = os.environ.copy()
+            env.update(
+                {
+                    "GITHUB_SERVER_URL": "https://github.com",
+                    "GITHUB_REPOSITORY": "owner/agent-repo",
+                    "GITHUB_RUN_ID": "123456",
+                    "GITHUB_RUN_ATTEMPT": "2",
+                    "GITHUB_RUN_NUMBER": "17",
+                    "GITHUB_WORKFLOW": "smoke",
+                    "GITHUB_JOB": "test",
+                    "GITHUB_ACTION": "__run",
+                    "GITHUB_EVENT_NAME": "pull_request",
+                    "GITHUB_REF": "refs/pull/8/merge",
+                    "GITHUB_REF_NAME": "8/merge",
+                    "GITHUB_HEAD_REF": "feature/statebind",
+                    "GITHUB_BASE_REF": "main",
+                    "GITHUB_SHA": "abc1234567890def",
+                    "GITHUB_ACTOR": "maintainer",
+                }
+            )
+            state = root / "statebind-ci.json"
+            handoff = root / "HANDOFF.ci.md"
+            subprocess.check_call(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "capture-github-run",
+                    "--goal",
+                    "resume failed CI",
+                    "--next-command",
+                    "make test",
+                    "--out",
+                    str(state),
+                    "--handoff",
+                    str(handoff),
+                    "--report",
+                    "statebind-validation.json",
+                ],
+                cwd=root,
+                env=env,
+            )
+
+            data = json.loads(state.read_text())
+            roles = {binding["role"]: binding["handle"] for binding in data["bindings"]}
+            self.assertEqual(data["active_target"]["type"], "github_actions_run")
+            self.assertEqual(data["active_target"]["handle"], "https://github.com/owner/agent-repo/actions/runs/123456")
+            self.assertEqual(roles["ci_workflow"], "smoke")
+            self.assertEqual(roles["ci_job"], "test")
+            self.assertEqual(roles["commit_sha"], "abc1234567890def")
+            self.assertEqual(roles["next_command"], "make test")
+            self.assertEqual(roles["artifact_path"], "statebind-validation.json")
+            self.assertEqual(data["raw_signals"]["github_actions"]["GITHUB_RUN_ATTEMPT"], "2")
+            self.assertIn("Open the bound GitHub Actions run", handoff.read_text())
+            self.assertFalse(MODULE.validate_contract(data, root))
+
+    def test_capture_github_run_requires_env_unless_allowed(self):
+        with tempfile.TemporaryDirectory() as td:
+            env = {
+                key: value
+                for key, value in os.environ.items()
+                if not key.startswith("GITHUB_")
+            }
+            proc = subprocess.run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "capture-github-run",
+                    "--next-command",
+                    "make test",
+                ],
+                cwd=td,
+                env=env,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(proc.returncode, 2)
+            self.assertIn("needs GitHub Actions env vars", proc.stderr)
+
     def test_validate_applies_policy_as_code(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
@@ -454,7 +536,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.34", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.35", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -767,7 +849,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.34\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.35\n",
                 },
             )
 

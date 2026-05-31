@@ -105,3 +105,29 @@ built-in schema with:
 ```bash
 statebind schema
 ```
+
+## GitHub Actions Runtime Capture
+
+For failed CI runs, `statebind capture-github-run` creates a contract from the
+current GitHub Actions environment:
+
+```bash
+statebind capture-github-run \
+  --goal "resume failed CI" \
+  --next-command "make test" \
+  --out statebind-ci.json \
+  --handoff HANDOFF.ci.md \
+  --report statebind-validation.json
+```
+
+The generated contract binds:
+
+- `ci_run`: the GitHub Actions run URL
+- `ci_workflow` and `ci_job`: the workflow and job names
+- `commit_sha`, `git_ref`, and `branch_ref`: the exact code state
+- `next_command`: the first command a resuming actor should run
+- `artifact_path`: an optional report or validation artifact path
+
+This is useful when the next actor is not looking at the live workflow tab. The
+contract preserves the run identity and retry attempt alongside the executable
+next command.

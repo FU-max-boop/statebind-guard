@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.34
+        uses: FU-max-boop/statebind-guard@v0.1.35
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.34`.
+`FU-max-boop/statebind-guard@v0.1.35`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -65,6 +65,36 @@ The action also writes `statebind-summary.md` and appends it to the GitHub
 Actions step summary. Maintainers can see pass/fail status, threshold, and
 findings without opening raw logs.
 
+## Runtime Capture
+
+When a workflow fails before a handoff is ready, capture the GitHub Actions run
+itself as executable StateBind state:
+
+```yaml
+- name: Capture failed runtime handoff
+  if: failure()
+  run: |
+    python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.35"
+    statebind capture-github-run \
+      --goal "resume failed CI" \
+      --next-command "make test" \
+      --out statebind-ci.json \
+      --handoff HANDOFF.ci.md \
+      --report statebind-validation.json \
+      --force
+- uses: actions/upload-artifact@v4
+  if: failure()
+  with:
+    name: statebind-runtime-handoff
+    path: |
+      statebind-ci.json
+      HANDOFF.ci.md
+```
+
+The generated contract binds the run URL, workflow/job, attempt, commit SHA,
+ref, event, and exact next command. That gives the next debugging actor a
+replayable starting point instead of a loose CI link.
+
 It also writes `statebind-report.html`, a standalone report that can be uploaded
 as a CI artifact for reviewers who want a readable validation page.
 
@@ -72,7 +102,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.34
+  uses: FU-max-boop/statebind-guard@v0.1.35
   with:
     statebind-json: statebind.json
     fail-on: warning

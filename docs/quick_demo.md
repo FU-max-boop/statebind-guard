@@ -59,6 +59,21 @@ generic for the repository you are reviewing.
 Use `--feedback-packet statebind-feedback-packet.md` to generate a
 human-review-gated maintainer feedback packet from the same scout evidence.
 
+When a GitHub Actions run fails, capture the exact runtime state:
+
+```bash
+statebind capture-github-run \
+  --goal "resume failed CI" \
+  --next-command "make test" \
+  --out statebind-ci.json \
+  --handoff HANDOFF.ci.md \
+  --report statebind-validation.json
+```
+
+The captured contract binds the run URL, workflow/job, commit SHA, ref, and
+next command so a later debugging actor can resume from executable state rather
+than a screenshot or vague run number.
+
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an
 automatic recommendation.

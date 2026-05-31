@@ -9,13 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocsSiteTests(unittest.TestCase):
     def test_landing_page_links_product_surface(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("StateBind Guard v0.1.34", html)
+        self.assertIn("StateBind Guard v0.1.35", html)
         self.assertIn("Make coding-agent handoffs executable.", html)
         self.assertIn("assets/statebind_guard_demo.svg", html)
         self.assertIn("assets/statebind_social_preview.png", html)
         self.assertIn('property="og:image"', html)
         self.assertIn('name="twitter:card" content="summary_large_image"', html)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.34", html)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.35", html)
         self.assertIn("statebind proof", html)
         self.assertIn("statebind audit --repo .", html)
         self.assertIn("statebind audit --repo-url", html)
@@ -24,6 +24,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("--result-card", html)
         self.assertIn("--issue-context-card", html)
         self.assertIn("--feedback-packet", html)
+        self.assertIn("capture-github-run", html)
         self.assertIn("statebind init", html)
         self.assertIn("statebind install-hook", html)
         self.assertIn("statebind doctor", html)
@@ -36,7 +37,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("HTML reports", html)
         self.assertIn("GitHub annotations", html)
         self.assertIn("action outputs", html)
-        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.34", html)
+        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.35", html)
         self.assertIn("docs/launch_note.md", html)
         self.assertIn("docs/launch_package.md", html)
         self.assertIn("docs/adoption_audit.md", html)
@@ -89,6 +90,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("--issue-context-card", readme)
         self.assertIn("--issue-context-term", readme)
         self.assertIn("--feedback-packet", readme)
+        self.assertIn("capture-github-run", readme)
         self.assertIn("GH_TOKEN", readme)
         self.assertIn("GITHUB_TOKEN", readme)
         self.assertIn("bad_visible_unbound: FAIL", readme)
@@ -109,6 +111,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("--issue-context-card", package)
         self.assertIn("--issue-context-term", package)
         self.assertIn("--feedback-packet", package)
+        self.assertIn("capture-github-run", package)
         self.assertIn("GH_TOKEN", package)
         self.assertIn("GITHUB_TOKEN", package)
         self.assertIn("bad_visible_unbound: FAIL", package)
@@ -140,8 +143,10 @@ class DocsSiteTests(unittest.TestCase):
 
         self.assertIn("859c500", receipt)
         self.assertIn("adoption_examples.md", industrial)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.34", industrial)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.34", action_usage)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.35", industrial)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.35", action_usage)
+        self.assertIn("capture-github-run", action_usage)
+        self.assertIn("statebind-runtime-handoff", action_usage)
         self.assertIn("current public adoption receipt", roadmap)
 
     def test_launch_note_states_narrow_claim(self):
@@ -150,6 +155,13 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("active target -> semantic role -> executable handle", note)
         self.assertIn("statebind policy --preset bugfix", note)
         self.assertIn("StateBind Guard does not claim", note)
+
+    def test_handoff_contract_documents_runtime_capture(self):
+        contract = (ROOT / "docs" / "handoff_contract.md").read_text(encoding="utf-8")
+        self.assertIn("GitHub Actions Runtime Capture", contract)
+        self.assertIn("capture-github-run", contract)
+        self.assertIn("ci_run", contract)
+        self.assertIn("commit_sha", contract)
 
     def test_adoption_audit_doc_has_first_pr_flow(self):
         audit = (ROOT / "docs" / "adoption_audit.md").read_text(encoding="utf-8")

@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.34"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.35"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.34"
+SOURCE_VERSION = "0.1.35"
 DEFAULT_ISSUE_CONTEXT_TERMS = (
     "durable execution",
     "message history",
@@ -416,6 +416,128 @@ def starter_contract(goal: str, next_command: str) -> dict[str, Any]:
     }
 
 
+GITHUB_ACTIONS_ENV_KEYS = (
+    "GITHUB_SERVER_URL",
+    "GITHUB_REPOSITORY",
+    "GITHUB_RUN_ID",
+    "GITHUB_RUN_ATTEMPT",
+    "GITHUB_RUN_NUMBER",
+    "GITHUB_WORKFLOW",
+    "GITHUB_JOB",
+    "GITHUB_ACTION",
+    "GITHUB_EVENT_NAME",
+    "GITHUB_REF",
+    "GITHUB_REF_NAME",
+    "GITHUB_HEAD_REF",
+    "GITHUB_BASE_REF",
+    "GITHUB_SHA",
+    "GITHUB_ACTOR",
+)
+
+
+def github_actions_snapshot(environ: dict[str, str] | None = None) -> dict[str, str]:
+    source = os.environ if environ is None else environ
+    return {key: str(source.get(key, "")).strip() for key in GITHUB_ACTIONS_ENV_KEYS}
+
+
+def github_actions_run_url(snapshot: dict[str, str]) -> str:
+    server = snapshot.get("GITHUB_SERVER_URL") or "https://github.com"
+    repository = snapshot.get("GITHUB_REPOSITORY", "")
+    run_id = snapshot.get("GITHUB_RUN_ID", "")
+    if repository and run_id:
+        return f"{server.rstrip('/')}/{repository}/actions/runs/{run_id}"
+    return ""
+
+
+def github_actions_contract(
+    goal: str,
+    next_command: str,
+    snapshot: dict[str, str],
+    report_path: str = "",
+) -> dict[str, Any]:
+    run_url = github_actions_run_url(snapshot)
+    workflow = snapshot.get("GITHUB_WORKFLOW", "")
+    job = snapshot.get("GITHUB_JOB", "")
+    attempt = snapshot.get("GITHUB_RUN_ATTEMPT", "")
+    repo = snapshot.get("GITHUB_REPOSITORY", "")
+    run_id = snapshot.get("GITHUB_RUN_ID", "")
+    evidence_parts = [
+        part
+        for part in (
+            f"workflow {workflow}" if workflow else "",
+            f"job {job}" if job else "",
+            f"run {run_id}" if run_id else "",
+            f"attempt {attempt}" if attempt else "",
+        )
+        if part
+    ]
+    evidence = ", ".join(evidence_parts) or "GitHub Actions runtime environment"
+    confidence = "high" if repo and run_id and workflow and next_command else "medium"
+    active_handle = run_url or run_id or workflow or next_command
+
+    bindings: list[dict[str, str]] = []
+
+    def add(role: str, handle: str, item_evidence: str, item_confidence: str = "high", risk: str = "") -> None:
+        if handle:
+            bindings.append(
+                {
+                    "role": role,
+                    "handle": handle,
+                    "evidence": item_evidence,
+                    "confidence": item_confidence,
+                    "risk": risk,
+                }
+            )
+
+    add("ci_run", run_url or run_id, "GITHUB_RUN_ID and GITHUB_REPOSITORY", confidence, "external_url" if run_url else "")
+    add("ci_workflow", workflow, "GITHUB_WORKFLOW", "high" if workflow else "medium")
+    add("ci_job", job, "GITHUB_JOB", "high" if job else "medium")
+    add("repository", repo, "GITHUB_REPOSITORY", "high" if repo else "medium")
+    add("commit_sha", snapshot.get("GITHUB_SHA", ""), "GITHUB_SHA", "high" if snapshot.get("GITHUB_SHA") else "medium")
+    add("git_ref", snapshot.get("GITHUB_REF", ""), "GITHUB_REF", "high" if snapshot.get("GITHUB_REF") else "medium")
+    add("branch_ref", snapshot.get("GITHUB_REF_NAME", ""), "GITHUB_REF_NAME", "high" if snapshot.get("GITHUB_REF_NAME") else "medium")
+    add("head_ref", snapshot.get("GITHUB_HEAD_REF", ""), "GITHUB_HEAD_REF", "medium", "pull_request_only")
+    add("base_ref", snapshot.get("GITHUB_BASE_REF", ""), "GITHUB_BASE_REF", "medium", "pull_request_only")
+    add("event_name", snapshot.get("GITHUB_EVENT_NAME", ""), "GITHUB_EVENT_NAME", "high" if snapshot.get("GITHUB_EVENT_NAME") else "medium")
+    add("next_command", next_command, "capture-github-run --next-command", "high" if next_command else "medium")
+    add("artifact_path", report_path, "capture-github-run --report", "medium", "unverified until the workflow writes the artifact")
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "task": {
+            "goal": goal,
+            "status": "captured from GitHub Actions runtime; verify attempt and commit before resuming",
+        },
+        "active_target": {
+            "type": "github_actions_run",
+            "handle": active_handle,
+            "evidence": evidence,
+            "confidence": confidence,
+        },
+        "bindings": bindings,
+        "risks": [
+            "Generated from GitHub Actions environment variables; regenerate if the run is retried.",
+            "Verify the run URL, commit SHA, and branch/ref before resuming locally.",
+        ],
+        "next_actions": [
+            "Open the bound GitHub Actions run and inspect the failed job before editing.",
+            "Check out the bound commit or branch/ref, then run the bound next_command.",
+            "If the workflow attempt changed, regenerate this StateBind contract.",
+        ],
+        "resume_prompt": (
+            "You are resuming from a GitHub Actions runtime snapshot. First read HANDOFF.md and "
+            "statebind.json, then verify the bound ci_run, ci_workflow, commit_sha, git_ref, and "
+            "next_command before editing or rerunning CI."
+        ),
+        "raw_signals": {
+            "source": "github_actions_runtime",
+            "github_actions": snapshot,
+            "run_url": run_url,
+            "action_ref": DEFAULT_ACTION_REF,
+        },
+    }
+
+
 def render_init_workflow(
     handoff_path: Path,
     statebind_path: Path,
@@ -558,6 +680,13 @@ def looks_like_path(handle: str) -> bool:
     if handle.startswith(("-", "$", *COMMAND_PREFIXES)):
         return False
     return "/" in handle or bool(re.search(r"\.[A-Za-z0-9_+-]{1,8}$", handle))
+
+
+def should_check_path_handle(role: str, handle: str) -> bool:
+    role_text = role.lower()
+    if any(token in role_text for token in ("branch", "ref", "sha", "url", "workflow", "run", "job", "repository")):
+        return False
+    return looks_like_path(handle)
 
 
 def is_action_role(role: str) -> bool:
@@ -756,7 +885,7 @@ def validate_contract(contract: dict[str, Any], repo: Path | None = None) -> lis
                     handle,
                 )
 
-        if repo and looks_like_path(handle):
+        if repo and should_check_path_handle(role, handle):
             candidate = (repo / handle).resolve()
             try:
                 candidate.relative_to(repo.resolve())
@@ -1367,9 +1496,13 @@ def render_md(contract: dict) -> str:
         lines.append(f"| {b['role']} | `{b['handle']}` | {b['evidence']} | {b['confidence']} | {b.get('risk','')} |")
     lines.append("")
     lines.append("## Next Action")
-    lines.append("1. Verify this handoff against current repo state.")
-    lines.append("2. Fill in active target and remove stale candidate bindings.")
-    lines.append("3. Run only verified commands.")
+    next_actions = contract.get("next_actions") or [
+        "Verify this handoff against current repo state.",
+        "Fill in active target and remove stale candidate bindings.",
+        "Run only verified commands.",
+    ]
+    for index, action in enumerate(next_actions, start=1):
+        lines.append(f"{index}. {action}")
     lines.append("")
     lines.append("## Risks And Ambiguities")
     for r in contract["risks"] or ["[none recorded]"]:
@@ -3243,6 +3376,15 @@ def main() -> int:
     p_init.add_argument("--next-command", default="make test")
     p_init.add_argument("--force", action="store_true", help="overwrite existing scaffold files")
 
+    p_capture_gha = sub.add_parser("capture-github-run", help="write a StateBind contract from GitHub Actions runtime env")
+    p_capture_gha.add_argument("--goal", default="Resume a GitHub Actions run with executable state bound")
+    p_capture_gha.add_argument("--next-command", required=True, help="exact command a resuming actor should run first")
+    p_capture_gha.add_argument("--out", type=Path, default=Path("statebind.json"), help="StateBind JSON path to write")
+    p_capture_gha.add_argument("--handoff", type=Path, help="optional handoff Markdown path to write")
+    p_capture_gha.add_argument("--report", default="", help="optional report/artifact path to bind")
+    p_capture_gha.add_argument("--force", action="store_true", help="overwrite existing output files")
+    p_capture_gha.add_argument("--allow-missing-env", action="store_true", help="write a medium-confidence draft outside GitHub Actions")
+
     p_install_hook = sub.add_parser("install-hook", help="install a local Git pre-commit StateBind guard")
     p_install_hook.add_argument("--repo", type=Path, default=Path("."))
     p_install_hook.add_argument("--json", type=Path, default=Path("statebind.json"))
@@ -3348,6 +3490,27 @@ def main() -> int:
         for path in written:
             print(f"Wrote {path}")
         print("Next: commit these files and let the StateBind Guard workflow validate future handoffs.")
+        return 0
+    if args.cmd == "capture-github-run":
+        snapshot = github_actions_snapshot()
+        if not args.allow_missing_env and not (snapshot.get("GITHUB_REPOSITORY") and snapshot.get("GITHUB_RUN_ID")):
+            print(
+                "capture-github-run needs GitHub Actions env vars; pass --allow-missing-env for a local draft.",
+                file=sys.stderr,
+            )
+            return 2
+        contract = github_actions_contract(args.goal, args.next_command, snapshot, args.report)
+        outputs = [(args.out, json.dumps(contract, indent=2, ensure_ascii=False) + "\n")]
+        if args.handoff:
+            outputs.append((args.handoff, render_md(contract)))
+        existing = [str(path) for path, _ in outputs if path.exists()]
+        if existing and not args.force:
+            print(f"{', '.join(existing)} already exists; pass --force to overwrite.", file=sys.stderr)
+            return 2
+        for path, text in outputs:
+            write_scaffold_file(path, text, args.force)
+            print(f"Wrote {path}")
+        print("Next: validate the captured runtime contract before resuming the failed run.")
         return 0
     if args.cmd == "install-hook":
         try:
