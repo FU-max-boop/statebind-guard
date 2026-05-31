@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.36
+        uses: FU-max-boop/statebind-guard@v0.1.37
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.36`.
+`FU-max-boop/statebind-guard@v0.1.37`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -74,7 +74,7 @@ itself as executable StateBind state:
 - name: Capture failed runtime handoff
   if: failure()
   run: |
-    python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
+    python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
     statebind capture-github-run \
       --goal "resume failed CI" \
       --next-command "make test" \
@@ -108,6 +108,19 @@ statebind capture-github-run \
 In API mode, StateBind also binds run/job status and conclusion. Set `GH_TOKEN`
 or `GITHUB_TOKEN` for private repositories or repeated captures.
 
+For local agent handoffs before CI exists, capture the current git worktree:
+
+```bash
+statebind capture-worktree \
+  --next-command "make test" \
+  --active-file src/parser.py \
+  --out statebind-local.json \
+  --handoff HANDOFF.local.md
+```
+
+That local snapshot binds the branch, head SHA, dirty files, and next command
+so the next actor can resume from the actual workspace state.
+
 It also writes `statebind-report.html`, a standalone report that can be uploaded
 as a CI artifact for reviewers who want a readable validation page.
 
@@ -115,7 +128,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.36
+  uses: FU-max-boop/statebind-guard@v0.1.37
   with:
     statebind-json: statebind.json
     fail-on: warning

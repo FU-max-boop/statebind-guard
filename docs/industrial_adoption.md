@@ -91,7 +91,7 @@ If your team already uses the standard pre-commit framework, add:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.36
+    rev: v0.1.37
     hooks:
       - id: statebind-guard
 ```
@@ -103,7 +103,7 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.36
+- uses: FU-max-boop/statebind-guard@v0.1.37
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -159,6 +159,7 @@ previous test" or "the SHA above".
 - Reusable GitHub composite action for copy-paste CI adoption.
 - Versioned JSON schema for agent/runtime interoperability.
 - Machine-readable findings for CI and agent runtimes.
+- Runtime capture for both GitHub Actions runs and local git worktrees.
 - SARIF output for GitHub-native code scanning and PR annotation workflows.
 - Conservative validation: uncertain handles stay uncertain.
 - Explicit claim boundary: this prevents wrong-object actions; it does not

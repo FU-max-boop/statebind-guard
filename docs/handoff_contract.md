@@ -120,7 +120,7 @@ statebind capture-github-run \
   --report statebind-validation.json
 ```
 
-The generated contract binds:
+The generated contract uses active target type `github_actions_run` and binds:
 
 - `ci_run`: the GitHub Actions run URL
 - `ci_workflow` and `ci_job`: the workflow and job names
@@ -146,3 +146,29 @@ statebind capture-github-run \
 
 For private repositories or larger capture loops, set `GH_TOKEN` or
 `GITHUB_TOKEN`.
+
+## Local Worktree Runtime Capture
+
+Before ending a local coding-agent session, `statebind capture-worktree` records
+the executable git state that a resume summary often loses:
+
+```bash
+statebind capture-worktree \
+  --goal "resume parser patch" \
+  --next-command "python -m pytest tests/test_parser.py" \
+  --active-file src/parser.py \
+  --out statebind-local.json \
+  --handoff HANDOFF.local.md
+```
+
+The generated contract uses active target type `git_worktree` and binds:
+
+- `branch_ref`, `head_sha`, and optional `upstream_ref`
+- staged, modified, deleted, and untracked files
+- explicitly named `active_file` handles
+- the exact `next_command`
+- an optional report or artifact path via `--report`
+
+The snapshot intentionally writes a portable repository label such as `.` rather
+than an absolute local path. Regenerate it after commit, stash, checkout, rebase,
+or any edit that changes the dirty-file set.

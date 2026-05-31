@@ -27,7 +27,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
 statebind proof
 ```
 
@@ -89,7 +89,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -117,7 +117,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.36"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
@@ -125,6 +125,7 @@ statebind scout --repo-url https://github.com/owner/repo --issue-dir statebind-n
 statebind scout --github-repo owner/repo --issue-context --issue-context-card statebind-issue-context.md --feedback-packet statebind-feedback-packet.md --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
 statebind proof
 statebind capture-github-run --run-url https://github.com/owner/repo/actions/runs/123 --next-command "make test" --out statebind-ci.json --handoff HANDOFF.ci.md
+statebind capture-worktree --next-command "make test" --active-file src/app.py --out statebind-local.json --handoff HANDOFF.local.md
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
 statebind install-hook --policy .statebind-policy.json
@@ -149,7 +150,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.36
+    rev: v0.1.37
     hooks:
       - id: statebind-guard
 ```
@@ -201,11 +202,14 @@ Use `statebind capture-github-run` inside a failing GitHub Actions job, or with
 `--run-url`, to bind the run URL, workflow/job, commit SHA, ref, conclusion,
 and exact next command into a runtime handoff artifact for the next debugging
 actor.
+Use `statebind capture-worktree` before handing off local coding-agent work to
+bind the current branch, head SHA, staged/modified/untracked files, active file,
+and exact next command without leaking absolute local paths.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.36
+- uses: FU-max-boop/statebind-guard@v0.1.37
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

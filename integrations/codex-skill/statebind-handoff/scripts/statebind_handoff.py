@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.36"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.37"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.36"
+SOURCE_VERSION = "0.1.37"
 DEFAULT_ISSUE_CONTEXT_TERMS = (
     "durable execution",
     "message history",
@@ -259,7 +259,7 @@ def uniq(items: Iterable[str], limit: int = 20) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
     for item in items:
-        item = item.strip().strip(".,;:")
+        item = item.strip().rstrip(".,;:")
         if not item or item in seen:
             continue
         seen.add(item)
@@ -555,6 +555,142 @@ def github_actions_contract(
     }
 
 
+def git_worktree_snapshot(repo: Path, repo_label: str = ".") -> dict[str, Any]:
+    """Capture portable git worktree state without writing absolute local paths."""
+    if run(["git", "rev-parse", "--is-inside-work-tree"], repo) != "true":
+        raise RuntimeError(f"{repo} does not look like a Git worktree.")
+    top_level = run(["git", "rev-parse", "--show-toplevel"], repo)
+    git_root = Path(top_level) if top_level else repo
+    deleted_files = set(run(["git", "diff", "--name-only", "--diff-filter=D"], git_root).splitlines())
+    staged_deleted_files = set(
+        run(["git", "diff", "--cached", "--name-only", "--diff-filter=D"], git_root).splitlines()
+    )
+    modified_files = [
+        path
+        for path in uniq(run(["git", "diff", "--name-only"], git_root).splitlines(), limit=80)
+        if path not in deleted_files
+    ]
+    staged_files = [
+        path
+        for path in uniq(run(["git", "diff", "--cached", "--name-only"], git_root).splitlines(), limit=80)
+        if path not in staged_deleted_files
+    ]
+    return {
+        "repo": repo_label or ".",
+        "branch": run(["git", "branch", "--show-current"], git_root),
+        "head_sha": run(["git", "rev-parse", "HEAD"], git_root),
+        "head_short_sha": run(["git", "rev-parse", "--short", "HEAD"], git_root),
+        "upstream_ref": run(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"], git_root),
+        "status_short": run(["git", "status", "--short"], git_root),
+        "modified_files": modified_files,
+        "staged_files": staged_files,
+        "deleted_files": uniq(sorted(deleted_files | staged_deleted_files), limit=80),
+        "untracked_files": uniq(run(["git", "ls-files", "--others", "--exclude-standard"], git_root).splitlines(), limit=80),
+    }
+
+
+def git_worktree_contract(
+    goal: str,
+    next_command: str,
+    snapshot: dict[str, Any],
+    active_files: list[str] | None = None,
+    report_path: str = "",
+) -> dict[str, Any]:
+    active_files = uniq(active_files or [], limit=20)
+    dirty_files = (
+        list(snapshot.get("staged_files") or [])
+        + list(snapshot.get("modified_files") or [])
+        + list(snapshot.get("deleted_files") or [])
+        + list(snapshot.get("untracked_files") or [])
+    )
+    first_handle = next(iter(active_files or dirty_files), "")
+    branch = str(snapshot.get("branch") or "")
+    head_sha = str(snapshot.get("head_sha") or "")
+    head_short_sha = str(snapshot.get("head_short_sha") or "")
+    repo_label = str(snapshot.get("repo") or ".")
+    active_handle = first_handle or (f"{branch}@{head_short_sha}" if branch and head_short_sha else head_sha or repo_label)
+    evidence_bits = [
+        f"branch {branch}" if branch else "",
+        f"head {head_short_sha}" if head_short_sha else "",
+        f"{len(dirty_files)} dirty file(s)" if dirty_files else "clean worktree",
+    ]
+    evidence = ", ".join(bit for bit in evidence_bits if bit)
+    confidence = "high" if head_sha and next_command else "medium"
+
+    bindings: list[dict[str, str]] = []
+
+    def add(role: str, handle: str, item_evidence: str, item_confidence: str = "high", risk: str = "") -> None:
+        if handle:
+            bindings.append(
+                {
+                    "role": role,
+                    "handle": handle,
+                    "evidence": item_evidence,
+                    "confidence": item_confidence,
+                    "risk": risk,
+                }
+            )
+
+    add("repository", repo_label, "capture-worktree --repo", "high")
+    add("branch_ref", branch, "git branch --show-current", "high" if branch else "medium")
+    add("head_sha", head_sha, "git rev-parse HEAD", "high" if head_sha else "medium")
+    add("upstream_ref", str(snapshot.get("upstream_ref") or ""), "git rev-parse @{upstream}", "medium")
+    for path in active_files:
+        add("active_file", path, "capture-worktree --active-file", "high")
+    for path in snapshot.get("staged_files") or []:
+        add("staged_file", path, "git diff --cached --name-only", "high")
+    for path in snapshot.get("modified_files") or []:
+        add("modified_file", path, "git diff --name-only", "high")
+    for path in snapshot.get("deleted_files") or []:
+        add("deleted_file", path, "git diff --name-only --diff-filter=D", "high", "path may no longer exist")
+    for path in snapshot.get("untracked_files") or []:
+        add("untracked_file", path, "git ls-files --others --exclude-standard", "medium", "untracked until committed")
+    add("next_command", next_command, "capture-worktree --next-command", "high" if next_command else "medium")
+    add("artifact_path", report_path, "capture-worktree --report", "medium", "verify artifact is current")
+
+    risks = [
+        "Generated from local git state; regenerate after commit, stash, checkout, or rebase.",
+        "Verify the branch, head SHA, dirty files, and next command before resuming.",
+    ]
+    if snapshot.get("untracked_files"):
+        risks.append("Untracked files are present; they can be missed by a commit or CI run.")
+    if snapshot.get("deleted_files"):
+        risks.append("Deleted paths are bound as evidence but may fail normal path-existence checks after checkout.")
+    if not dirty_files:
+        risks.append("Worktree is clean; confirm whether this handoff is meant to resume code editing or only verification.")
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "task": {
+            "goal": goal,
+            "status": "captured from local git worktree; verify branch and dirty files before resuming",
+        },
+        "active_target": {
+            "type": "git_worktree",
+            "handle": active_handle,
+            "evidence": evidence or "local git worktree snapshot",
+            "confidence": confidence,
+        },
+        "bindings": bindings,
+        "risks": risks,
+        "next_actions": [
+            "Confirm the bound branch_ref and head_sha match the intended workspace.",
+            "Inspect the bound staged, modified, deleted, and untracked files before editing.",
+            "Run the bound next_command before handing the task to another actor.",
+        ],
+        "resume_prompt": (
+            "You are resuming from a local git worktree snapshot. First read HANDOFF.md and "
+            "statebind.json, then verify the branch_ref, head_sha, active files, dirty files, "
+            "and next_command before editing or switching branches."
+        ),
+        "raw_signals": {
+            "source": "git_worktree",
+            "git_worktree": snapshot,
+            "action_ref": DEFAULT_ACTION_REF,
+        },
+    }
+
+
 def parse_github_run_url(value: str) -> tuple[str, str]:
     parsed = urlparse(value)
     if parsed.netloc not in {"github.com", "www.github.com"}:
@@ -770,7 +906,10 @@ def looks_like_path(handle: str) -> bool:
 
 def should_check_path_handle(role: str, handle: str) -> bool:
     role_text = role.lower()
-    if any(token in role_text for token in ("branch", "ref", "sha", "url", "workflow", "run", "job", "repository")):
+    if any(
+        token in role_text
+        for token in ("branch", "ref", "sha", "url", "workflow", "run", "job", "repository", "deleted")
+    ):
         return False
     return looks_like_path(handle)
 
@@ -3475,6 +3614,17 @@ def main() -> int:
     p_capture_gha.add_argument("--force", action="store_true", help="overwrite existing output files")
     p_capture_gha.add_argument("--allow-missing-env", action="store_true", help="write a medium-confidence draft outside GitHub Actions")
 
+    p_capture_worktree = sub.add_parser("capture-worktree", help="write a StateBind contract from local git worktree state")
+    p_capture_worktree.add_argument("--repo", type=Path, default=Path("."), help="local git repository to capture")
+    p_capture_worktree.add_argument("--repo-label", default=".", help="portable repository label to write instead of a local path")
+    p_capture_worktree.add_argument("--goal", default="Resume a local coding-agent worktree with executable state bound")
+    p_capture_worktree.add_argument("--next-command", required=True, help="exact command a resuming actor should run first")
+    p_capture_worktree.add_argument("--active-file", action="append", default=[], help="primary file path to bind; repeat for several files")
+    p_capture_worktree.add_argument("--out", type=Path, default=Path("statebind.json"), help="StateBind JSON path to write")
+    p_capture_worktree.add_argument("--handoff", type=Path, help="optional handoff Markdown path to write")
+    p_capture_worktree.add_argument("--report", default="", help="optional report/artifact path to bind")
+    p_capture_worktree.add_argument("--force", action="store_true", help="overwrite existing output files")
+
     p_install_hook = sub.add_parser("install-hook", help="install a local Git pre-commit StateBind guard")
     p_install_hook.add_argument("--repo", type=Path, default=Path("."))
     p_install_hook.add_argument("--json", type=Path, default=Path("statebind.json"))
@@ -3614,6 +3764,25 @@ def main() -> int:
             write_scaffold_file(path, text, args.force)
             print(f"Wrote {path}")
         print("Next: validate the captured runtime contract before resuming the failed run.")
+        return 0
+    if args.cmd == "capture-worktree":
+        try:
+            snapshot = git_worktree_snapshot(args.repo, args.repo_label)
+        except RuntimeError as exc:
+            print(f"capture-worktree failed: {exc}", file=sys.stderr)
+            return 2
+        contract = git_worktree_contract(args.goal, args.next_command, snapshot, args.active_file, args.report)
+        outputs = [(args.out, json.dumps(contract, indent=2, ensure_ascii=False) + "\n")]
+        if args.handoff:
+            outputs.append((args.handoff, render_md(contract)))
+        existing = [str(path) for path, _ in outputs if path.exists()]
+        if existing and not args.force:
+            print(f"{', '.join(existing)} already exists; pass --force to overwrite.", file=sys.stderr)
+            return 2
+        for path, text in outputs:
+            write_scaffold_file(path, text, args.force)
+            print(f"Wrote {path}")
+        print("Next: validate the captured worktree contract before resuming local edits.")
         return 0
     if args.cmd == "install-hook":
         try:

@@ -427,6 +427,76 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertEqual(proc.returncode, 2)
             self.assertIn("needs GitHub Actions env vars", proc.stderr)
 
+    def test_capture_worktree_writes_local_contract(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            (repo / "src").mkdir()
+            (repo / "tests").mkdir()
+            (repo / "src" / "app.py").write_text("VALUE = 1\n")
+            (repo / "tests" / "test_app.py").write_text("def test_value(): pass\n")
+            (repo / ".pre-commit-config.yaml").write_text("repos: []\n")
+            run(["git", "init", "-q"], repo)
+            run(["git", "config", "user.email", "demo@example.com"], repo)
+            run(["git", "config", "user.name", "Demo"], repo)
+            run(["git", "add", "."], repo)
+            run(["git", "commit", "-q", "-m", "init"], repo)
+            (repo / "src" / "app.py").write_text("VALUE = 2\n")
+            (repo / ".pre-commit-config.yaml").write_text("repos:\n  - repo: local\n")
+            (repo / "tests" / "test_app.py").unlink()
+            (repo / "tests" / "test_new.py").write_text("def test_new(): pass\n")
+            run(["git", "add", "tests/test_new.py"], repo)
+            (repo / "notes.txt").write_text("local resume note\n")
+            (repo / "statebind-validation.json").write_text("{}\n")
+
+            state = repo / "statebind-local.json"
+            handoff = repo / "HANDOFF.local.md"
+            subprocess.check_call(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "capture-worktree",
+                    "--repo",
+                    ".",
+                    "--repo-label",
+                    ".",
+                    "--goal",
+                    "resume parser patch",
+                    "--next-command",
+                    "python -m pytest tests/test_new.py",
+                    "--active-file",
+                    "src/app.py",
+                    "--out",
+                    str(state),
+                    "--handoff",
+                    str(handoff),
+                    "--report",
+                    "statebind-validation.json",
+                ],
+                cwd=repo,
+            )
+
+            data = json.loads(state.read_text())
+            role_handles: dict[str, list[str]] = {}
+            for binding in data["bindings"]:
+                role_handles.setdefault(binding["role"], []).append(binding["handle"])
+            self.assertEqual(data["active_target"]["type"], "git_worktree")
+            self.assertEqual(data["active_target"]["handle"], "src/app.py")
+            self.assertIn("branch", data["active_target"]["evidence"])
+            self.assertIn("src/app.py", role_handles["active_file"])
+            self.assertIn("src/app.py", role_handles["modified_file"])
+            self.assertIn(".pre-commit-config.yaml", role_handles["modified_file"])
+            self.assertNotIn("pre-commit-config.yaml", role_handles["modified_file"])
+            self.assertIn("tests/test_new.py", role_handles["staged_file"])
+            self.assertIn("tests/test_app.py", role_handles["deleted_file"])
+            self.assertIn("notes.txt", role_handles["untracked_file"])
+            self.assertEqual(role_handles["next_command"], ["python -m pytest tests/test_new.py"])
+            self.assertEqual(role_handles["artifact_path"], ["statebind-validation.json"])
+            self.assertEqual(data["raw_signals"]["source"], "git_worktree")
+            self.assertNotIn(str(repo), state.read_text())
+            self.assertNotIn(str(repo), handoff.read_text())
+            self.assertIn("Confirm the bound branch_ref", handoff.read_text())
+            self.assertFalse(MODULE.validate_contract(data, repo))
+
     def test_validate_applies_policy_as_code(self):
         with tempfile.TemporaryDirectory() as td:
             repo = Path(td)
@@ -600,7 +670,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.36", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.37", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -913,7 +983,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.36\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.37\n",
                 },
             )
 

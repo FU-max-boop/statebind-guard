@@ -84,6 +84,20 @@ statebind capture-github-run \
   --handoff HANDOFF.ci.md
 ```
 
+Before handing off a dirty local worktree, capture the local executable state:
+
+```bash
+statebind capture-worktree \
+  --goal "resume parser patch" \
+  --next-command "python -m pytest tests/test_parser.py" \
+  --active-file src/parser.py \
+  --out statebind-local.json \
+  --handoff HANDOFF.local.md
+```
+
+That snapshot binds the branch, head SHA, staged/modified/untracked files, the
+active file, and the exact next command without writing absolute local paths.
+
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an
 automatic recommendation.
