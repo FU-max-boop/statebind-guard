@@ -70,9 +70,18 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.31"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.32"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.31"
+SOURCE_VERSION = "0.1.32"
+DEFAULT_ISSUE_CONTEXT_TERMS = (
+    "handoff",
+    "resume",
+    "RunState",
+    "message history",
+    "durable execution",
+    "state loss",
+    "tool output",
+)
 
 
 def resolve_package_version() -> str:
@@ -2382,6 +2391,75 @@ def github_snapshot(owner_repo: str, ref: str | None, timeout: int) -> tuple[str
     return repo, paths, texts
 
 
+def quote_github_search_term(term: str) -> str:
+    if re.search(r"\s", term):
+        return f'"{term}"'
+    return term
+
+
+def github_issue_context(
+    owner_repo: str,
+    terms: Iterable[str],
+    limit: int,
+    timeout: int,
+) -> list[dict[str, Any]]:
+    if limit <= 0:
+        return []
+    owner, repo = parse_github_repo(owner_repo)
+    normalized_repo = f"{owner}/{repo}"
+    seen: set[int] = set()
+    items: list[dict[str, Any]] = []
+    per_term = max(1, min(limit, 3))
+    for term in terms:
+        query = f"repo:{normalized_repo} is:issue {quote_github_search_term(term)}"
+        url = (
+            "https://api.github.com/search/issues"
+            f"?q={quote(query, safe='')}&sort=updated&order=desc&per_page={per_term}"
+        )
+        payload = github_api_json(url, timeout)
+        for item in payload.get("items", []):
+            number = item.get("number")
+            if not isinstance(number, int) or number in seen:
+                continue
+            seen.add(number)
+            labels = [
+                label.get("name", "")
+                for label in item.get("labels", [])
+                if isinstance(label, dict) and label.get("name")
+            ]
+            issue = {
+                "number": number,
+                "title": item.get("title", ""),
+                "state": item.get("state", ""),
+                "updated_at": item.get("updated_at", ""),
+                "url": item.get("html_url", ""),
+                "labels": labels,
+                "matched_term": term,
+                "statebind_relevance": issue_context_relevance(item.get("title", ""), labels),
+            }
+            items.append(issue)
+            if len(items) >= limit:
+                return items
+    return items
+
+
+def issue_context_relevance(title: str, labels: list[str]) -> str:
+    text = " ".join([title, *labels]).lower()
+    if "durable" in text or "temporal" in text:
+        return "Durable execution or workflow state boundary where resume fidelity can matter."
+    if "message history" in text or "history" in text:
+        return "Message-history boundary where visible content may diverge from executable state."
+    if "handoff" in text:
+        return "Explicit handoff boundary where state shape or role binding can be lost."
+    if "runstate" in text or "resume" in text:
+        return "Run/resume state boundary where serialized handles must retain their role."
+    if "tool" in text and ("output" in text or "call" in text):
+        return "Tool-call or tool-output boundary where call identity must remain bound."
+    if "state" in text and ("loss" in text or "lost" in text):
+        return "State-loss boundary that may expose visible-but-unbound handles."
+    return "Potential state-continuation context; requires human review before outreach."
+
+
 def audit_github_report(
     owner_repo: str,
     ref: str | None,
@@ -2481,8 +2559,15 @@ def scout_record_from_report(
     repo_url: str,
     report: dict[str, Any],
     issue_dir: Path | None,
+    issue_context: list[dict[str, Any]] | None = None,
+    issue_context_error: str = "",
 ) -> dict[str, Any]:
     score, priority, reasons = scout_score(report)
+    issue_context = issue_context or []
+    if issue_context:
+        reasons.append(f"{len(issue_context)} public issue-context match(es) found")
+    elif issue_context_error:
+        reasons.append("public issue-context lookup failed")
     record = {
         "source": scout_source_label(repo_url),
         "repo": report["repo"],
@@ -2496,6 +2581,8 @@ def scout_record_from_report(
         "suggested_next_command": report["suggested_next_command"],
         "summary": report["summary"],
         "issue_template": "",
+        "issue_context": issue_context,
+        "issue_context_error": issue_context_error,
     }
     if issue_dir and priority != "skip":
         issue_path = issue_dir / safe_issue_filename(report["repo"])
@@ -2512,19 +2599,20 @@ def render_scout_markdown(payload: dict[str, Any]) -> str:
         f"Successful audits: {payload['summary']['ok']}",
         f"Failed audits: {payload['summary']['errors']}",
         "",
-        "| Priority | Score | Repository | Adoption | Candidates | Suggested gate | Note |",
-        "|---|---:|---|---|---:|---|---|",
+        "| Priority | Score | Repository | Adoption | Candidates | Issue context | Suggested gate | Note |",
+        "|---|---:|---|---|---:|---:|---|---|",
     ]
     for record in payload["repositories"]:
         gate = record.get("suggested_next_command", {}).get("command", "")
         note = record.get("issue_template") or ""
         lines.append(
-            "| {priority} | {score} | `{repo}` | {adoption} | {candidates} | `{gate}` | {note} |".format(
+            "| {priority} | {score} | `{repo}` | {adoption} | {candidates} | {context} | `{gate}` | {note} |".format(
                 priority=record["priority"],
                 score=record["score"],
                 repo=record["repo"],
                 adoption=record.get("adoption_level", ""),
                 candidates=record.get("candidate_count", 0),
+                context=len(record.get("issue_context", [])),
                 gate=gate,
                 note=note,
             )
@@ -2549,6 +2637,14 @@ def render_scout_markdown(payload: dict[str, Any]) -> str:
             lines.append("- handoff candidates:")
             for candidate in record["handoff_candidates"]:
                 lines.append(f"  - `{candidate['path']}` ({candidate['reason']})")
+        if record.get("issue_context"):
+            lines.append("- public issue context:")
+            for item in record["issue_context"]:
+                lines.append(
+                    f"  - #{item['number']} {item['title']} ({item['state']}, matched `{item['matched_term']}`)"
+                )
+        if record.get("issue_context_error"):
+            lines.append(f"- issue context error: {record['issue_context_error']}")
         lines.append("")
     return "\n".join(lines)
 
@@ -2589,19 +2685,20 @@ def render_scout_result_card(payload: dict[str, Any]) -> str:
             "",
             "## Top Review Targets",
             "",
-            "| Repository | Priority | Score | Candidates | Suggested gate | Why now |",
-            "|---|---|---:|---:|---|---|",
+            "| Repository | Priority | Score | Candidates | Issue context | Suggested gate | Why now |",
+            "|---|---|---:|---:|---:|---|---|",
         ]
     )
     for record in top_records:
         gate = record.get("suggested_next_command", {}).get("command", "")
         why = "; ".join(record.get("reasons", [])[:2])
         lines.append(
-            "| `{repo}` | `{priority}` | {score} | {candidates} | `{gate}` | {why} |".format(
+            "| `{repo}` | `{priority}` | {score} | {candidates} | {context} | `{gate}` | {why} |".format(
                 repo=markdown_cell(record["repo"]),
                 priority=record["priority"],
                 score=record["score"],
                 candidates=record.get("candidate_count", 0),
+                context=len(record.get("issue_context", [])),
                 gate=markdown_cell(gate),
                 why=markdown_cell(why),
             )
@@ -2614,12 +2711,89 @@ def render_scout_result_card(payload: dict[str, Any]) -> str:
             "",
             "- Treat this card as a triage artifact, not as permission to spam maintainers.",
             "- Prefer high or medium targets with handoff-like files and an inferred local gate.",
+            "- When issue context is present, use it only to make the first question specific.",
             "- Read the repository context before opening an issue or PR.",
             "- Convert generated notes into human-reviewed, maintainer-specific feedback.",
             "",
             "## Claim Boundary",
             "",
             "This card proves the scout can find plausible adoption surfaces. It does not prove that a maintainer wants StateBind, that a repository has a real handoff failure, or that outreach should be opened without project-specific review.",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def render_scout_issue_context_card(payload: dict[str, Any]) -> str:
+    records = [
+        record
+        for record in payload["repositories"]
+        if record["status"] == "ok" and (record.get("issue_context") or record.get("issue_context_error"))
+    ]
+    lines = [
+        "# StateBind Scout Issue Context Card",
+        "",
+        "This card records public issue context found during a `statebind scout` run.",
+        "Use it to make maintainer-facing questions specific; do not treat it as",
+        "evidence that maintainers want StateBind Guard or as permission to open a PR.",
+        "",
+        "## Scope",
+        "",
+        f"- repositories scanned: {payload['summary']['total']}",
+        f"- successful audits: {payload['summary']['ok']}",
+        f"- repositories with issue context: {sum(1 for record in records if record.get('issue_context'))}",
+        "",
+        "## Posting Gate",
+        "",
+        "- Public issue matches are context, not consent.",
+        "- Do not comment on an existing issue unless the comment adds direct maintainer value.",
+        "- Do not pitch adoption from this card alone; ask for feedback first.",
+        "- Re-run the card before posting if issue state may have changed.",
+        "",
+        "## Target Summary",
+        "",
+        "| Repository | Priority | Issue Context | Current Read |",
+        "|---|---|---:|---|",
+    ]
+    for record in records:
+        count = len(record.get("issue_context", []))
+        read = "Public issue context found; use only after human review." if count else record.get("issue_context_error", "")
+        lines.append(f"| `{record['repo']}` | `{record['priority']}` | {count} | {markdown_cell(read)} |")
+
+    for record in records:
+        lines.extend(["", f"## `{record['repo']}`", ""])
+        if record.get("issue_context_error"):
+            lines.append(f"- issue context error: {record['issue_context_error']}")
+            lines.append("")
+        if not record.get("issue_context"):
+            continue
+        lines.extend(
+            [
+                "| Issue | State | Labels | Matched Term | StateBind Relevance |",
+                "|---|---|---|---|---|",
+            ]
+        )
+        for item in record["issue_context"]:
+            labels = ", ".join(item.get("labels", [])) or "none"
+            lines.append(
+                "| [#{number}]({url}) {title} | `{state}` | {labels} | `{term}` | {relevance} |".format(
+                    number=item["number"],
+                    url=item["url"],
+                    title=markdown_cell(item["title"]),
+                    state=str(item.get("state", "")).lower(),
+                    labels=markdown_cell(labels),
+                    term=markdown_cell(item.get("matched_term", "")),
+                    relevance=markdown_cell(item.get("statebind_relevance", "")),
+                )
+            )
+
+    lines.extend(
+        [
+            "",
+            "## Claim Boundary",
+            "",
+            "This card proves the scout can find public context that may make a",
+            "feedback question more specific. It does not prove product-market fit,",
+            "maintainer demand, or correctness of any repository-specific diagnosis.",
         ]
     )
     return "\n".join(lines)
@@ -2641,6 +2815,9 @@ def run_scout(
     markdown_out: Path | None,
     result_card_out: Path | None,
     issue_dir: Path | None,
+    issue_context: bool,
+    issue_context_card_out: Path | None,
+    issue_context_limit: int,
 ) -> int:
     urls = load_scout_urls(repo_urls, repo_list)
     github_specs = load_scout_urls(github_repos, github_list)
@@ -2652,6 +2829,7 @@ def run_scout(
         return 2
 
     records: list[dict[str, Any]] = []
+    collect_issue_context = issue_context or issue_context_card_out is not None
     for repo_url in urls:
         tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
         try:
@@ -2687,7 +2865,19 @@ def run_scout(
                 workflow_path,
                 policy_path,
             )
-            records.append(scout_record_from_report(github_repo, report, issue_dir))
+            context_items: list[dict[str, Any]] = []
+            context_error = ""
+            if collect_issue_context:
+                try:
+                    context_items = github_issue_context(
+                        github_repo,
+                        DEFAULT_ISSUE_CONTEXT_TERMS,
+                        issue_context_limit,
+                        github_timeout,
+                    )
+                except RuntimeError as exc:
+                    context_error = str(exc)
+            records.append(scout_record_from_report(github_repo, report, issue_dir, context_items, context_error))
         except RuntimeError as exc:
             records.append(
                 {
@@ -2716,6 +2906,8 @@ def run_scout(
         write_output(markdown_out, markdown)
     if result_card_out:
         write_output(result_card_out, render_scout_result_card(payload))
+    if issue_context_card_out:
+        write_output(issue_context_card_out, render_scout_issue_context_card(payload))
     if json_out:
         print(json.dumps(payload, indent=2))
     else:
@@ -2927,6 +3119,9 @@ def main() -> int:
     p_scout.add_argument("--markdown", type=Path, help="write a Markdown scout report")
     p_scout.add_argument("--result-card", type=Path, help="write a compact scout result card")
     p_scout.add_argument("--issue-dir", type=Path, help="write one maintainer-safe note per successful audit")
+    p_scout.add_argument("--issue-context", action="store_true", help="search public GitHub issues for handoff/resume context")
+    p_scout.add_argument("--issue-context-card", type=Path, help="write a public issue-context evidence card")
+    p_scout.add_argument("--issue-context-limit", type=int, default=4, help="maximum issue-context matches per GitHub repository")
 
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
@@ -3030,6 +3225,9 @@ def main() -> int:
             args.markdown,
             args.result_card,
             args.issue_dir,
+            args.issue_context,
+            args.issue_context_card,
+            args.issue_context_limit,
         )
     if args.cmd == "check":
         return check_handoff(args.handoff)

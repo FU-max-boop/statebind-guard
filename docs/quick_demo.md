@@ -51,6 +51,9 @@ when comparing several candidate repositories before outreach.
 Use `--github-list` for large GitHub repositories where cloning is too slow.
 Use `--result-card statebind-scout-card.md` when the output needs to be reviewed
 or shared as a compact campaign receipt.
+Use `--issue-context --issue-context-card statebind-issue-context.md` to make
+the scout search current public GitHub issues for handoff/resume context before
+you draft maintainer-facing feedback.
 
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an

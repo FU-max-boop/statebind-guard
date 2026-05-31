@@ -1,4 +1,5 @@
 import importlib.util
+import contextlib
 import io
 import json
 import subprocess
@@ -453,7 +454,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.31", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.32", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -766,7 +767,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.31\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.32\n",
                 },
             )
 
@@ -792,6 +793,85 @@ class StateBindHandoffTests(unittest.TestCase):
         record = MODULE.scout_record_from_report("owner/agent-repo", report, None)
         self.assertEqual(record["priority"], "high")
         self.assertGreaterEqual(record["score"], 8)
+
+    def test_github_api_scout_writes_issue_context_card(self):
+        original_snapshot = MODULE.github_snapshot
+        original_issue_context = MODULE.github_issue_context
+
+        def fake_snapshot(owner_repo, ref, timeout):
+            self.assertEqual(owner_repo, "owner/agent-repo")
+            return (
+                "agent-repo",
+                ["AGENTS.md", "Makefile"],
+                {"Makefile": "test:\n\tpython -m unittest discover -s tests\n"},
+            )
+
+        def fake_issue_context(owner_repo, terms, limit, timeout):
+            self.assertEqual(owner_repo, "owner/agent-repo")
+            self.assertIn("handoff", list(terms))
+            self.assertEqual(limit, 2)
+            self.assertEqual(timeout, 7)
+            return [
+                {
+                    "number": 42,
+                    "title": "Resume drops tool output",
+                    "state": "open",
+                    "updated_at": "2026-05-31T00:00:00Z",
+                    "url": "https://github.com/owner/agent-repo/issues/42",
+                    "labels": ["bug", "resume"],
+                    "matched_term": "resume",
+                    "statebind_relevance": "Run/resume state boundary where serialized handles must retain their role.",
+                }
+            ]
+
+        MODULE.github_snapshot = fake_snapshot
+        MODULE.github_issue_context = fake_issue_context
+        try:
+            with tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                markdown = root / "scout.md"
+                result_card = root / "scout-card.md"
+                context_card = root / "issue-context.md"
+                stdout = io.StringIO()
+                with contextlib.redirect_stdout(stdout):
+                    code = MODULE.run_scout(
+                        [],
+                        None,
+                        ["owner/agent-repo"],
+                        None,
+                        None,
+                        30,
+                        7,
+                        Path("statebind.json"),
+                        Path("HANDOFF.md"),
+                        Path(".github/workflows/statebind-guard.yml"),
+                        None,
+                        True,
+                        markdown,
+                        result_card,
+                        None,
+                        True,
+                        context_card,
+                        2,
+                    )
+                data = json.loads(stdout.getvalue())
+                markdown_text = markdown.read_text()
+                result_card_text = result_card.read_text()
+                context_card_text = context_card.read_text()
+        finally:
+            MODULE.github_snapshot = original_snapshot
+            MODULE.github_issue_context = original_issue_context
+
+        self.assertEqual(code, 0)
+        record = data["repositories"][0]
+        self.assertEqual(record["issue_context"][0]["number"], 42)
+        self.assertIn("public issue-context match", "; ".join(record["reasons"]))
+        self.assertIn("Issue context", markdown_text)
+        self.assertIn("Resume drops tool output", markdown_text)
+        self.assertIn("Issue context", result_card_text)
+        self.assertIn("# StateBind Scout Issue Context Card", context_card_text)
+        self.assertIn("#42", context_card_text)
+        self.assertIn("not treat it as", context_card_text)
 
     def test_github_api_rate_limit_error_mentions_token(self):
         original_urlopen = MODULE.urlopen

@@ -26,7 +26,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.31"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.32"
 statebind proof
 ```
 
@@ -88,7 +88,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.31"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.32"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -115,12 +115,12 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.31"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.32"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind scout --repo-url https://github.com/owner/repo --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
-statebind scout --github-repo owner/repo --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
+statebind scout --github-repo owner/repo --issue-context --issue-context-card statebind-issue-context.md --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -146,7 +146,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.31
+    rev: v0.1.32
     hooks:
       - id: statebind-guard
 ```
@@ -188,12 +188,14 @@ GitHub repositories are too expensive to clone; this API mode scans the Git tree
 and a small set of configuration files. Set `GH_TOKEN` or `GITHUB_TOKEN` before
 larger campaigns to avoid unauthenticated GitHub API rate limits. Add
 `--result-card` when you want a compact evidence card for a review thread,
-launch note, or maintainer discussion.
+launch note, or maintainer discussion. Add `--issue-context` with
+`--issue-context-card` to search public GitHub issues for handoff/resume context
+before writing a maintainer-facing feedback request.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.31
+- uses: FU-max-boop/statebind-guard@v0.1.32
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

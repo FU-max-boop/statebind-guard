@@ -38,6 +38,8 @@ For large GitHub repositories, avoid clone cost and use the GitHub API scout:
 ```bash
 statebind scout \
   --github-list candidate-github-repos.txt \
+  --issue-context \
+  --issue-context-card statebind-issue-context.md \
   --issue-dir statebind-notes \
   --markdown statebind-scout.md \
   --result-card statebind-scout-card.md
@@ -45,6 +47,10 @@ statebind scout \
 
 Set `GH_TOKEN` or `GITHUB_TOKEN` before larger campaigns to avoid
 unauthenticated GitHub API rate limits.
+Use `--issue-context` and `--issue-context-card` when a GitHub API scout should
+also search current public issues for handoff, resume, RunState, durable
+execution, message-history, state-loss, and tool-output context. The generated
+card is a relevance check, not permission to open an issue.
 
 The scout report labels each repository as `high`, `medium`, `low`,
 `follow_up`, or `skip`. Prefer `high` and `medium` targets where the audit
