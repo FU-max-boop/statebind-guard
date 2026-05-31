@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.27"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.28"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.27"
+SOURCE_VERSION = "0.1.28"
 
 
 def resolve_package_version() -> str:
@@ -2553,6 +2553,78 @@ def render_scout_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_scout_result_card(payload: dict[str, Any]) -> str:
+    records = payload["repositories"]
+    ok_records = [record for record in records if record["status"] == "ok"]
+    counts = {name: 0 for name in ("high", "medium", "low", "follow_up", "skip")}
+    for record in records:
+        counts[record["priority"]] = counts.get(record["priority"], 0) + 1
+    note_count = sum(1 for record in records if record.get("issue_template"))
+    top_records = [
+        record
+        for record in ok_records
+        if record["priority"] in {"high", "medium", "follow_up"}
+    ][:8]
+
+    lines = [
+        "# StateBind Scout Result Card",
+        "",
+        "## Scope",
+        "",
+        f"- repositories scanned: {payload['summary']['total']}",
+        f"- successful audits: {payload['summary']['ok']}",
+        f"- failed audits: {payload['summary']['errors']}",
+        f"- generated maintainer-note drafts: {note_count}",
+        "",
+        "## Priority Mix",
+        "",
+        "| Priority | Count |",
+        "|---|---:|",
+    ]
+    for priority in ("high", "medium", "low", "follow_up", "skip"):
+        lines.append(f"| `{priority}` | {counts.get(priority, 0)} |")
+
+    lines.extend(
+        [
+            "",
+            "## Top Review Targets",
+            "",
+            "| Repository | Priority | Score | Candidates | Suggested gate | Why now |",
+            "|---|---|---:|---:|---|---|",
+        ]
+    )
+    for record in top_records:
+        gate = record.get("suggested_next_command", {}).get("command", "")
+        why = "; ".join(record.get("reasons", [])[:2])
+        lines.append(
+            "| `{repo}` | `{priority}` | {score} | {candidates} | `{gate}` | {why} |".format(
+                repo=markdown_cell(record["repo"]),
+                priority=record["priority"],
+                score=record["score"],
+                candidates=record.get("candidate_count", 0),
+                gate=markdown_cell(gate),
+                why=markdown_cell(why),
+            )
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Review Gate",
+            "",
+            "- Treat this card as a triage artifact, not as permission to spam maintainers.",
+            "- Prefer high or medium targets with handoff-like files and an inferred local gate.",
+            "- Read the repository context before opening an issue or PR.",
+            "- Convert generated notes into human-reviewed, maintainer-specific feedback.",
+            "",
+            "## Claim Boundary",
+            "",
+            "This card proves the scout can find plausible adoption surfaces. It does not prove that a maintainer wants StateBind, that a repository has a real handoff failure, or that outreach should be opened without project-specific review.",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def run_scout(
     repo_urls: list[str],
     repo_list: Path | None,
@@ -2567,6 +2639,7 @@ def run_scout(
     policy_path: Path | None,
     json_out: bool,
     markdown_out: Path | None,
+    result_card_out: Path | None,
     issue_dir: Path | None,
 ) -> int:
     urls = load_scout_urls(repo_urls, repo_list)
@@ -2641,6 +2714,8 @@ def run_scout(
     markdown = render_scout_markdown(payload)
     if markdown_out:
         write_output(markdown_out, markdown)
+    if result_card_out:
+        write_output(result_card_out, render_scout_result_card(payload))
     if json_out:
         print(json.dumps(payload, indent=2))
     else:
@@ -2850,6 +2925,7 @@ def main() -> int:
     p_scout.add_argument("--policy", type=Path, help="check a StateBind policy file")
     p_scout.add_argument("--json", action="store_true", help="print machine-readable scout ranking")
     p_scout.add_argument("--markdown", type=Path, help="write a Markdown scout report")
+    p_scout.add_argument("--result-card", type=Path, help="write a compact scout result card")
     p_scout.add_argument("--issue-dir", type=Path, help="write one maintainer-safe note per successful audit")
 
     p_check = sub.add_parser("check", help="basic handoff audit")
@@ -2952,6 +3028,7 @@ def main() -> int:
             args.policy,
             args.json,
             args.markdown,
+            args.result_card,
             args.issue_dir,
         )
     if args.cmd == "check":

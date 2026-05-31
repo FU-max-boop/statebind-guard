@@ -453,7 +453,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.27", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.28", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -684,6 +684,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 run(["git", "commit", "-q", "-m", "init"], repo)
 
             markdown = root / "scout.md"
+            result_card = root / "scout-card.md"
             issue_dir = root / "notes"
             scout_json = run(
                 [
@@ -697,6 +698,8 @@ class StateBindHandoffTests(unittest.TestCase):
                     "--json",
                     "--markdown",
                     str(markdown),
+                    "--result-card",
+                    str(result_card),
                     "--issue-dir",
                     str(issue_dir),
                 ],
@@ -720,6 +723,15 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertIn("plain-repo", report)
             self.assertIn("Prefer `high` or `medium` targets", report)
             self.assertNotIn(str(root), report)
+
+            card = result_card.read_text()
+            self.assertIn("# StateBind Scout Result Card", card)
+            self.assertIn("repositories scanned: 2", card)
+            self.assertIn("| `high` | 1 |", card)
+            self.assertIn("| `skip` | 1 |", card)
+            self.assertIn("generated maintainer-note drafts: 1", card)
+            self.assertIn("handoff-heavy", card)
+            self.assertIn("triage artifact", card)
 
             notes = sorted(path.name for path in issue_dir.glob("*.md"))
             self.assertEqual(notes, ["handoff-heavy-statebind-note.md"])
@@ -754,7 +766,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.27\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.28\n",
                 },
             )
 

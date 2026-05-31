@@ -29,7 +29,8 @@ so you can avoid low-signal or irrelevant maintainer pings:
 statebind scout \
   --repo-list candidate-repos.txt \
   --issue-dir statebind-notes \
-  --markdown statebind-scout.md
+  --markdown statebind-scout.md \
+  --result-card statebind-scout-card.md
 ```
 
 For large GitHub repositories, avoid clone cost and use the GitHub API scout:
@@ -38,7 +39,8 @@ For large GitHub repositories, avoid clone cost and use the GitHub API scout:
 statebind scout \
   --github-list candidate-github-repos.txt \
   --issue-dir statebind-notes \
-  --markdown statebind-scout.md
+  --markdown statebind-scout.md \
+  --result-card statebind-scout-card.md
 ```
 
 Set `GH_TOKEN` or `GITHUB_TOKEN` before larger campaigns to avoid
@@ -47,6 +49,8 @@ unauthenticated GitHub API rate limits.
 The scout report labels each repository as `high`, `medium`, `low`,
 `follow_up`, or `skip`. Prefer `high` and `medium` targets where the audit
 finds handoff-like files and a concrete local gate.
+The result card is shorter: it summarizes scope, priority mix, top review
+targets, and the claim boundary for human-reviewed outreach.
 
 It scans for:
 

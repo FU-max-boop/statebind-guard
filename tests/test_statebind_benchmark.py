@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -90,6 +91,21 @@ class StateBindBenchmarkTests(unittest.TestCase):
         self.assertLessEqual(guard["unsafe_accept_rate"], 0.05)
         self.assertLess(guard["unsafe_accept_rate"], visibility["unsafe_accept_rate"])
         self.assertLess(guard["unsafe_accept_rate"], keyword["unsafe_accept_rate"])
+
+    def test_github_scout_campaign_card_is_backed_by_data(self):
+        data = json.loads((ROOT / "data" / "statebind_guard_github_scout_campaign_2026_05_31.json").read_text())
+        card = (ROOT / "docs" / "result_cards" / "statebind_guard_github_scout_campaign_2026_05_31.md").read_text()
+        records = data["repositories"]
+
+        self.assertEqual(data["summary"], {"total": 8, "ok": 8, "errors": 0})
+        self.assertEqual(sum(1 for record in records if record["priority"] == "high"), 7)
+        self.assertEqual(sum(1 for record in records if record["priority"] == "skip"), 1)
+        self.assertIn("repositories scanned: 8", card)
+        self.assertIn("| `high` | 7 |", card)
+        self.assertIn("generated maintainer-note drafts: 7", card)
+        self.assertIn("openai-agents-python", card)
+        self.assertIn("pydantic-ai", card)
+        self.assertIn("triage artifact", card)
 
 
 if __name__ == "__main__":

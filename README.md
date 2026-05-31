@@ -10,6 +10,7 @@
 **Adoption receipt:** [separate-repository GitHub Action proof](docs/adoption_examples.md)
 **Adoption audit:** [pre-adoption scanner for third-party repositories](docs/adoption_audit.md)
 **Deployed corpus:** [sanitized release, CI, packaging, and adoption handoffs](docs/result_cards/statebind_guard_deployed_corpus.md)
+**Scout campaign:** [8 public AI/tooling repos ranked through GitHub API scout](docs/result_cards/statebind_guard_github_scout_campaign_2026_05_31.md)
 **Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
@@ -22,7 +23,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.28"
 statebind proof
 ```
 
@@ -84,7 +85,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.28"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -97,6 +98,7 @@ Then inspect:
 - [quick demo](docs/quick_demo.md)
 - [adoption examples](docs/adoption_examples.md)
 - [deployed corpus result card](docs/result_cards/statebind_guard_deployed_corpus.md)
+- [GitHub scout campaign result card](docs/result_cards/statebind_guard_github_scout_campaign_2026_05_31.md)
 - [roadmap](docs/roadmap.md)
 - [adoption feedback](docs/adoption_feedback.md)
 - [failure cases](docs/failure_cases.md)
@@ -107,12 +109,12 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.28"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
-statebind scout --repo-url https://github.com/owner/repo --issue-dir statebind-notes --markdown statebind-scout.md
-statebind scout --github-repo owner/repo --issue-dir statebind-notes --markdown statebind-scout.md
+statebind scout --repo-url https://github.com/owner/repo --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
+statebind scout --github-repo owner/repo --issue-dir statebind-notes --markdown statebind-scout.md --result-card statebind-scout-card.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -138,7 +140,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.27
+    rev: v0.1.28
     hooks:
       - id: statebind-guard
 ```
@@ -178,12 +180,14 @@ targets by adoption priority and can write one maintainer-safe draft note per
 useful target. Use `--github-repo owner/repo` or `--github-list` when large
 GitHub repositories are too expensive to clone; this API mode scans the Git tree
 and a small set of configuration files. Set `GH_TOKEN` or `GITHUB_TOKEN` before
-larger campaigns to avoid unauthenticated GitHub API rate limits.
+larger campaigns to avoid unauthenticated GitHub API rate limits. Add
+`--result-card` when you want a compact evidence card for a review thread,
+launch note, or maintainer discussion.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.27
+- uses: FU-max-boop/statebind-guard@v0.1.28
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -276,6 +280,7 @@ data/
   statebind_guard_seed_benchmark.json
   statebind_guard_natural_handoff_benchmark.json
   statebind_guard_failure_corpus.json
+  statebind_guard_github_scout_campaign_2026_05_31.json
 ```
 
 ## Use With Codex
@@ -333,6 +338,9 @@ wrong-commit, wrong-PR, stale-artifact, config/environment, dataset-version,
 run-ID, branch-name, risky-command, and multi-binding failures. See
 [failure corpus result card](docs/result_cards/statebind_guard_failure_corpus.md)
 and the [schema/report upgrade case study](docs/case_studies/schema_report_upgrade.md).
+The GitHub scout campaign card shows a real authenticated API scan over eight
+public AI/tooling repositories and preserves the human-review boundary before
+any outreach.
 
 ## What StateBind Is And Is Not
 

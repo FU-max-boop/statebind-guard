@@ -1,0 +1,317 @@
+{
+  "schema_version": "0.1",
+  "summary": {
+    "total": 8,
+    "ok": 8,
+    "errors": 0
+  },
+  "repositories": [
+    {
+      "source": "https://github.com/openai/openai-agents-python",
+      "repo": "openai-agents-python",
+      "status": "ok",
+      "priority": "high",
+      "score": 12,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "16 handoff-like file(s) found",
+        "small local gate inferred from pyproject.toml present"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 16,
+      "handoff_candidates": [
+        {
+          "path": "AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "CLAUDE.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "docs/agents.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "docs/handoffs.md",
+          "reason": "handoff-like filename"
+        },
+        {
+          "path": "docs/ja/agents.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "docs/ja/handoffs.md",
+          "reason": "handoff-like filename"
+        },
+        {
+          "path": "docs/ko/agents.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "docs/ko/handoffs.md",
+          "reason": "handoff-like filename"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "python -m pytest",
+        "evidence": "pyproject.toml present"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": "openai-agents-python-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/pydantic/pydantic-ai",
+      "repo": "pydantic-ai",
+      "status": "ok",
+      "priority": "high",
+      "score": 12,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "19 handoff-like file(s) found",
+        "small local gate inferred from Makefile target `test`"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 19,
+      "handoff_candidates": [
+        {
+          "path": "AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "CLAUDE.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "docs/AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "docs/CLAUDE.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "pydantic_ai_slim/pydantic_ai/AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "pydantic_ai_slim/pydantic_ai/CLAUDE.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "pydantic_ai_slim/pydantic_ai/capabilities/AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "pydantic_ai_slim/pydantic_ai/durable_exec/AGENTS.md",
+          "reason": "agent instruction file"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "make test",
+        "evidence": "Makefile target `test`"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": "pydantic-ai-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/modelcontextprotocol/python-sdk",
+      "repo": "python-sdk",
+      "status": "ok",
+      "priority": "high",
+      "score": 10,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "2 handoff-like file(s) found",
+        "small local gate inferred from pyproject.toml present"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 2,
+      "handoff_candidates": [
+        {
+          "path": "AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "CLAUDE.md",
+          "reason": "agent instruction file"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "python -m pytest",
+        "evidence": "pyproject.toml present"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": "python-sdk-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/browser-use/browser-use",
+      "repo": "browser-use",
+      "status": "ok",
+      "priority": "high",
+      "score": 10,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "2 handoff-like file(s) found",
+        "small local gate inferred from pyproject.toml present"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 2,
+      "handoff_candidates": [
+        {
+          "path": "AGENTS.md",
+          "reason": "agent instruction file"
+        },
+        {
+          "path": "CLAUDE.md",
+          "reason": "agent instruction file"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "python -m pytest",
+        "evidence": "pyproject.toml present"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": "browser-use-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/OpenHands/OpenHands",
+      "repo": "OpenHands",
+      "status": "ok",
+      "priority": "high",
+      "score": 9,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "1 handoff-like file(s) found",
+        "small local gate inferred from Makefile target `test`"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 1,
+      "handoff_candidates": [
+        {
+          "path": "AGENTS.md",
+          "reason": "agent instruction file"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "make test",
+        "evidence": "Makefile target `test`"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": "OpenHands-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/crewAIInc/crewAI",
+      "repo": "crewAI",
+      "status": "ok",
+      "priority": "high",
+      "score": 9,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "1 handoff-like file(s) found",
+        "small local gate inferred from pyproject.toml present"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 1,
+      "handoff_candidates": [
+        {
+          "path": "lib/cli/src/crewai_cli/templates/AGENTS.md",
+          "reason": "agent instruction file"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "python -m pytest",
+        "evidence": "pyproject.toml present"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": "crewAI-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/microsoft/autogen",
+      "repo": "autogen",
+      "status": "ok",
+      "priority": "high",
+      "score": 8,
+      "reasons": [
+        "handoff surfaces exist but StateBind is not fully wired",
+        "3 handoff-like file(s) found",
+        "verification command needs maintainer confirmation"
+      ],
+      "adoption_level": "partial",
+      "candidate_count": 3,
+      "handoff_candidates": [
+        {
+          "path": "python/samples/core_streaming_handoffs_fastapi/.gitignore",
+          "reason": "handoff-like filename"
+        },
+        {
+          "path": "python/samples/core_streaming_handoffs_fastapi/README.md",
+          "reason": "handoff-like filename"
+        },
+        {
+          "path": "python/samples/core_streaming_handoffs_fastapi/requirements.txt",
+          "reason": "handoff-like filename"
+        }
+      ],
+      "suggested_next_command": {
+        "command": "make test",
+        "evidence": "default starter command; verify before committing"
+      },
+      "summary": {
+        "ok": 0,
+        "warnings": 5,
+        "errors": 0
+      },
+      "issue_template": "autogen-statebind-note.md"
+    },
+    {
+      "source": "https://github.com/google-gemini/gemini-cli",
+      "repo": "gemini-cli",
+      "status": "ok",
+      "priority": "skip",
+      "score": 4,
+      "reasons": [
+        "no StateBind wiring detected",
+        "no handoff-like files found",
+        "small local gate inferred from Makefile target `test`"
+      ],
+      "adoption_level": "not_started",
+      "candidate_count": 0,
+      "handoff_candidates": [],
+      "suggested_next_command": {
+        "command": "make test",
+        "evidence": "Makefile target `test`"
+      },
+      "summary": {
+        "ok": 1,
+        "warnings": 4,
+        "errors": 0
+      },
+      "issue_template": ""
+    }
+  ]
+}
