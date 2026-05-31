@@ -453,7 +453,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.28", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.29", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -766,7 +766,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.28\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.29\n",
                 },
             )
 

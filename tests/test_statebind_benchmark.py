@@ -107,6 +107,19 @@ class StateBindBenchmarkTests(unittest.TestCase):
         self.assertIn("pydantic-ai", card)
         self.assertIn("triage artifact", card)
 
+    def test_adoption_target_review_has_human_gate(self):
+        data = json.loads((ROOT / "data" / "statebind_guard_adoption_target_review_2026_05_31.json").read_text())
+        doc = (ROOT / "docs" / "adoption_target_review_2026_05_31.md").read_text()
+        targets = data["targets"]
+
+        self.assertEqual(data["summary"], {"reviewed": 5, "go_feedback_only": 2, "hold_more_evidence": 3, "skip": 0})
+        self.assertEqual(sum(1 for target in targets if target["decision"] == "go_feedback_only"), 2)
+        self.assertEqual(sum(1 for target in targets if target["decision"] == "hold_more_evidence"), 3)
+        self.assertTrue(all(target["do_not_do"] for target in targets))
+        self.assertIn("pydantic/pydantic-ai", doc)
+        self.assertIn("openai/openai-agents-python", doc)
+        self.assertIn("Human final review is required", doc)
+
 
 if __name__ == "__main__":
     unittest.main()

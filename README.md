@@ -11,6 +11,7 @@
 **Adoption audit:** [pre-adoption scanner for third-party repositories](docs/adoption_audit.md)
 **Deployed corpus:** [sanitized release, CI, packaging, and adoption handoffs](docs/result_cards/statebind_guard_deployed_corpus.md)
 **Scout campaign:** [8 public AI/tooling repos ranked through GitHub API scout](docs/result_cards/statebind_guard_github_scout_campaign_2026_05_31.md)
+**Target review:** [human gate for first adoption outreach targets](docs/adoption_target_review_2026_05_31.md)
 **Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
@@ -23,7 +24,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.28"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.29"
 statebind proof
 ```
 
@@ -85,7 +86,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.28"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.29"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -99,6 +100,7 @@ Then inspect:
 - [adoption examples](docs/adoption_examples.md)
 - [deployed corpus result card](docs/result_cards/statebind_guard_deployed_corpus.md)
 - [GitHub scout campaign result card](docs/result_cards/statebind_guard_github_scout_campaign_2026_05_31.md)
+- [adoption target review](docs/adoption_target_review_2026_05_31.md)
 - [roadmap](docs/roadmap.md)
 - [adoption feedback](docs/adoption_feedback.md)
 - [failure cases](docs/failure_cases.md)
@@ -109,7 +111,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.28"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.29"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
@@ -140,7 +142,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.28
+    rev: v0.1.29
     hooks:
       - id: statebind-guard
 ```
@@ -187,7 +189,7 @@ launch note, or maintainer discussion.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.28
+- uses: FU-max-boop/statebind-guard@v0.1.29
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -281,6 +283,7 @@ data/
   statebind_guard_natural_handoff_benchmark.json
   statebind_guard_failure_corpus.json
   statebind_guard_github_scout_campaign_2026_05_31.json
+  statebind_guard_adoption_target_review_2026_05_31.json
 ```
 
 ## Use With Codex

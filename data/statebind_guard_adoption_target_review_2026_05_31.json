@@ -1,0 +1,105 @@
+{
+  "schema_version": "0.1",
+  "review_date": "2026-05-31",
+  "source_campaign": "data/statebind_guard_github_scout_campaign_2026_05_31.json",
+  "summary": {
+    "reviewed": 5,
+    "go_feedback_only": 2,
+    "hold_more_evidence": 3,
+    "skip": 0
+  },
+  "review_gate": [
+    "Do not treat a high scout score as permission to open a maintainer issue.",
+    "Prefer feedback-only outreach when a repository has explicit agent or durable-execution surfaces.",
+    "Hold when the scout finds only generic agent instruction files but no concrete handoff or resume boundary.",
+    "Do not propose a code PR before maintainer alignment unless there is a specific failing issue, test, or documented request."
+  ],
+  "targets": [
+    {
+      "repo": "pydantic/pydantic-ai",
+      "scout_priority": "high",
+      "scout_score": 12,
+      "decision": "go_feedback_only",
+      "confidence": "high",
+      "evidence_paths": [
+        "AGENTS.md",
+        "pydantic_ai_slim/pydantic_ai/durable_exec/AGENTS.md"
+      ],
+      "why_it_fits": "The repository explicitly frames public APIs, docs, and agent-facing contribution quality as product quality. Its durable execution guidelines call out preserving run context, dependencies, message history, retries, model/profile selection, and toolset lifecycle across durable boundaries, which is close to StateBind Guard's executable-binding failure mode.",
+      "first_ask": "Ask whether a StateBind-style executable handoff contract would be useful as a review/audit artifact for durable execution and agent-resume boundaries.",
+      "do_not_do": [
+        "Do not open a code PR before a proposal or maintainer reply.",
+        "Do not claim Pydantic AI needs StateBind Guard.",
+        "Do not suggest broad adoption across the whole repo from the first contact."
+      ]
+    },
+    {
+      "repo": "openai/openai-agents-python",
+      "scout_priority": "high",
+      "scout_score": 12,
+      "decision": "go_feedback_only",
+      "confidence": "medium_high",
+      "evidence_paths": [
+        "AGENTS.md",
+        "docs/handoffs.md"
+      ],
+      "why_it_fits": "The repository contains explicit contributor-agent instructions plus a substantial handoffs documentation surface. The docs discuss handoff inputs, input filters, nested handoff history, and conversation-history mapping, all of which create semantic-role-to-executable-state boundaries that StateBind Guard is designed to audit.",
+      "first_ask": "Ask for feedback on whether executable binding checks would be useful for handoff-history, RunState, and docs-example review; frame it as a narrow research/tooling question.",
+      "do_not_do": [
+        "Do not propose changing SDK behavior without an issue and maintainer alignment.",
+        "Do not edit generated translated docs.",
+        "Do not imply official OpenAI endorsement."
+      ]
+    },
+    {
+      "repo": "modelcontextprotocol/python-sdk",
+      "scout_priority": "high",
+      "scout_score": 10,
+      "decision": "hold_more_evidence",
+      "confidence": "medium",
+      "evidence_paths": [
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "why_it_fits": "The repository has agent-facing contribution instructions and strict testing/coverage rules, but the current scout evidence does not yet identify a concrete handoff/resume boundary or durable-agent failure mode inside the SDK.",
+      "first_ask": "Hold until there is a specific issue, PR, or protocol-resume case where executable bindings would reduce maintainer risk.",
+      "do_not_do": [
+        "Do not open a generic adoption issue.",
+        "Do not propose CI adoption without a concrete failure case."
+      ]
+    },
+    {
+      "repo": "browser-use/browser-use",
+      "scout_priority": "high",
+      "scout_score": 10,
+      "decision": "hold_more_evidence",
+      "confidence": "medium",
+      "evidence_paths": [
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "why_it_fits": "The project is directly about autonomous browser agents and therefore likely has resume/state reliability pressure, but the current scout signal is mostly generic repository-agent instructions rather than a maintainer-visible handoff failure surface.",
+      "first_ask": "Hold until a specific browser task resume, profile/session, or action-result binding example is found.",
+      "do_not_do": [
+        "Do not pitch StateBind as a general browser automation improvement.",
+        "Do not file outreach without a concrete browser-agent failure example."
+      ]
+    },
+    {
+      "repo": "OpenHands/OpenHands",
+      "scout_priority": "high",
+      "scout_score": 9,
+      "decision": "hold_more_evidence",
+      "confidence": "medium",
+      "evidence_paths": [
+        "AGENTS.md"
+      ],
+      "why_it_fits": "The project is a coding-agent runtime, so the domain fit is strong in principle. The current campaign evidence is still too thin because the scout found only one handoff-like file and no specific failing boundary.",
+      "first_ask": "Review existing OpenHands issues and docs for concrete task resume, workspace state, or pull request continuation failures before any outreach.",
+      "do_not_do": [
+        "Do not open a generic adoption issue.",
+        "Do not claim high priority from domain fit alone."
+      ]
+    }
+  ]
+}

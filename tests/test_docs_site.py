@@ -9,13 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class DocsSiteTests(unittest.TestCase):
     def test_landing_page_links_product_surface(self):
         html = (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-        self.assertIn("StateBind Guard v0.1.28", html)
+        self.assertIn("StateBind Guard v0.1.29", html)
         self.assertIn("Make coding-agent handoffs executable.", html)
         self.assertIn("assets/statebind_guard_demo.svg", html)
         self.assertIn("assets/statebind_social_preview.png", html)
         self.assertIn('property="og:image"', html)
         self.assertIn('name="twitter:card" content="summary_large_image"', html)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.28", html)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.29", html)
         self.assertIn("statebind proof", html)
         self.assertIn("statebind audit --repo .", html)
         self.assertIn("statebind audit --repo-url", html)
@@ -34,7 +34,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("HTML reports", html)
         self.assertIn("GitHub annotations", html)
         self.assertIn("action outputs", html)
-        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.28", html)
+        self.assertIn("https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.29", html)
         self.assertIn("docs/launch_note.md", html)
         self.assertIn("docs/launch_package.md", html)
         self.assertIn("docs/adoption_audit.md", html)
@@ -67,6 +67,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("docs/adoption_examples.md", readme)
         self.assertIn("docs/result_cards/statebind_guard_deployed_corpus.md", readme)
         self.assertIn("docs/result_cards/statebind_guard_github_scout_campaign_2026_05_31.md", readme)
+        self.assertIn("docs/adoption_target_review_2026_05_31.md", readme)
         self.assertIn("statebind-guard-adoption-example", readme)
         self.assertIn("actions/runs/26683277633", readme)
         self.assertIn("statebind install-hook", readme)
@@ -104,6 +105,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("Technical Claims To Defend", package)
         self.assertIn("Feedback Loop", package)
         self.assertIn("adoption_feedback.md", package)
+        self.assertIn("adoption_target_review_2026_05_31.md", package)
         self.assertIn("roadmap.md", package)
         self.assertIn("statebind-guard-adoption-example", package)
         self.assertIn("26683277633", package)
@@ -124,8 +126,8 @@ class DocsSiteTests(unittest.TestCase):
 
         self.assertIn("859c500", receipt)
         self.assertIn("adoption_examples.md", industrial)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.28", industrial)
-        self.assertIn("FU-max-boop/statebind-guard@v0.1.28", action_usage)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.29", industrial)
+        self.assertIn("FU-max-boop/statebind-guard@v0.1.29", action_usage)
         self.assertIn("current public adoption receipt", roadmap)
 
     def test_launch_note_states_narrow_claim(self):

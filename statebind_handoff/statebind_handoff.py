@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.28"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.29"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.28"
+SOURCE_VERSION = "0.1.29"
 
 
 def resolve_package_version() -> str:
