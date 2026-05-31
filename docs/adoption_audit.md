@@ -122,8 +122,7 @@ The output includes:
 A typical first PR is deliberately small:
 
 ```bash
-statebind init --goal "Preserve executable coding-agent handoffs" --next-command "make test"
-statebind policy --preset bugfix --out .statebind-policy.json
+statebind init --goal "Preserve executable coding-agent handoffs" --next-command "make test" --policy-out .statebind-policy.json --pre-commit-config .pre-commit-config.yaml
 statebind doctor --repo . --policy .statebind-policy.json
 ```
 

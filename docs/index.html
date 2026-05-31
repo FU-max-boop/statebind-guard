@@ -266,7 +266,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
-        <div class="eyebrow">StateBind Guard v0.1.37</div>
+        <div class="eyebrow">StateBind Guard v0.1.38</div>
         <h1>Make coding-agent handoffs executable.</h1>
         <p class="lead">
           StateBind Guard catches the quiet failure where a handoff mentions the
@@ -275,7 +275,7 @@
         </p>
         <div class="actions" aria-label="Primary links">
           <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
-          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.37">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.38">Latest release</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_package.md">Launch package</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_note.md">Launch note</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/adoption_audit.md">Adoption audit</a>
@@ -334,7 +334,7 @@
             The starter scaffold is intentionally small: one human-readable
             handoff, one JSON contract, one policy, one workflow.
           </p>
-          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind scout --repo-list candidate-repos.txt --issue-dir statebind-notes --result-card statebind-scout-card.md
@@ -342,11 +342,10 @@ statebind scout --github-list candidate-github-repos.txt --issue-context --issue
 statebind capture-github-run --run-url https://github.com/owner/repo/actions/runs/123 --next-command "make test" --out statebind-ci.json --handoff HANDOFF.ci.md
 statebind capture-worktree --next-command "make test" --active-file src/app.py --out statebind-local.json --handoff HANDOFF.local.md
 statebind proof
-statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --preset bugfix --out .statebind-policy.json
+statebind init --goal "keep coding-agent handoffs executable" --next-command "make test" --policy-out .statebind-policy.json --pre-commit-config .pre-commit-config.yaml
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
-git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml</code></pre>
+git add HANDOFF.md statebind.json .statebind-policy.json .pre-commit-config.yaml .github/workflows/statebind-guard.yml</code></pre>
         </div>
         <img
           class="demo-image"
@@ -389,7 +388,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
             after copying it.
           </p>
         </div>
-        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.37
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.38
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

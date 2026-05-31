@@ -59,6 +59,16 @@ statebind validate statebind.json \
 statebind doctor --repo .
 ```
 
+For a first adoption bundle, `init` can create the handoff, JSON contract,
+workflow, policy, and standard pre-commit config in one step:
+
+```bash
+statebind init --goal "Preserve executable coding-agent handoffs" \
+  --next-command "make test" \
+  --policy-out .statebind-policy.json \
+  --pre-commit-config .pre-commit-config.yaml
+```
+
 For repositories that keep `statebind.json` committed, install a local
 pre-commit guard:
 
@@ -91,7 +101,7 @@ If your team already uses the standard pre-commit framework, add:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.37
+    rev: v0.1.38
     hooks:
       - id: statebind-guard
 ```
@@ -103,7 +113,7 @@ See [pre-commit usage](pre_commit_usage.md) for the full local workflow.
 Require handoff contracts for risky agent-generated PRs:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.37
+- uses: FU-max-boop/statebind-guard@v0.1.38
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

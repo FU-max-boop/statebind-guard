@@ -670,7 +670,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.37", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.38", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -726,6 +726,64 @@ class StateBindHandoffTests(unittest.TestCase):
             )
             self.assertEqual(quiet_proc.returncode, 0)
             self.assertEqual(quiet_proc.stdout, "")
+
+    def test_init_can_write_policy_and_pre_commit_bundle(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            run(["git", "init", "-q"], repo)
+            policy = repo / ".statebind-policy.json"
+            pre_commit_config = repo / ".pre-commit-config.yaml"
+
+            out = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "init",
+                    "--goal",
+                    "adopt StateBind Guard",
+                    "--next-command",
+                    "python -m unittest discover -s tests",
+                    "--policy-out",
+                    str(policy),
+                    "--policy-preset",
+                    "minimal",
+                    "--pre-commit-config",
+                    str(pre_commit_config),
+                ],
+                repo,
+            )
+
+            self.assertIn("statebind doctor --repo .", out)
+            self.assertTrue(policy.exists())
+            self.assertTrue(pre_commit_config.exists())
+            policy_data = json.loads(policy.read_text())
+            self.assertEqual(policy_data["preset"], "minimal")
+            self.assertEqual(policy_data["required_roles"], ["next_command"])
+            config_text = pre_commit_config.read_text()
+            self.assertIn("https://github.com/FU-max-boop/statebind-guard", config_text)
+            self.assertIn("rev: v0.1.38", config_text)
+            self.assertIn("id: statebind-guard", config_text)
+
+            validate_out = run(
+                [
+                    "python",
+                    str(SCRIPT),
+                    "validate",
+                    "statebind.json",
+                    "--repo",
+                    ".",
+                    "--policy",
+                    str(policy),
+                    "--fail-on",
+                    "warning",
+                ],
+                repo,
+            )
+            self.assertIn("StateBind validation passed", validate_out)
+
+            doctor_out = run(["python", str(SCRIPT), "doctor", "--repo", ".", "--policy", str(policy)], repo)
+            self.assertIn("[ok] pre_commit_config", doctor_out)
+            self.assertIn("[ok] policy_file", doctor_out)
 
     def test_audit_guides_pre_adoption_repo(self):
         with tempfile.TemporaryDirectory() as td:
@@ -983,7 +1041,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.37\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.38\n",
                 },
             )
 

@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: statebind
-        uses: FU-max-boop/statebind-guard@v0.1.37
+        uses: FU-max-boop/statebind-guard@v0.1.38
         with:
           handoff: HANDOFF.md
           statebind-json: statebind.json
@@ -43,7 +43,7 @@ jobs:
 ```
 
 Pin to a release tag in production, for example
-`FU-max-boop/statebind-guard@v0.1.37`.
+`FU-max-boop/statebind-guard@v0.1.38`.
 
 After copying the workflow, run a local adoption audit:
 
@@ -74,7 +74,7 @@ itself as executable StateBind state:
 - name: Capture failed runtime handoff
   if: failure()
   run: |
-    python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+    python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
     statebind capture-github-run \
       --goal "resume failed CI" \
       --next-command "make test" \
@@ -128,7 +128,7 @@ The action exposes machine-readable outputs for downstream workflow logic:
 
 ```yaml
 - id: statebind
-  uses: FU-max-boop/statebind-guard@v0.1.37
+  uses: FU-max-boop/statebind-guard@v0.1.38
   with:
     statebind-json: statebind.json
     fail-on: warning

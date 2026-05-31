@@ -27,7 +27,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
 statebind proof
 ```
 
@@ -89,7 +89,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -117,7 +117,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
@@ -126,21 +126,23 @@ statebind scout --github-repo owner/repo --issue-context --issue-context-card st
 statebind proof
 statebind capture-github-run --run-url https://github.com/owner/repo/actions/runs/123 --next-command "make test" --out statebind-ci.json --handoff HANDOFF.ci.md
 statebind capture-worktree --next-command "make test" --active-file src/app.py --out statebind-local.json --handoff HANDOFF.local.md
-statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --preset bugfix --out .statebind-policy.json
+statebind init --goal "keep coding-agent handoffs executable" --next-command "make test" --policy-out .statebind-policy.json --pre-commit-config .pre-commit-config.yaml
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
-git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml
+git add HANDOFF.md statebind.json .statebind-policy.json .pre-commit-config.yaml .github/workflows/statebind-guard.yml
 ```
 
-This creates a ready-to-run handoff contract and a GitHub Actions workflow that
-publishes JSON/SARIF validation reports on future pushes and pull requests.
+This creates a ready-to-run handoff contract, policy file, standard pre-commit
+config, and GitHub Actions workflow that publishes JSON/SARIF validation reports
+on future pushes and pull requests.
 The optional local hook blocks commits when `statebind.json` loses its
 executable binding contract. `statebind doctor` audits whether the repo has the
 contract, human handoff, GitHub Action, pre-commit config, local hook, and
 validation gate wired correctly. `statebind policy` creates a team-editable
 policy file for required roles and confidence thresholds, with presets for
 bug fixes, CI failures, releases, migrations, and benchmark runs.
+For stricter bug-fix handoffs, run
+`statebind policy --preset bugfix --out .statebind-policy.json`.
 The GitHub Action also exposes `passed`, `errors`, `warnings`, and `exit_code`
 outputs, so downstream workflow steps can route failed handoffs without parsing
 artifacts.
@@ -150,7 +152,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.37
+    rev: v0.1.38
     hooks:
       - id: statebind-guard
 ```
@@ -209,7 +211,7 @@ and exact next command without leaking absolute local paths.
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.37
+- uses: FU-max-boop/statebind-guard@v0.1.38
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

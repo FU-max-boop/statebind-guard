@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.37"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.38"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.37"
+SOURCE_VERSION = "0.1.38"
 DEFAULT_ISSUE_CONTEXT_TERMS = (
     "durable execution",
     "message history",
@@ -804,6 +804,16 @@ jobs:
 """
 
 
+def render_pre_commit_config() -> str:
+    repository, rev = DEFAULT_ACTION_REF.split("@", 1)
+    return f"""repos:
+  - repo: https://github.com/{repository}
+    rev: {rev}
+    hooks:
+      - id: statebind-guard
+"""
+
+
 def write_scaffold_file(path: Path, text: str, force: bool) -> None:
     if path.exists() and not force:
         raise FileExistsError(f"{path} already exists; pass --force to overwrite it.")
@@ -818,6 +828,9 @@ def init_scaffold(
     goal: str,
     next_command: str,
     force: bool,
+    policy_path: Path | None = None,
+    policy_preset: str = "minimal",
+    pre_commit_config_path: Path | None = None,
 ) -> list[Path]:
     contract = starter_contract(goal, next_command)
     outputs = [
@@ -825,6 +838,10 @@ def init_scaffold(
         (statebind_path, json.dumps(contract, indent=2, ensure_ascii=False) + "\n"),
         (workflow_path, render_init_workflow(handoff_path, statebind_path)),
     ]
+    if policy_path:
+        outputs.append((policy_path, policy_text(policy_preset)))
+    if pre_commit_config_path:
+        outputs.append((pre_commit_config_path, render_pre_commit_config()))
     if not force:
         existing = [str(path) for path, _ in outputs if path.exists()]
         if existing:
@@ -3599,6 +3616,18 @@ def main() -> int:
         default="Preserve executable coding-agent handoff bindings for this repository.",
     )
     p_init.add_argument("--next-command", default="make test")
+    p_init.add_argument("--policy-out", type=Path, help="optional StateBind policy JSON path to write")
+    p_init.add_argument(
+        "--policy-preset",
+        choices=sorted(POLICY_PRESETS),
+        default="minimal",
+        help="policy preset to use with --policy-out",
+    )
+    p_init.add_argument(
+        "--pre-commit-config",
+        type=Path,
+        help="optional standard pre-commit config path to write",
+    )
     p_init.add_argument("--force", action="store_true", help="overwrite existing scaffold files")
 
     p_capture_gha = sub.add_parser("capture-github-run", help="write a StateBind contract from GitHub Actions runtime or run URL")
@@ -3723,13 +3752,25 @@ def main() -> int:
         return 0
     if args.cmd == "init":
         try:
-            written = init_scaffold(args.handoff, args.json, args.workflow, args.goal, args.next_command, args.force)
+            written = init_scaffold(
+                args.handoff,
+                args.json,
+                args.workflow,
+                args.goal,
+                args.next_command,
+                args.force,
+                args.policy_out,
+                args.policy_preset,
+                args.pre_commit_config,
+            )
         except FileExistsError as exc:
             print(str(exc), file=sys.stderr)
             return 2
         for path in written:
             print(f"Wrote {path}")
         print("Next: commit these files and let the StateBind Guard workflow validate future handoffs.")
+        if args.policy_out or args.pre_commit_config:
+            print("Then run `statebind doctor --repo .` to verify the full adoption bundle.")
         return 0
     if args.cmd == "capture-github-run":
         try:

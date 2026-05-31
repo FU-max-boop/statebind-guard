@@ -87,19 +87,24 @@ StateBind Guard is intentionally small and dependency-free:
 ## Try It
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
 statebind proof
-statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --preset bugfix --out .statebind-policy.json
+statebind init --goal "keep coding-agent handoffs executable" --next-command "make test" --policy-out .statebind-policy.json --pre-commit-config .pre-commit-config.yaml
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
-git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/statebind-guard.yml
+git add HANDOFF.md statebind.json .statebind-policy.json .pre-commit-config.yaml .github/workflows/statebind-guard.yml
+```
+
+For stricter bug-fix handoffs:
+
+```bash
+statebind policy --preset bugfix --out .statebind-policy.json
 ```
 
 Then use the generated workflow or call the action directly:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.37
+- uses: FU-max-boop/statebind-guard@v0.1.38
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

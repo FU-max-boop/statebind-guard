@@ -23,7 +23,7 @@ release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.37"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.38"
 statebind proof
 ```
 
@@ -83,8 +83,7 @@ statebind scout --github-list candidate-github-repos.txt --issue-context --issue
 statebind capture-github-run --run-url https://github.com/owner/repo/actions/runs/123 --next-command "make test" --out statebind-ci.json --handoff HANDOFF.ci.md
 statebind capture-worktree --next-command "make test" --active-file src/app.py --out statebind-local.json --handoff HANDOFF.local.md
 statebind proof
-statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
-statebind policy --preset bugfix --out .statebind-policy.json
+statebind init --goal "keep coding-agent handoffs executable" --next-command "make test" --policy-out .statebind-policy.json --pre-commit-config .pre-commit-config.yaml
 statebind install-hook --policy .statebind-policy.json
 statebind doctor
 ```
@@ -92,7 +91,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.37
+- uses: FU-max-boop/statebind-guard@v0.1.38
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
