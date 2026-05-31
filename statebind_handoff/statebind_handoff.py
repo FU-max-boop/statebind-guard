@@ -8,6 +8,7 @@ Codex or a human should still verify evidence and confidence.
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import os
@@ -18,6 +19,9 @@ import tempfile
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
 
 
 FILE_RE = re.compile(r"(?<![\w./-])(?:[\w.-]+/)+[\w.@:+-]+(?:\.[A-Za-z0-9_+-]+)?")
@@ -66,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.26"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.27"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.26"
+SOURCE_VERSION = "0.1.27"
 
 
 def resolve_package_version() -> str:
@@ -1799,12 +1803,15 @@ def repo_rel(repo: Path, path: Path) -> str:
 
 
 def find_handoff_candidates(repo: Path) -> list[dict[str, str]]:
+    return handoff_candidates_from_paths(repo_rel(repo, path) for path in iter_repo_files(repo))
+
+
+def handoff_candidates_from_paths(paths: Iterable[str]) -> list[dict[str, str]]:
     candidates: list[dict[str, str]] = []
-    for path in iter_repo_files(repo):
-        rel = repo_rel(repo, path)
-        name = path.name.lower()
+    for rel in paths:
+        name = Path(rel).name.lower()
         rel_lower = rel.lower()
-        if path.suffix.lower() not in {"", ".md", ".markdown", ".txt"}:
+        if Path(rel).suffix.lower() not in {"", ".md", ".markdown", ".txt"}:
             continue
         if name in HANDOFF_NAME_HINTS or "handoff" in rel_lower or rel_lower.endswith("/agents.md"):
             candidates.append(
@@ -1816,6 +1823,35 @@ def find_handoff_candidates(repo: Path) -> list[dict[str, str]]:
         if len(candidates) >= 20:
             break
     return candidates
+
+
+def infer_next_command_from_snapshot(paths: Iterable[str], texts: dict[str, str]) -> dict[str, str]:
+    path_set = set(paths)
+    for name in ("Makefile", "makefile"):
+        if name in path_set:
+            text = texts.get(name, "")
+            for target, command in (
+                ("public-check", "make public-check"),
+                ("test", "make test"),
+                ("smoke", "make smoke"),
+            ):
+                if re.search(rf"(?m)^{re.escape(target)}\s*:", text):
+                    return {"command": command, "evidence": f"{name} target `{target}`"}
+
+    if "package.json" in path_set:
+        try:
+            package = json.loads(texts.get("package.json", "{}"))
+        except json.JSONDecodeError:
+            package = {}
+        scripts = package.get("scripts") if isinstance(package, dict) else {}
+        if isinstance(scripts, dict) and "test" in scripts:
+            lock_command = "pnpm test" if "pnpm-lock.yaml" in path_set else "npm test"
+            return {"command": lock_command, "evidence": "package.json test script"}
+
+    if "pyproject.toml" in path_set:
+        return {"command": "python -m pytest", "evidence": "pyproject.toml present"}
+
+    return {"command": "make test", "evidence": "default starter command; verify before committing"}
 
 
 def infer_next_command(repo: Path) -> dict[str, str]:
@@ -1860,6 +1896,19 @@ def statebind_workflow_paths(repo: Path) -> list[str]:
     return paths
 
 
+def statebind_workflows_from_snapshot(paths: Iterable[str], texts: dict[str, str]) -> list[str]:
+    workflow_paths: list[str] = []
+    for path in sorted(paths):
+        if not path.startswith(".github/workflows/"):
+            continue
+        if not path.endswith((".yml", ".yaml")):
+            continue
+        text = texts.get(path, "")
+        if "statebind-guard" in text or "statebind-json" in text:
+            workflow_paths.append(path)
+    return workflow_paths
+
+
 def repo_label_from_url(repo_url: str) -> str:
     clean = repo_url.rstrip("/")
     if clean.endswith(".git"):
@@ -1884,63 +1933,40 @@ def clone_repo_for_audit(repo_url: str, ref: str | None, target: Path, timeout: 
     return clone_dir
 
 
-def audit_report(
-    repo: Path,
-    statebind_path: Path,
-    handoff_path: Path,
-    workflow_path: Path,
-    policy_path: Path | None,
-    repo_label: str | None = None,
-) -> dict[str, Any]:
-    repo = repo.resolve()
-    checks: list[DoctorCheck] = []
-    if not repo.exists():
-        add_doctor_check(checks, "error", "repo", f"Repository path does not exist: {repo}")
-        summary = {"ok": 0, "warnings": 0, "errors": 1}
-        return {
-            "schema_version": SCHEMA_VERSION,
-            "repo": str(repo),
-            "adoption_level": "unavailable",
-            "summary": summary,
-            "checks": [asdict(check) for check in checks],
-            "handoff_candidates": [],
-            "statebind_workflows": [],
-            "suggested_next_command": infer_next_command(Path(".")),
-            "recommended_commands": [],
-        }
-
-    statebind_abs = resolve_repo_path(repo, statebind_path)
-    handoff_abs = resolve_repo_path(repo, handoff_path)
-    workflow_abs = resolve_repo_path(repo, workflow_path)
-    resolved_policy = policy_path
-    if resolved_policy is None and (repo / ".statebind-policy.json").exists():
-        resolved_policy = Path(".statebind-policy.json")
-    policy_abs = resolve_repo_path(repo, resolved_policy) if resolved_policy else None
-
-    candidates = find_handoff_candidates(repo)
-    workflows = statebind_workflow_paths(repo)
-    suggested = infer_next_command(repo)
-
-    if statebind_abs.exists():
-        add_doctor_check(checks, "ok", "statebind_json", f"Found {statebind_path.as_posix()}.")
+def add_audit_signal_checks(
+    checks: list[DoctorCheck],
+    statebind_exists: bool,
+    statebind_label: str,
+    handoff_exists: bool,
+    handoff_label: str,
+    candidates: list[dict[str, str]],
+    workflows: list[str],
+    workflow_exists: bool,
+    workflow_label: str,
+    policy_exists: bool,
+    policy_label: str,
+    suggested: dict[str, str],
+) -> None:
+    if statebind_exists:
+        add_doctor_check(checks, "ok", "statebind_json", f"Found {statebind_label}.")
     else:
         add_doctor_check(
             checks,
             "warning",
             "statebind_json",
-            f"Missing {statebind_path.as_posix()}.",
+            f"Missing {statebind_label}.",
             f'Run `statebind init --goal "Preserve executable coding-agent handoffs" --next-command "{suggested["command"]}"`.',
         )
 
-    if handoff_abs.exists():
-        add_doctor_check(checks, "ok", "handoff_markdown", f"Found {handoff_path.as_posix()}.")
+    if handoff_exists:
+        add_doctor_check(checks, "ok", "handoff_markdown", f"Found {handoff_label}.")
     elif candidates:
         preview = ", ".join(candidate["path"] for candidate in candidates[:5])
         add_doctor_check(
             checks,
             "warning",
             "handoff_candidates",
-            f"Found handoff-like files but no canonical {handoff_path.as_posix()}: {preview}.",
+            f"Found handoff-like files but no canonical {handoff_label}: {preview}.",
             "Bind the active file/test/command into StateBind JSON before handoff consumption.",
         )
     else:
@@ -1954,12 +1980,12 @@ def audit_report(
 
     if workflows:
         add_doctor_check(checks, "ok", "github_action", f"StateBind workflow present: {', '.join(workflows)}.")
-    elif workflow_abs.exists():
+    elif workflow_exists:
         add_doctor_check(
             checks,
             "warning",
             "github_action",
-            f"Workflow exists but is not wired to StateBind Guard: {workflow_path.as_posix()}.",
+            f"Workflow exists but is not wired to StateBind Guard: {workflow_label}.",
             "Copy the workflow generated by `statebind init` or use the GitHub Action example.",
         )
     else:
@@ -1967,12 +1993,12 @@ def audit_report(
             checks,
             "warning",
             "github_action",
-            f"No StateBind workflow found at {workflow_path.as_posix()}.",
+            f"No StateBind workflow found at {workflow_label}.",
             "Add the generated workflow in the first adoption PR.",
         )
 
-    if policy_abs and policy_abs.exists():
-        add_doctor_check(checks, "ok", "policy_file", f"Found {resolved_policy.as_posix() if resolved_policy else policy_abs.name}.")
+    if policy_exists:
+        add_doctor_check(checks, "ok", "policy_file", f"Found {policy_label}.")
     else:
         add_doctor_check(
             checks,
@@ -1998,11 +2024,39 @@ def audit_report(
             f"Suggested next command `{suggested['command']}` from {suggested['evidence']}.",
         )
 
-    has_statebind = statebind_abs.exists()
-    has_workflow = bool(workflows)
-    if has_statebind and has_workflow:
+
+def build_audit_report(
+    repo_name: str,
+    statebind_exists: bool,
+    handoff_exists: bool,
+    workflow_exists: bool,
+    policy_exists: bool,
+    statebind_label: str,
+    handoff_label: str,
+    workflow_label: str,
+    policy_label: str,
+    candidates: list[dict[str, str]],
+    workflows: list[str],
+    suggested: dict[str, str],
+) -> dict[str, Any]:
+    checks: list[DoctorCheck] = []
+    add_audit_signal_checks(
+        checks,
+        statebind_exists,
+        statebind_label,
+        handoff_exists,
+        handoff_label,
+        candidates,
+        workflows,
+        workflow_exists,
+        workflow_label,
+        policy_exists,
+        policy_label,
+        suggested,
+    )
+    if statebind_exists and workflows:
         adoption_level = "wired"
-    elif has_statebind or has_workflow or handoff_abs.exists() or candidates:
+    elif statebind_exists or workflows or handoff_exists or candidates:
         adoption_level = "partial"
     else:
         adoption_level = "not_started"
@@ -2022,7 +2076,7 @@ def audit_report(
     ]
     return {
         "schema_version": SCHEMA_VERSION,
-        "repo": repo_label or repo.name,
+        "repo": repo_name,
         "adoption_level": adoption_level,
         "summary": summary,
         "checks": [asdict(check) for check in checks],
@@ -2031,6 +2085,58 @@ def audit_report(
         "suggested_next_command": suggested,
         "recommended_commands": recommended_commands,
     }
+
+
+def audit_report(
+    repo: Path,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    policy_path: Path | None,
+    repo_label: str | None = None,
+) -> dict[str, Any]:
+    repo = repo.resolve()
+    if not repo.exists():
+        checks: list[DoctorCheck] = []
+        add_doctor_check(checks, "error", "repo", f"Repository path does not exist: {repo}")
+        summary = {"ok": 0, "warnings": 0, "errors": 1}
+        return {
+            "schema_version": SCHEMA_VERSION,
+            "repo": str(repo),
+            "adoption_level": "unavailable",
+            "summary": summary,
+            "checks": [asdict(check) for check in checks],
+            "handoff_candidates": [],
+            "statebind_workflows": [],
+            "suggested_next_command": infer_next_command(Path(".")),
+            "recommended_commands": [],
+        }
+
+    statebind_abs = resolve_repo_path(repo, statebind_path)
+    handoff_abs = resolve_repo_path(repo, handoff_path)
+    workflow_abs = resolve_repo_path(repo, workflow_path)
+    resolved_policy = policy_path
+    if resolved_policy is None and (repo / ".statebind-policy.json").exists():
+        resolved_policy = Path(".statebind-policy.json")
+    policy_abs = resolve_repo_path(repo, resolved_policy) if resolved_policy else None
+
+    candidates = find_handoff_candidates(repo)
+    workflows = statebind_workflow_paths(repo)
+    suggested = infer_next_command(repo)
+    return build_audit_report(
+        repo_label or repo.name,
+        statebind_abs.exists(),
+        handoff_abs.exists(),
+        workflow_abs.exists(),
+        bool(policy_abs and policy_abs.exists()),
+        statebind_path.as_posix(),
+        handoff_path.as_posix(),
+        workflow_path.as_posix(),
+        resolved_policy.as_posix() if resolved_policy else ".statebind-policy.json",
+        candidates,
+        workflows,
+        suggested,
+    )
 
 
 def render_audit_markdown(report: dict[str, Any]) -> str:
@@ -2185,6 +2291,128 @@ def run_audit(
             tmp_ctx.cleanup()
 
 
+def parse_github_repo(value: str) -> tuple[str, str]:
+    if value.startswith(("http://", "https://")):
+        parsed = urlparse(value)
+        parts = [part for part in parsed.path.strip("/").split("/") if part]
+    elif value.startswith("git@github.com:"):
+        parts = value.split(":", 1)[1].strip("/").split("/")
+    else:
+        parts = value.strip("/").split("/")
+    if len(parts) < 2:
+        raise RuntimeError(f"GitHub repository must look like owner/repo: {value}")
+    owner, repo = parts[0], parts[1]
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    return owner, repo
+
+
+def github_api_json(url: str, timeout: int) -> dict[str, Any]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "statebind-guard",
+    }
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = Request(url, headers=headers)
+    try:
+        with urlopen(req, timeout=timeout) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace").strip()
+        if exc.code == 403 and "rate limit" in detail.lower():
+            detail = (
+                f"{detail} Set GH_TOKEN or GITHUB_TOKEN to use authenticated "
+                "GitHub API requests for larger scout campaigns."
+            )
+        raise RuntimeError(f"GitHub API error {exc.code} for {url}: {detail}") from exc
+    except URLError as exc:
+        raise RuntimeError(f"GitHub API request failed for {url}: {exc.reason}") from exc
+    except TimeoutError as exc:
+        raise RuntimeError(f"GitHub API request timed out after {timeout} seconds") from exc
+
+
+def github_content_text(owner: str, repo: str, path: str, ref: str, timeout: int) -> str:
+    encoded_path = quote(path)
+    encoded_ref = quote(ref, safe="")
+    url = f"https://api.github.com/repos/{owner}/{repo}/contents/{encoded_path}?ref={encoded_ref}"
+    payload = github_api_json(url, timeout)
+    if payload.get("encoding") == "base64" and isinstance(payload.get("content"), str):
+        return base64.b64decode(payload["content"]).decode("utf-8", errors="replace")
+    return ""
+
+
+def github_snapshot(owner_repo: str, ref: str | None, timeout: int) -> tuple[str, list[str], dict[str, str]]:
+    owner, repo = parse_github_repo(owner_repo)
+    repo_payload = github_api_json(f"https://api.github.com/repos/{owner}/{repo}", timeout)
+    selected_ref = ref or repo_payload.get("default_branch") or "main"
+    branch_payload = github_api_json(
+        f"https://api.github.com/repos/{owner}/{repo}/branches/{quote(selected_ref, safe='')}",
+        timeout,
+    )
+    tree_sha = branch_payload["commit"]["commit"]["tree"]["sha"]
+    tree_payload = github_api_json(
+        f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree_sha}?recursive=1",
+        timeout,
+    )
+    paths = [
+        item["path"]
+        for item in tree_payload.get("tree", [])
+        if item.get("type") == "blob" and isinstance(item.get("path"), str)
+    ]
+    fetch_paths = {
+        "Makefile",
+        "makefile",
+        "package.json",
+        "pyproject.toml",
+    }
+    fetch_paths.update(
+        path
+        for path in paths
+        if path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml"))
+    )
+    texts: dict[str, str] = {}
+    for path in sorted(fetch_paths):
+        if path in paths:
+            try:
+                texts[path] = github_content_text(owner, repo, path, selected_ref, timeout)
+            except RuntimeError:
+                texts[path] = ""
+    return repo, paths, texts
+
+
+def audit_github_report(
+    owner_repo: str,
+    ref: str | None,
+    timeout: int,
+    statebind_path: Path,
+    handoff_path: Path,
+    workflow_path: Path,
+    policy_path: Path | None,
+) -> dict[str, Any]:
+    repo_name, paths, texts = github_snapshot(owner_repo, ref, timeout)
+    path_set = set(paths)
+    resolved_policy = policy_path.as_posix() if policy_path else ".statebind-policy.json"
+    candidates = handoff_candidates_from_paths(paths)
+    workflows = statebind_workflows_from_snapshot(paths, texts)
+    suggested = infer_next_command_from_snapshot(paths, texts)
+    return build_audit_report(
+        repo_name,
+        statebind_path.as_posix() in path_set,
+        handoff_path.as_posix() in path_set,
+        workflow_path.as_posix() in path_set,
+        resolved_policy in path_set,
+        statebind_path.as_posix(),
+        handoff_path.as_posix(),
+        workflow_path.as_posix(),
+        resolved_policy,
+        candidates,
+        workflows,
+        suggested,
+    )
+
+
 def scout_source_label(repo_url: str) -> str:
     if repo_url.startswith(("http://", "https://", "git@", "ssh://")):
         return repo_url
@@ -2328,8 +2556,11 @@ def render_scout_markdown(payload: dict[str, Any]) -> str:
 def run_scout(
     repo_urls: list[str],
     repo_list: Path | None,
+    github_repos: list[str],
+    github_list: Path | None,
     ref: str | None,
     clone_timeout: int,
+    github_timeout: int,
     statebind_path: Path,
     handoff_path: Path,
     workflow_path: Path,
@@ -2339,8 +2570,12 @@ def run_scout(
     issue_dir: Path | None,
 ) -> int:
     urls = load_scout_urls(repo_urls, repo_list)
-    if not urls:
-        print("StateBind scout needs at least one --repo-url or --repo-list entry.", file=sys.stderr)
+    github_specs = load_scout_urls(github_repos, github_list)
+    if not urls and not github_specs:
+        print(
+            "StateBind scout needs at least one --repo-url, --repo-list, --github-repo, or --github-list entry.",
+            file=sys.stderr,
+        )
         return 2
 
     records: list[dict[str, Any]] = []
@@ -2367,6 +2602,31 @@ def run_scout(
         finally:
             if tmp_ctx:
                 tmp_ctx.cleanup()
+
+    for github_repo in github_specs:
+        try:
+            report = audit_github_report(
+                github_repo,
+                ref,
+                github_timeout,
+                statebind_path,
+                handoff_path,
+                workflow_path,
+                policy_path,
+            )
+            records.append(scout_record_from_report(github_repo, report, issue_dir))
+        except RuntimeError as exc:
+            records.append(
+                {
+                    "source": github_repo,
+                    "repo": repo_label_from_url(github_repo),
+                    "status": "error",
+                    "priority": "skip",
+                    "score": 0,
+                    "reasons": ["GitHub API scout failed"],
+                    "error": str(exc),
+                }
+            )
 
     records.sort(key=lambda item: (item["status"] == "ok", item["score"]), reverse=True)
     payload = {
@@ -2579,8 +2839,11 @@ def main() -> int:
     p_scout = sub.add_parser("scout", help="rank repositories for careful StateBind adoption outreach")
     p_scout.add_argument("--repo-url", action="append", default=[], help="Git repository URL or local Git path to scout")
     p_scout.add_argument("--repo-list", type=Path, help="newline-delimited repository URLs to scout")
+    p_scout.add_argument("--github-repo", action="append", default=[], help="GitHub owner/repo to scout through the GitHub API")
+    p_scout.add_argument("--github-list", type=Path, help="newline-delimited GitHub owner/repo entries to scout through the GitHub API")
     p_scout.add_argument("--ref", help="branch or tag to clone for each repository")
     p_scout.add_argument("--clone-timeout", type=int, default=30, help="seconds before a scout clone fails")
+    p_scout.add_argument("--github-timeout", type=int, default=20, help="seconds before a GitHub API scout request fails")
     p_scout.add_argument("--statebind-json", type=Path, default=Path("statebind.json"))
     p_scout.add_argument("--handoff", type=Path, default=Path("HANDOFF.md"))
     p_scout.add_argument("--workflow", type=Path, default=Path(".github/workflows/statebind-guard.yml"))
@@ -2678,8 +2941,11 @@ def main() -> int:
         return run_scout(
             args.repo_url,
             args.repo_list,
+            args.github_repo,
+            args.github_list,
             args.ref,
             args.clone_timeout,
+            args.github_timeout,
             args.statebind_json,
             args.handoff,
             args.workflow,

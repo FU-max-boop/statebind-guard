@@ -1,5 +1,8 @@
+import importlib.util
+import io
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +10,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "statebind_handoff" / "statebind_handoff.py"
+SPEC = importlib.util.spec_from_file_location("statebind_handoff_script", SCRIPT)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC and SPEC.loader
+sys.modules[SPEC.name] = MODULE
+SPEC.loader.exec_module(MODULE)
 
 
 def run(cmd, cwd):
@@ -445,7 +453,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.26", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.27", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -729,6 +737,71 @@ class StateBindHandoffTests(unittest.TestCase):
 
         self.assertEqual(proc.returncode, 2)
         self.assertIn("needs at least one", proc.stderr)
+
+    def test_github_api_scout_report_without_git_clone(self):
+        original_snapshot = MODULE.github_snapshot
+
+        def fake_snapshot(owner_repo, ref, timeout):
+            self.assertEqual(owner_repo, "owner/agent-repo")
+            self.assertIsNone(ref)
+            self.assertEqual(timeout, 7)
+            return (
+                "agent-repo",
+                [
+                    "AGENTS.md",
+                    "Makefile",
+                    ".github/workflows/statebind-guard.yml",
+                ],
+                {
+                    "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.27\n",
+                },
+            )
+
+        MODULE.github_snapshot = fake_snapshot
+        try:
+            report = MODULE.audit_github_report(
+                "owner/agent-repo",
+                None,
+                7,
+                Path("statebind.json"),
+                Path("HANDOFF.md"),
+                Path(".github/workflows/statebind-guard.yml"),
+                None,
+            )
+        finally:
+            MODULE.github_snapshot = original_snapshot
+
+        self.assertEqual(report["repo"], "agent-repo")
+        self.assertEqual(report["adoption_level"], "partial")
+        self.assertEqual(report["suggested_next_command"]["command"], "make test")
+        self.assertTrue(any(candidate["path"] == "AGENTS.md" for candidate in report["handoff_candidates"]))
+        self.assertEqual(report["statebind_workflows"], [".github/workflows/statebind-guard.yml"])
+        record = MODULE.scout_record_from_report("owner/agent-repo", report, None)
+        self.assertEqual(record["priority"], "high")
+        self.assertGreaterEqual(record["score"], 8)
+
+    def test_github_api_rate_limit_error_mentions_token(self):
+        original_urlopen = MODULE.urlopen
+
+        def fake_urlopen(req, timeout):
+            raise MODULE.HTTPError(
+                req.full_url,
+                403,
+                "Forbidden",
+                hdrs=None,
+                fp=io.BytesIO(b'{"message":"API rate limit exceeded"}'),
+            )
+
+        MODULE.urlopen = fake_urlopen
+        try:
+            with self.assertRaises(RuntimeError) as ctx:
+                MODULE.github_api_json("https://api.github.com/repos/owner/repo", 3)
+        finally:
+            MODULE.urlopen = original_urlopen
+
+        self.assertIn("GH_TOKEN", str(ctx.exception))
+        self.assertIn("GITHUB_TOKEN", str(ctx.exception))
 
     def test_init_refuses_to_partially_overwrite_existing_files(self):
         with tempfile.TemporaryDirectory() as td:

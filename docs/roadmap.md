@@ -16,6 +16,8 @@ into real repositories, or improve the evidence behind the claim.
   repositories.
 - Use `statebind scout` to rank candidate repositories before any external
   outreach, so maintainer notes go only to plausible high-signal targets.
+- Keep the GitHub API scout path useful for large repositories where shallow
+  clone is too slow or flaky.
 - Collect adoption reports from coding-agent, CI, and research-engineering users.
 - Collect sanitized visible-but-unbound failure cases for the benchmark corpus.
 

@@ -32,6 +32,18 @@ statebind scout \
   --markdown statebind-scout.md
 ```
 
+For large GitHub repositories, avoid clone cost and use the GitHub API scout:
+
+```bash
+statebind scout \
+  --github-list candidate-github-repos.txt \
+  --issue-dir statebind-notes \
+  --markdown statebind-scout.md
+```
+
+Set `GH_TOKEN` or `GITHUB_TOKEN` before larger campaigns to avoid
+unauthenticated GitHub API rate limits.
+
 The scout report labels each repository as `high`, `medium`, `low`,
 `follow_up`, or `skip`. Prefer `high` and `medium` targets where the audit
 finds handoff-like files and a concrete local gate.

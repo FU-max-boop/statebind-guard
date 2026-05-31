@@ -23,7 +23,7 @@ release, CI, packaging, SARIF/report, Pages, skill-sync, and adoption handoffs.
 ## Proof Snippet
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.26"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
 statebind proof
 ```
 
@@ -79,6 +79,7 @@ statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind scout --repo-list candidate-repos.txt --issue-dir statebind-notes --markdown statebind-scout.md
+statebind scout --github-list candidate-github-repos.txt --issue-dir statebind-notes --markdown statebind-scout.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -89,7 +90,7 @@ statebind doctor
 Then pin the GitHub Action:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.26
+- uses: FU-max-boop/statebind-guard@v0.1.27
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
@@ -115,6 +116,8 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
   report and maintainer note from a temporary shallow checkout.
 - `statebind scout` ranks multiple candidate repositories before outreach and
   writes maintainer-safe notes only for non-skip targets.
+- `statebind scout --github-list` uses GitHub's API to screen large repositories
+  without a clone; set `GH_TOKEN` or `GITHUB_TOKEN` before larger campaigns.
 - The deployed-derived result card tests sanitized release, CI, packaging,
   SARIF/report, Pages, skill-sync, and external-adoption handoffs.
 - `make dist-check` builds the wheel and source distribution, checks sdist

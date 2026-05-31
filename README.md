@@ -22,7 +22,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.26"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
 statebind proof
 ```
 
@@ -84,7 +84,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.26"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -107,11 +107,12 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.26"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind scout --repo-url https://github.com/owner/repo --issue-dir statebind-notes --markdown statebind-scout.md
+statebind scout --github-repo owner/repo --issue-dir statebind-notes --markdown statebind-scout.md
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -137,7 +138,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.26
+    rev: v0.1.27
     hooks:
       - id: statebind-guard
 ```
@@ -174,12 +175,15 @@ a temporary checkout and generate the same audit without manually cloning it;
 add `--clone-timeout 60` for slow hosts.
 Use `statebind scout` when comparing several candidate repositories; it ranks
 targets by adoption priority and can write one maintainer-safe draft note per
-useful target.
+useful target. Use `--github-repo owner/repo` or `--github-list` when large
+GitHub repositories are too expensive to clone; this API mode scans the Git tree
+and a small set of configuration files. Set `GH_TOKEN` or `GITHUB_TOKEN` before
+larger campaigns to avoid unauthenticated GitHub API rate limits.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.26
+- uses: FU-max-boop/statebind-guard@v0.1.27
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

@@ -23,7 +23,7 @@ body:
     id: version
     attributes:
       label: StateBind Guard version
-      placeholder: v0.1.26
+      placeholder: v0.1.27
     validations:
       required: true
   - type: textarea

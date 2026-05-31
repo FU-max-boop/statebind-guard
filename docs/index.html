@@ -266,7 +266,7 @@
   <body>
     <header class="hero">
       <div class="hero-inner">
-        <div class="eyebrow">StateBind Guard v0.1.26</div>
+        <div class="eyebrow">StateBind Guard v0.1.27</div>
         <h1>Make coding-agent handoffs executable.</h1>
         <p class="lead">
           StateBind Guard catches the quiet failure where a handoff mentions the
@@ -275,7 +275,7 @@
         </p>
         <div class="actions" aria-label="Primary links">
           <a class="button" href="https://github.com/FU-max-boop/statebind-guard">GitHub repository</a>
-          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.26">Latest release</a>
+          <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/releases/tag/v0.1.27">Latest release</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_package.md">Launch package</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/launch_note.md">Launch note</a>
           <a class="button secondary" href="https://github.com/FU-max-boop/statebind-guard/blob/main/docs/adoption_audit.md">Adoption audit</a>
@@ -334,10 +334,11 @@
             The starter scaffold is intentionally small: one human-readable
             handoff, one JSON contract, one policy, one workflow.
           </p>
-          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.26"
+          <pre><code>python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.27"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
 statebind scout --repo-list candidate-repos.txt --issue-dir statebind-notes
+statebind scout --github-list candidate-github-repos.txt --issue-dir statebind-notes
 statebind proof
 statebind init --goal "keep coding-agent handoffs executable" --next-command "make test"
 statebind policy --preset bugfix --out .statebind-policy.json
@@ -386,7 +387,7 @@ git add HANDOFF.md statebind.json .statebind-policy.json .github/workflows/state
             after copying it.
           </p>
         </div>
-        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.26
+        <pre><code>- uses: FU-max-boop/statebind-guard@v0.1.27
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json
