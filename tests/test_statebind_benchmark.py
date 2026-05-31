@@ -186,6 +186,15 @@ class StateBindBenchmarkTests(unittest.TestCase):
             self.assertIn("Target Summary", rendered)
             self.assertIn("draft_anchor", rendered)
 
+    def test_pydantic_feedback_packet_has_strict_gate(self):
+        packet = (ROOT / "docs" / "maintainer_feedback" / "pydantic_ai_feedback_packet_2026_05_31.md").read_text()
+        self.assertIn("Human final review is required", packet)
+        self.assertIn("#5731", packet)
+        self.assertIn("#5721", packet)
+        self.assertIn("--issue-context-term", packet)
+        self.assertIn("I am not asking you to add a dependency", packet)
+        self.assertIn("Do not imply StateBind Guard is a fix", packet)
+
 
 if __name__ == "__main__":
     unittest.main()

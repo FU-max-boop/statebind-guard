@@ -14,6 +14,7 @@
 **Target review:** [human gate for first adoption outreach targets](docs/adoption_target_review_2026_05_31.md)
 **Context evidence:** [current public issues behind feedback-only drafts](docs/adoption_context_evidence_2026_05_31.md)
 **Feedback drafts:** [manual-review feedback requests](docs/adoption_feedback_requests_2026_05_31.md)
+**Maintainer packet:** [Pydantic AI feedback packet](docs/maintainer_feedback/pydantic_ai_feedback_packet_2026_05_31.md)
 **Roadmap / feedback:** [roadmap](docs/roadmap.md), [adoption feedback](docs/adoption_feedback.md)
 
 StateBind Guard is a small benchmark and checker for a simple failure mode in
@@ -26,7 +27,7 @@ coding-agent handoffs:
 Try the claim before installing any hooks:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.32"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.33"
 statebind proof
 ```
 
@@ -88,7 +89,7 @@ For a quick technical screen, this repository should answer three questions:
 Run:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.32"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.33"
 statebind proof
 bash scripts/run_smoke_test.sh
 make benchmark
@@ -105,6 +106,7 @@ Then inspect:
 - [adoption target review](docs/adoption_target_review_2026_05_31.md)
 - [adoption context evidence](docs/adoption_context_evidence_2026_05_31.md)
 - [adoption feedback request drafts](docs/adoption_feedback_requests_2026_05_31.md)
+- [Pydantic AI maintainer feedback packet](docs/maintainer_feedback/pydantic_ai_feedback_packet_2026_05_31.md)
 - [roadmap](docs/roadmap.md)
 - [adoption feedback](docs/adoption_feedback.md)
 - [failure cases](docs/failure_cases.md)
@@ -115,7 +117,7 @@ Then inspect:
 Add StateBind Guard to any repository in about 30 seconds:
 
 ```bash
-python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.32"
+python -m pip install "git+https://github.com/FU-max-boop/statebind-guard.git@v0.1.33"
 statebind audit --repo . --markdown statebind-adoption-audit.md
 statebind audit --repo . --issue-template statebind-maintainer-note.md
 statebind audit --repo-url https://github.com/owner/repo --issue-template statebind-maintainer-note.md
@@ -146,7 +148,7 @@ Use it with the standard pre-commit framework:
 ```yaml
 repos:
   - repo: https://github.com/FU-max-boop/statebind-guard
-    rev: v0.1.32
+    rev: v0.1.33
     hooks:
       - id: statebind-guard
 ```
@@ -190,12 +192,14 @@ larger campaigns to avoid unauthenticated GitHub API rate limits. Add
 `--result-card` when you want a compact evidence card for a review thread,
 launch note, or maintainer discussion. Add `--issue-context` with
 `--issue-context-card` to search public GitHub issues for handoff/resume context
-before writing a maintainer-facing feedback request.
+before writing a maintainer-facing feedback request. Use `--issue-context-term`
+to override the default search terms when a target has a more specific durable
+execution surface.
 
 Use it directly in a GitHub workflow:
 
 ```yaml
-- uses: FU-max-boop/statebind-guard@v0.1.32
+- uses: FU-max-boop/statebind-guard@v0.1.33
   with:
     handoff: HANDOFF.md
     statebind-json: statebind.json

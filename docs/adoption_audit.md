@@ -51,6 +51,8 @@ Use `--issue-context` and `--issue-context-card` when a GitHub API scout should
 also search current public issues for handoff, resume, RunState, durable
 execution, message-history, state-loss, and tool-output context. The generated
 card is a relevance check, not permission to open an issue.
+Use `--issue-context-term` to override the default terms for a target-specific
+review, for example `--issue-context-term "message history"`.
 
 The scout report labels each repository as `high`, `medium`, `low`,
 `follow_up`, or `skip`. Prefer `high` and `medium` targets where the audit
@@ -85,6 +87,8 @@ The current public issue-context evidence behind those targets is in
 [`adoption_context_evidence_2026_05_31.md`](adoption_context_evidence_2026_05_31.md).
 The matching feedback-only drafts are in
 [`adoption_feedback_requests_2026_05_31.md`](adoption_feedback_requests_2026_05_31.md).
+The first target-specific human-review packet is
+[`maintainer_feedback/pydantic_ai_feedback_packet_2026_05_31.md`](maintainer_feedback/pydantic_ai_feedback_packet_2026_05_31.md).
 
 The issue template deliberately asks a narrow review question instead of
 assuming adoption: whether the repository has a real resume or handoff boundary

@@ -54,6 +54,8 @@ or shared as a compact campaign receipt.
 Use `--issue-context --issue-context-card statebind-issue-context.md` to make
 the scout search current public GitHub issues for handoff/resume context before
 you draft maintainer-facing feedback.
+Use `--issue-context-term "message history"` when the default terms are too
+generic for the repository you are reviewing.
 
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an

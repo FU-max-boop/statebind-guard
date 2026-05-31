@@ -70,17 +70,17 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.32"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.33"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.32"
+SOURCE_VERSION = "0.1.33"
 DEFAULT_ISSUE_CONTEXT_TERMS = (
-    "handoff",
-    "resume",
-    "RunState",
-    "message history",
     "durable execution",
+    "message history",
     "state loss",
     "tool output",
+    "RunState",
+    "resume",
+    "handoff",
 )
 
 
@@ -2443,6 +2443,16 @@ def github_issue_context(
     return items
 
 
+def load_issue_context_terms(values: list[str]) -> tuple[str, ...]:
+    terms: list[str] = []
+    for value in values:
+        for item in value.split(","):
+            term = item.strip()
+            if term:
+                terms.append(term)
+    return tuple(terms) or DEFAULT_ISSUE_CONTEXT_TERMS
+
+
 def issue_context_relevance(title: str, labels: list[str]) -> str:
     text = " ".join([title, *labels]).lower()
     if "durable" in text or "temporal" in text:
@@ -2818,6 +2828,7 @@ def run_scout(
     issue_context: bool,
     issue_context_card_out: Path | None,
     issue_context_limit: int,
+    issue_context_terms: Iterable[str],
 ) -> int:
     urls = load_scout_urls(repo_urls, repo_list)
     github_specs = load_scout_urls(github_repos, github_list)
@@ -2830,6 +2841,7 @@ def run_scout(
 
     records: list[dict[str, Any]] = []
     collect_issue_context = issue_context or issue_context_card_out is not None
+    context_terms = tuple(issue_context_terms)
     for repo_url in urls:
         tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
         try:
@@ -2871,7 +2883,7 @@ def run_scout(
                 try:
                     context_items = github_issue_context(
                         github_repo,
-                        DEFAULT_ISSUE_CONTEXT_TERMS,
+                        context_terms,
                         issue_context_limit,
                         github_timeout,
                     )
@@ -3122,6 +3134,12 @@ def main() -> int:
     p_scout.add_argument("--issue-context", action="store_true", help="search public GitHub issues for handoff/resume context")
     p_scout.add_argument("--issue-context-card", type=Path, help="write a public issue-context evidence card")
     p_scout.add_argument("--issue-context-limit", type=int, default=4, help="maximum issue-context matches per GitHub repository")
+    p_scout.add_argument(
+        "--issue-context-term",
+        action="append",
+        default=[],
+        help="issue search term for --issue-context; repeat or comma-separate to override defaults",
+    )
 
     p_check = sub.add_parser("check", help="basic handoff audit")
     p_check.add_argument("handoff", type=Path)
@@ -3228,6 +3246,7 @@ def main() -> int:
             args.issue_context,
             args.issue_context_card,
             args.issue_context_limit,
+            load_issue_context_terms(args.issue_context_term),
         )
     if args.cmd == "check":
         return check_handoff(args.handoff)

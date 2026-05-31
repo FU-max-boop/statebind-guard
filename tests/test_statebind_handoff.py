@@ -454,7 +454,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.32", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.33", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -767,7 +767,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.32\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.33\n",
                 },
             )
 
@@ -808,7 +808,7 @@ class StateBindHandoffTests(unittest.TestCase):
 
         def fake_issue_context(owner_repo, terms, limit, timeout):
             self.assertEqual(owner_repo, "owner/agent-repo")
-            self.assertIn("handoff", list(terms))
+            self.assertEqual(tuple(terms), ("message history", "tool output"))
             self.assertEqual(limit, 2)
             self.assertEqual(timeout, 7)
             return [
@@ -853,6 +853,7 @@ class StateBindHandoffTests(unittest.TestCase):
                         True,
                         context_card,
                         2,
+                        ("message history", "tool output"),
                     )
                 data = json.loads(stdout.getvalue())
                 markdown_text = markdown.read_text()
