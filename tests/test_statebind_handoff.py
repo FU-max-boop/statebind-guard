@@ -454,7 +454,7 @@ class StateBindHandoffTests(unittest.TestCase):
             self.assertTrue(state.exists())
             self.assertTrue(workflow.exists())
             workflow_text = workflow.read_text()
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.33", workflow_text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.34", workflow_text)
             self.assertIn("handoff: HANDOFF.md", workflow_text)
             self.assertIn("statebind-json: statebind.json", workflow_text)
 
@@ -767,7 +767,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 ],
                 {
                     "Makefile": "test:\n\tpython -m unittest discover -s tests\n",
-                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.33\n",
+                    ".github/workflows/statebind-guard.yml": "uses: FU-max-boop/statebind-guard@v0.1.34\n",
                 },
             )
 
@@ -832,6 +832,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 markdown = root / "scout.md"
                 result_card = root / "scout-card.md"
                 context_card = root / "issue-context.md"
+                feedback_packet = root / "feedback-packet.md"
                 stdout = io.StringIO()
                 with contextlib.redirect_stdout(stdout):
                     code = MODULE.run_scout(
@@ -852,6 +853,7 @@ class StateBindHandoffTests(unittest.TestCase):
                         None,
                         True,
                         context_card,
+                        feedback_packet,
                         2,
                         ("message history", "tool output"),
                     )
@@ -859,6 +861,7 @@ class StateBindHandoffTests(unittest.TestCase):
                 markdown_text = markdown.read_text()
                 result_card_text = result_card.read_text()
                 context_card_text = context_card.read_text()
+                feedback_packet_text = feedback_packet.read_text()
         finally:
             MODULE.github_snapshot = original_snapshot
             MODULE.github_issue_context = original_issue_context
@@ -873,6 +876,10 @@ class StateBindHandoffTests(unittest.TestCase):
         self.assertIn("# StateBind Scout Issue Context Card", context_card_text)
         self.assertIn("#42", context_card_text)
         self.assertIn("not treat it as", context_card_text)
+        self.assertIn("# StateBind Maintainer Feedback Packet", feedback_packet_text)
+        self.assertIn("Human final review is required", feedback_packet_text)
+        self.assertIn("Feedback request: executable state-binding checks", feedback_packet_text)
+        self.assertIn("I am asking for feedback, not proposing adoption", feedback_packet_text)
 
     def test_github_api_rate_limit_error_mentions_token(self):
         original_urlopen = MODULE.urlopen

@@ -70,9 +70,9 @@ HANDOFF_NAME_HINTS = {
 }
 SCHEMA_VERSION = "0.1"
 POLICY_SCHEMA_VERSION = "0.1"
-DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.33"
+DEFAULT_ACTION_REF = "FU-max-boop/statebind-guard@v0.1.34"
 CONFIDENCE_ORDER = {"uncertain": 0, "low": 1, "medium": 2, "high": 3}
-SOURCE_VERSION = "0.1.33"
+SOURCE_VERSION = "0.1.34"
 DEFAULT_ISSUE_CONTEXT_TERMS = (
     "durable execution",
     "message history",
@@ -2809,6 +2809,159 @@ def render_scout_issue_context_card(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def feedback_ready_records(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        record
+        for record in payload["repositories"]
+        if record["status"] == "ok"
+        and record["priority"] in {"high", "medium", "follow_up"}
+        and record.get("issue_context")
+    ]
+
+
+def render_issue_context_bullets(record: dict[str, Any], limit: int = 6) -> list[str]:
+    lines: list[str] = []
+    for item in record.get("issue_context", [])[:limit]:
+        lines.append(
+            "- #{number} {title} ({state}, matched `{term}`): {relevance}".format(
+                number=item["number"],
+                title=item["title"],
+                state=str(item.get("state", "")).lower(),
+                term=item.get("matched_term", ""),
+                relevance=item.get("statebind_relevance", ""),
+            )
+        )
+    return lines
+
+
+def render_feedback_issue_draft(record: dict[str, Any]) -> str:
+    candidates = [
+        f"`{candidate['path']}`"
+        for candidate in record.get("handoff_candidates", [])[:4]
+        if candidate.get("path")
+    ]
+    surface_text = ", ".join(candidates) if candidates else "public repo surfaces found by the scout"
+    lines = [
+        f"Title: Feedback request: executable state-binding checks for `{record['repo']}`",
+        "",
+        "Hi maintainers,",
+        "",
+        "I am asking for feedback, not proposing adoption or asking you to add a dependency.",
+        "",
+        "I ran a read-only StateBind scout and then checked current public issue context before deciding whether this question is specific enough to ask. The relevant surfaces I saw were "
+        f"{surface_text}.",
+        "",
+        "The public context that made this feel worth asking:",
+        *render_issue_context_bullets(record),
+        "",
+        "Question: would an external executable-state contract that binds message/history/tool/resume handles to verification gates be useful signal for this kind of issue, noisy, or out of scope for this project?",
+        "",
+        "If this is not a problem you want surfaced, that is useful feedback too. I will not open a code PR or suggest CI adoption unless maintainers explicitly ask for that direction.",
+    ]
+    return "\n".join(lines)
+
+
+def render_scout_feedback_packet(payload: dict[str, Any]) -> str:
+    records = feedback_ready_records(payload)
+    issue_context_terms = payload.get("issue_context_terms", [])
+    lines = [
+        "# StateBind Maintainer Feedback Packet",
+        "",
+        "This packet is generated from a `statebind scout` run. It is designed for",
+        "human review before any maintainer-facing comment, issue, or pull request.",
+        "",
+        "## Posting Gate",
+        "",
+        "- Human final review is required before posting any text from this packet.",
+        "- This is feedback-only outreach, not an adoption request.",
+        "- Do not comment on an existing issue unless the comment directly helps that issue.",
+        "- Do not open a code PR or CI adoption PR from this packet alone.",
+        "- Re-run scout before posting if issue state may have changed.",
+        "",
+        "## Scope",
+        "",
+        f"- repositories scanned: {payload['summary']['total']}",
+        f"- successful audits: {payload['summary']['ok']}",
+        f"- feedback-ready targets: {len(records)}",
+    ]
+    if issue_context_terms:
+        lines.append(f"- issue-context terms: {', '.join(f'`{term}`' for term in issue_context_terms)}")
+
+    if not records:
+        lines.extend(
+            [
+                "",
+                "## No Feedback-Ready Targets",
+                "",
+                "No scanned target had both a non-skip priority and public issue context.",
+                "Hold outreach until the scout finds repository-specific evidence.",
+                "",
+                "## Claim Boundary",
+                "",
+                "This packet is not evidence of maintainer demand or product-market fit.",
+            ]
+        )
+        return "\n".join(lines)
+
+    lines.extend(
+        [
+            "",
+            "## Target Summary",
+            "",
+            "| Repository | Priority | Score | Issue Context | Suggested Gate |",
+            "|---|---|---:|---:|---|",
+        ]
+    )
+    for record in records:
+        gate = record.get("suggested_next_command", {}).get("command", "")
+        lines.append(
+            "| `{repo}` | `{priority}` | {score} | {context} | `{gate}` |".format(
+                repo=markdown_cell(record["repo"]),
+                priority=record["priority"],
+                score=record["score"],
+                context=len(record.get("issue_context", [])),
+                gate=markdown_cell(gate),
+            )
+        )
+
+    for record in records:
+        lines.extend(["", f"## `{record['repo']}`", ""])
+        lines.append(f"- priority: `{record['priority']}`")
+        lines.append(f"- score: {record['score']}")
+        lines.append("- reasons:")
+        for reason in record.get("reasons", [])[:5]:
+            lines.append(f"  - {reason}")
+        if record.get("handoff_candidates"):
+            lines.append("- relevant surfaces:")
+            for candidate in record["handoff_candidates"][:4]:
+                lines.append(f"  - `{candidate['path']}` ({candidate['reason']})")
+        lines.extend(["", "### Public Issue Context", ""])
+        lines.extend(render_issue_context_bullets(record))
+        lines.extend(
+            [
+                "",
+                "### Suggested Draft",
+                "",
+                "```markdown",
+                render_feedback_issue_draft(record),
+                "```",
+            ]
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Claim Boundary",
+            "",
+            "This packet proves only that StateBind found relevant public context for a",
+            "human-reviewed feedback question. It does not prove a maintainer wants",
+            "StateBind, that StateBind is correct for the repository, or that outreach",
+            "should be posted without project-specific judgment.",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def run_scout(
     repo_urls: list[str],
     repo_list: Path | None,
@@ -2827,6 +2980,7 @@ def run_scout(
     issue_dir: Path | None,
     issue_context: bool,
     issue_context_card_out: Path | None,
+    feedback_packet_out: Path | None,
     issue_context_limit: int,
     issue_context_terms: Iterable[str],
 ) -> int:
@@ -2840,7 +2994,7 @@ def run_scout(
         return 2
 
     records: list[dict[str, Any]] = []
-    collect_issue_context = issue_context or issue_context_card_out is not None
+    collect_issue_context = issue_context or issue_context_card_out is not None or feedback_packet_out is not None
     context_terms = tuple(issue_context_terms)
     for repo_url in urls:
         tmp_ctx: tempfile.TemporaryDirectory[str] | None = None
@@ -2911,6 +3065,7 @@ def run_scout(
             "ok": sum(1 for record in records if record["status"] == "ok"),
             "errors": sum(1 for record in records if record["status"] != "ok"),
         },
+        "issue_context_terms": list(context_terms) if collect_issue_context else [],
         "repositories": records,
     }
     markdown = render_scout_markdown(payload)
@@ -2920,6 +3075,8 @@ def run_scout(
         write_output(result_card_out, render_scout_result_card(payload))
     if issue_context_card_out:
         write_output(issue_context_card_out, render_scout_issue_context_card(payload))
+    if feedback_packet_out:
+        write_output(feedback_packet_out, render_scout_feedback_packet(payload))
     if json_out:
         print(json.dumps(payload, indent=2))
     else:
@@ -3133,6 +3290,7 @@ def main() -> int:
     p_scout.add_argument("--issue-dir", type=Path, help="write one maintainer-safe note per successful audit")
     p_scout.add_argument("--issue-context", action="store_true", help="search public GitHub issues for handoff/resume context")
     p_scout.add_argument("--issue-context-card", type=Path, help="write a public issue-context evidence card")
+    p_scout.add_argument("--feedback-packet", type=Path, help="write a human-review maintainer feedback packet")
     p_scout.add_argument("--issue-context-limit", type=int, default=4, help="maximum issue-context matches per GitHub repository")
     p_scout.add_argument(
         "--issue-context-term",
@@ -3245,6 +3403,7 @@ def main() -> int:
             args.issue_dir,
             args.issue_context,
             args.issue_context_card,
+            args.feedback_packet,
             args.issue_context_limit,
             load_issue_context_terms(args.issue_context_term),
         )

@@ -56,6 +56,8 @@ the scout search current public GitHub issues for handoff/resume context before
 you draft maintainer-facing feedback.
 Use `--issue-context-term "message history"` when the default terms are too
 generic for the repository you are reviewing.
+Use `--feedback-packet statebind-feedback-packet.md` to generate a
+human-review-gated maintainer feedback packet from the same scout evidence.
 
 Use `--issue-template statebind-maintainer-note.md` when preparing an external
 feedback request; the note frames adoption as a maintainer question, not an

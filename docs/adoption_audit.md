@@ -40,6 +40,7 @@ statebind scout \
   --github-list candidate-github-repos.txt \
   --issue-context \
   --issue-context-card statebind-issue-context.md \
+  --feedback-packet statebind-feedback-packet.md \
   --issue-dir statebind-notes \
   --markdown statebind-scout.md \
   --result-card statebind-scout-card.md
@@ -53,6 +54,8 @@ execution, message-history, state-loss, and tool-output context. The generated
 card is a relevance check, not permission to open an issue.
 Use `--issue-context-term` to override the default terms for a target-specific
 review, for example `--issue-context-term "message history"`.
+Use `--feedback-packet` when the next artifact should be a human-review-gated
+maintainer feedback packet rather than only a context card.
 
 The scout report labels each repository as `high`, `medium`, `low`,
 `follow_up`, or `skip`. Prefer `high` and `medium` targets where the audit
