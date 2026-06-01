@@ -11,7 +11,7 @@ The public adoption example lives at
 What it proves:
 
 - The workflow consumes a released action from a separate repository:
-  `FU-max-boop/statebind-guard@v0.1.13`.
+  `FU-max-boop/statebind-guard@v0.1.38`.
 - The example stores `HANDOFF.md`, `statebind.json`, and a bug-fix policy.
 - CI asserts the action outputs `passed=true`, `errors=0`, `warnings=0`, and
   `exit_code=0`.
@@ -20,9 +20,9 @@ What it proves:
 Verified receipt:
 
 - Workflow run:
-  [26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633)
+  [26735088397](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26735088397)
 - Commit:
-  [859c500](https://github.com/FU-max-boop/statebind-guard-adoption-example/commit/859c500c7b59afe6013dbfd6360144c4ca35300e)
+  [ea607d4](https://github.com/FU-max-boop/statebind-guard-adoption-example/commit/ea607d4bb921d4be1f8734ce59b1ec48c39f51af)
 - Artifact name: `statebind-validation`
 - Result: `passed=true`, `errors=0`, `warnings=0`, `exit_code=0`
 

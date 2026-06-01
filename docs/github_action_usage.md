@@ -56,8 +56,8 @@ The doctor confirms the workflow points at StateBind Guard and that
 
 Public receipt: the separate repository
 [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example)
-consumes `FU-max-boop/statebind-guard@v0.1.13` and passed
-[run 26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
+consumes `FU-max-boop/statebind-guard@v0.1.38` and passed
+[run 26735088397](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26735088397).
 That workflow asserts `passed=true`, `errors=0`, `warnings=0`, and
 `exit_code=0`, then uploads JSON, SARIF, Markdown, and HTML reports.
 

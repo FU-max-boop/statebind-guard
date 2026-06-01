@@ -145,8 +145,8 @@ StateBind findings visible in GitHub code scanning and PR annotations.
 Public separate-repository receipt:
 
 - Example repo: [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example)
-- Passing run: [26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633)
-- The workflow consumes `FU-max-boop/statebind-guard@v0.1.13`, asserts action
+- Passing run: [26735088397](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26735088397)
+- The workflow consumes `FU-max-boop/statebind-guard@v0.1.38`, asserts action
   outputs `passed=true`, `errors=0`, `warnings=0`, and `exit_code=0`, then
   uploads JSON, SARIF, Markdown, and HTML reports.
 

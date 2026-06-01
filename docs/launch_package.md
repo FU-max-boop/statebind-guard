@@ -144,6 +144,6 @@ After trying the tool, open an adoption report or sanitized failure-case issue:
 - GitHub Action smoke dogfoods the local composite action on both passing and
   failing fixtures, verifying outputs and reports in each path.
 - The repository and generated workflows upload SARIF through GitHub code scanning, not only as an artifact.
-- Separate-repository adoption smoke passes in [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
+- Separate-repository adoption smoke passes in [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26735088397).
 - Release artifacts include JSON, SARIF, Markdown, and standalone HTML reports.
 - The landing page and README link the proof, launch note, quick demo, adoption examples, pre-commit usage, policy usage, and CI usage.

@@ -52,7 +52,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("docs/adoption_examples.md", html)
         self.assertIn("External adoption receipt", html)
         self.assertIn("statebind-guard-adoption-example", html)
-        self.assertIn("26683277633", html)
+        self.assertIn("26735088397", html)
 
     def test_social_preview_png_has_expected_dimensions(self):
         png = (ROOT / "docs" / "assets" / "statebind_social_preview.png").read_bytes()
@@ -79,7 +79,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("docs/adoption_feedback_requests_2026_05_31.md", readme)
         self.assertIn("docs/maintainer_feedback/pydantic_ai_feedback_packet_2026_05_31.md", readme)
         self.assertIn("statebind-guard-adoption-example", readme)
-        self.assertIn("actions/runs/26683277633", readme)
+        self.assertIn("actions/runs/26735088397", readme)
         self.assertIn("statebind install-hook", readme)
         self.assertIn("statebind doctor", readme)
         self.assertIn("statebind policy", readme)
@@ -136,7 +136,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("maintainer_feedback/pydantic_ai_feedback_packet_2026_05_31.md", package)
         self.assertIn("roadmap.md", package)
         self.assertIn("statebind-guard-adoption-example", package)
-        self.assertIn("26683277633", package)
+        self.assertIn("26735088397", package)
         self.assertIn("deployed-derived", package)
 
     def test_external_adoption_receipt_is_linked(self):
@@ -147,12 +147,12 @@ class DocsSiteTests(unittest.TestCase):
 
         for text in (receipt, industrial, action_usage):
             self.assertIn("statebind-guard-adoption-example", text)
-            self.assertIn("FU-max-boop/statebind-guard@v0.1.13", text)
-            self.assertIn("26683277633", text)
+            self.assertIn("FU-max-boop/statebind-guard@v0.1.38", text)
+            self.assertIn("26735088397", text)
             self.assertIn("passed=true", text)
             self.assertIn("warnings=0", text)
 
-        self.assertIn("859c500", receipt)
+        self.assertIn("ea607d4", receipt)
         self.assertIn("adoption_examples.md", industrial)
         self.assertIn("FU-max-boop/statebind-guard@v0.1.38", industrial)
         self.assertIn("FU-max-boop/statebind-guard@v0.1.38", action_usage)

@@ -58,7 +58,7 @@ External receipt: a separate public repository,
 [statebind-guard-adoption-example](https://github.com/FU-max-boop/statebind-guard-adoption-example),
 pins the released action and has a passing workflow run with JSON, SARIF,
 Markdown, and HTML artifacts:
-[run 26683277633](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26683277633).
+[run 26735088397](https://github.com/FU-max-boop/statebind-guard-adoption-example/actions/runs/26735088397).
 
 Release receipt: each `v*` tag builds and verifies both a Python wheel and
 source distribution, then attaches those assets to the GitHub release. The
